@@ -208,8 +208,8 @@ tr:hover td { background: #f8fafc; }
         <div class="card-hd"><span class="card-tit">월별 모니터링 / 위반 건수 추이</span><span class="card-tag" id="lineYear">-</span></div>
         <div style="position:relative;width:100%;height:230px;"><canvas id="lineChart"></canvas></div>
         <div class="leg" style="margin-top:10px;margin-bottom:0">
-          <span><span class="ld" style="background:#1e3a8a"></span>모니터링</span>
-          <span><span class="ld" style="background:#dc2626"></span>위반</span>
+          <span><span class="ld" style="background:#8fa8c8"></span>모니터링</span>
+          <span><span class="ld" style="background:#e8845a"></span>위반</span>
         </div>
       </div>
       <div class="card">
@@ -366,9 +366,9 @@ const SUB = {
 };
 const TYPES=['가맹','불법파견','표시광고','노무','영업비밀'];
 const BRANDS=['애슐리','피자몰','로운','자연별곡','델리바이애슐리','리미니','프랑제리','카페','프랜차이즈','광주ck','주안ck','기흥ck','CX팀'];
-const TC=['#1e3a8a','#2563eb','#0891b2','#0d9488','#7c3aed'];
-const BC=BRANDS.map(()=>'#1e3a8a');
-const SC=['#1e3a8a','#2563eb','#0891b2','#0d9488','#7c3aed','#db2777','#ea580c','#ca8a04','#16a34a','#0284c7','#9333ea','#e11d48','#0f766e'];
+const TC=['#4f86c6','#e8845a','#5eba8a','#e8c35a','#9b7ed4'];
+const BC=BRANDS.map(()=>'#85B7EB');
+const SC=['#4f86c6','#e8845a','#5eba8a','#e8c35a','#9b7ed4','#e87a9f','#5abfbf','#c4a86e','#7ab8d4','#d4846e','#82c4a0','#b8a0d4','#e8a05a'];
 const MONTHS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 const STATS=['모니터링','위반(처리중)','완료'];
 const ADMIN='admin';
@@ -533,7 +533,7 @@ function renderLine(d,now){
   const m=Array(12).fill(0),v=Array(12).fill(0);
   d.forEach(r=>{const x=new Date(r.date);if(x.getFullYear()===yr){m[x.getMonth()]+=r.count;if(r.status==='위반(처리중)'||r.status==='완료')v[x.getMonth()]+=r.count;}});
   if(lChart)lChart.destroy();
-  lChart=new Chart(document.getElementById('lineChart'),{type:'line',data:{labels:MONTHS,datasets:[{label:'모니터링',data:m,borderColor:'#1e3a8a',backgroundColor:'rgba(30,58,138,0.06)',tension:0.4,pointRadius:3,pointBackgroundColor:'#1e3a8a',borderWidth:2},{label:'위반',data:v,borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,0.06)',tension:0.4,pointRadius:3,pointBackgroundColor:'#dc2626',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,0,0,0.03)'},ticks:{font:{size:10},color:'#94a3b8',autoSkip:false,maxRotation:0}},y:{grid:{color:'rgba(0,0,0,0.03)'},ticks:{font:{size:10},color:'#94a3b8'},beginAtZero:true}}}});
+  lChart=new Chart(document.getElementById('lineChart'),{type:'line',data:{labels:MONTHS,datasets:[{label:'모니터링',data:m,borderColor:'#8fa8c8',backgroundColor:'rgba(143,168,200,0.07)',tension:0.4,pointRadius:3,pointBackgroundColor:'#8fa8c8',borderWidth:2},{label:'위반',data:v,borderColor:'#e8845a',backgroundColor:'rgba(232,132,90,0.07)',tension:0.4,pointRadius:3,pointBackgroundColor:'#e8845a',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,0,0,0.03)'},ticks:{font:{size:10},color:'#94a3b8',autoSkip:false,maxRotation:0}},y:{grid:{color:'rgba(0,0,0,0.03)'},ticks:{font:{size:10},color:'#94a3b8'},beginAtZero:true}}}});
 }
 
 function renderRight(d,k,now){
