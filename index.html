@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>외식 BG 리스크 적발 및 처리 분석</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F5F6FA; color: #1a1a2e; min-height: 100vh; }
+  header { background: #fff; border-bottom: 1px solid #e8eaf0; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; }
+  .logo { font-size: 15px; font-weight: 600; color: #185FA5; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .logo-dot { width: 8px; height: 8px; background: #185FA5; border-radius: 50%; flex-shrink: 0; }
+  .header-right { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #888; flex-shrink: 0; }
+  .year-badge { background: #E6F1FB; color: #185FA5; border-radius: 6px; padding: 4px 12px; font-size: 12px; font-weight: 500; }
+  .tab-btn { font-size: 13px; padding: 6px 16px; border-radius: 20px; border: 1px solid #e0e0e0; background: #fff; color: #666; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .tab-btn.active { background: #185FA5; color: #fff; border-color: #185FA5; }
+  .user-chip { font-size: 12px; background: #EAF3DE; color: #3B6D11; border-radius: 20px; padding: 4px 12px; display: none; align-items: center; gap: 6px; }
+  .user-chip.show { display: flex; }
+  .logout-btn { font-size: 12px; color: #aaa; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+  .logout-btn:hover { color: #e24b4a; background: #fcebeb; }
+  main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .page { display: none; } .page.active { display: block; }
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 200; display: flex; align-items: center; justify-content: center; }
+  .modal-bg.hide { display: none; }
+  .modal { background: #fff; border-radius: 16px; padding: 2rem; width: 100%; max-width: 400px; }
+  .modal-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; color: #1a1a2e; }
+  .modal-sub { font-size: 13px; color: #888; margin-bottom: 1.5rem; }
+  .modal .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .modal .form-group label { font-size: 12px; color: #888; font-weight: 500; }
+  .modal .form-group input { padding: 10px 12px; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 13px; color: #1a1a2e; outline: none; }
+  .modal .form-group input:focus { border-color: #378ADD; }
+  .modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 1.2rem; }
+  .btn-full { width: 100%; padding: 11px; background: #185FA5; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .btn-full:hover { background: #0e4a82; }
+  .btn-link { background: none; border: none; color: #185FA5; font-size: 13px; cursor: pointer; text-align: center; }
+  .modal-err { font-size: 12px; color: #A32D2D; background: #FCEBEB; border-radius: 6px; padding: 8px 12px; display: none; margin-bottom: 10px; }
+  .modal-err.show { display: block; }
+  .page-title { font-size: 22px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
+  .page-sub { font-size: 14px; color: #888; margin-bottom: 2rem; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 1.5rem; }
+  .kpi { background: #fff; border-radius: 12px; padding: 1.2rem 1.4rem; border: 1px solid #eaecf0; }
+  .kpi-label { font-size: 12px; color: #888; margin-bottom: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 600; color: #1a1a2e; margin-bottom: 2px; }
+  .kpi-rate { font-size: 12px; color: #378ADD; font-weight: 500; margin-bottom: 4px; }
+  .kpi-sub { font-size: 11px; color: #aaa; }
+  .kpi-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 10px; }
+  .icon-blue{background:#E6F1FB} .icon-red{background:#FCEBEB} .icon-green{background:#EAF3DE} .icon-amber{background:#FAEEDA}
+  .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+  .bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { background: #fff; border-radius: 12px; border: 1px solid #eaecf0; padding: 1.2rem 1.4rem; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .card-title { font-size: 14px; font-weight: 500; color: #444; }
+  .card-tag { font-size: 11px; background: #F5F6FA; color: #888; border-radius: 4px; padding: 2px 8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; font-size: 12px; color: #666; }
+  .leg-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 4px; vertical-align: middle; }
+  .filter-row { display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
+  .filter-btn { font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid #e0e0e0; background: #fff; color: #666; cursor: pointer; transition: all 0.15s; }
+  .filter-btn.active, .filter-btn:hover { background: #185FA5; color: #fff; border-color: #185FA5; }
+  .refresh-btn { margin-left: auto; font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid #e0e0e0; background: #fff; color: #666; cursor: pointer; }
+  .refresh-btn:hover { background: #f5f6fa; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: #aaa; font-weight: 500; padding: 6px 10px; border-bottom: 1px solid #f0f0f0; font-size: 11px; }
+  td { padding: 8px 10px; border-bottom: 1px solid #f7f7f7; color: #333; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafbff; }
+  .status { font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+  .s-done{background:#EAF3DE;color:#3B6D11} .s-ing{background:#FCEBEB;color:#A32D2D} .s-monitor{background:#E6F1FB;color:#185FA5}
+  .status-select { font-size: 11px; padding: 3px 6px; border-radius: 6px; border: 1px solid #e0e0e0; background: #fff; color: #555; cursor: pointer; outline: none; }
+  .form-section { background: #fff; border-radius: 12px; border: 1px solid #eaecf0; padding: 1.5rem 1.75rem; margin-bottom: 1.5rem; }
+  .form-section-title { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 1.2rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f0f0f0; }
+  .form-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 12px; color: #888; font-weight: 500; }
+  .form-group input, .form-group select { padding: 9px 12px; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 13px; color: #1a1a2e; background: #fff; outline: none; transition: border 0.15s; }
+  .form-group input:focus, .form-group select:focus { border-color: #378ADD; }
+  .form-group select:disabled { background: #f5f6fa; color: #bbb; }
+  .form-actions { display: flex; gap: 10px; margin-top: 1.2rem; align-items: center; }
+  .btn-primary { padding: 10px 24px; background: #185FA5; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; }
+  .btn-primary:hover { background: #0e4a82; }
+  .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+  .btn-secondary { padding: 10px 20px; background: #fff; color: #666; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 13px; cursor: pointer; }
+  .saving-indicator { font-size: 12px; color: #888; display: none; align-items: center; gap: 6px; }
+  .saving-indicator.show { display: flex; }
+  .spinner { width: 14px; height: 14px; border: 2px solid #e0e0e0; border-top-color: #378ADD; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .invite-box { background: #E6F1FB; border-radius: 10px; padding: 1rem 1.2rem; display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+  .invite-url { font-size: 12px; color: #185FA5; word-break: break-all; flex: 1; }
+  .copy-btn { font-size: 12px; padding: 6px 14px; background: #185FA5; color: #fff; border: none; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+  .admin-badge { font-size: 11px; background: #E6F1FB; color: #185FA5; border-radius: 4px; padding: 2px 7px; }
+  .del-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 15px; padding: 2px 6px; border-radius: 4px; }
+  .del-btn:hover { color: #e24b4a; background: #fcebeb; }
+  .undo-toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 13px; display: flex; align-items: center; gap: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; white-space: nowrap; }
+  .undo-toast.show { opacity: 1; pointer-events: auto; }
+  .undo-btn { background: #378ADD; color: #fff; border: none; border-radius: 6px; padding: 4px 12px; font-size: 12px; cursor: pointer; }
+  .toast { position: fixed; bottom: 2rem; right: 2rem; background: #1a1a2e; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 998; }
+  .toast.show { opacity: 1; }
+  .sync-badge { font-size: 11px; padding: 3px 8px; border-radius: 10px; background: #EAF3DE; color: #3B6D11; white-space: nowrap; }
+  .records-table-wrap { overflow-x: auto; }
+  .empty-state { text-align: center; color: #bbb; padding: 3rem 1rem; font-size: 14px; }
+  .lock-notice { text-align: center; padding: 4rem 1rem; }
+  .lock-icon { font-size: 48px; margin-bottom: 1rem; }
+  .lock-notice h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .lock-notice p { font-size: 14px; color: #888; margin-bottom: 1.5rem; }
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2,1fr); }
+    .charts-row, .bottom-row { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: repeat(2,1fr); }
+  }
+  @media (max-width: 500px) {
+    .form-grid { grid-template-columns: 1fr; }
+    main { padding: 1rem; }
+    header { padding: 0 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="logo-dot"></div>외식BG RO실 리스크 관리 시스템</div>
+  <div class="header-right">
+    <span class="sync-badge" id="syncBadge">불러오는 중...</span>
+    <span class="year-badge">2026년 기준</span>
+    <div class="user-chip" id="userChip"><span id="userChipName"></span><button class="logout-btn" onclick="logout()">로그아웃</button></div>
+    <button class="tab-btn active" onclick="switchTab('dashboard',this)">대시보드</button>
+    <button class="tab-btn" onclick="switchTab('input',this)">데이터 입력</button>
+    <button class="tab-btn" id="adminTabBtn" style="display:none" onclick="switchTab('admin',this)">관리자</button>
+  </div>
+</header>
+
+<main>
+  <div id="page-dashboard" class="page active">
+    <p class="page-title">외식 BG 리스크 적발 및 처리 분석</p>
+    <p class="page-sub">전국 법위반 적발 현황 및 처리 상태를 한눈에 확인하세요.</p>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setFilter(this,'all')">전체</button>
+      <button class="filter-btn" onclick="setFilter(this,'가맹')">가맹</button>
+      <button class="filter-btn" onclick="setFilter(this,'불법파견')">불법파견</button>
+      <button class="filter-btn" onclick="setFilter(this,'표시광고')">표시광고</button>
+      <button class="filter-btn" onclick="setFilter(this,'노무')">노무</button>
+      <button class="filter-btn" onclick="setFilter(this,'영업비밀')">영업비밀</button>
+      <button class="refresh-btn" onclick="loadData()">↻ 새로고침</button>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-icon icon-blue">📋</div><p class="kpi-label"><strong style="font-weight:600;color:#1a1a2e">누적</strong><br>적발 / 모니터링</p><p class="kpi-value" id="kpi1">-</p><p class="kpi-rate" id="kpi1-rate">-</p><p class="kpi-sub" id="kpi1s">-</p></div>
+      <div class="kpi"><div class="kpi-icon icon-red">🔍</div><p class="kpi-label"><strong style="font-weight:600;color:#1a1a2e">당월</strong><br>적발 / 모니터링</p><p class="kpi-value" id="kpi2">-</p><p class="kpi-rate" id="kpi2-rate">-</p><p class="kpi-sub" id="kpi2s">-</p></div>
+      <div class="kpi"><div class="kpi-icon icon-green">✅</div><p class="kpi-label">처리 완료율</p><p class="kpi-value" id="kpi3">-</p><p class="kpi-sub" id="kpi3s">-</p></div>
+      <div class="kpi"><div class="kpi-icon icon-amber">⏱</div><p class="kpi-label">조치중 건수</p><p class="kpi-value" id="kpi4">-</p><p class="kpi-sub" id="kpi4s">-</p></div>
+    </div>
+    <div class="charts-row">
+      <div class="card">
+        <div class="card-header"><span class="card-title">월별 모니터링 건수 추이</span><span class="card-tag" id="lineYear">-</span></div>
+        <div style="position:relative;width:100%;height:240px;"><canvas id="lineChart" role="img" aria-label="월별 모니터링 건수 추이"></canvas></div>
+      </div>
+      <div class="card" id="rightChartCard">
+        <div class="card-header"><span class="card-title" id="rightChartTitle">위반 유형별 분포</span><span class="card-tag" id="rightChartTag">-</span></div>
+        <div id="rightChartLegend" class="legend"></div>
+        <div style="position:relative;width:100%;height:220px;"><canvas id="rightChart" role="img" aria-label="분포 차트"></canvas></div>
+      </div>
+    </div>
+    <div class="bottom-row">
+      <div class="card">
+        <div class="card-header"><span class="card-title">브랜드별 적발 현황</span><span class="card-tag">전체 브랜드</span></div>
+        <div style="position:relative;width:100%;height:320px;"><canvas id="barChart" role="img" aria-label="브랜드별 적발 건수"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">최근 모니터링 현황</span><span class="card-tag">최신순</span></div>
+        <div class="records-table-wrap">
+          <table><thead><tr><th>날짜</th><th>위반 유형</th><th>상세 유형</th><th>브랜드</th><th>상태</th></tr></thead>
+          <tbody id="recentTbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-input" class="page">
+    <div id="inputLock" class="lock-notice">
+      <div class="lock-icon">🔒</div>
+      <h2>로그인이 필요합니다</h2>
+      <p>데이터 입력은 승인된 사용자만 가능합니다.</p>
+      <button class="btn-primary" style="margin:0 auto;display:block;width:fit-content;padding:10px 28px" onclick="showLogin()">로그인하기</button>
+    </div>
+    <div id="inputForm" style="display:none">
+      <p class="page-title">데이터 입력</p>
+      <p class="page-sub">새 모니터링 건수를 입력하고, 목록에서 상태를 수정할 수 있습니다.</p>
+      <div class="form-section">
+        <p class="form-section-title">신규 입력</p>
+        <div class="form-grid">
+          <div class="form-group"><label>날짜</label><input type="date" id="f-date"></div>
+          <div class="form-group"><label>위반 유형</label>
+            <select id="f-type" onchange="updateSubTypes()">
+              <option value="">선택하세요</option>
+              <option>가맹</option><option>불법파견</option><option>표시광고</option><option>노무</option><option>영업비밀</option>
+            </select>
+          </div>
+          <div class="form-group"><label>상세 위반 유형</label>
+            <select id="f-subtype" disabled><option value="">위반 유형을 먼저 선택하세요</option></select>
+          </div>
+          <div class="form-group"><label>브랜드</label>
+            <select id="f-brand">
+              <option value="">선택하세요</option>
+              <option>애슐리</option><option>피자몰</option><option>로운</option><option>자연별곡</option>
+              <option>델리바이애슐리</option><option>리미니</option><option>프랑제리</option><option>카페</option><option>프랜차이즈</option>
+            </select>
+          </div>
+          <div class="form-group"><label>건수</label><input type="number" id="f-count" min="1" value="1"></div>
+          <div class="form-group"><label>비고 (선택)</label><input type="text" id="f-note" placeholder="메모 입력"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" id="submitBtn" onclick="addRecord()">입력하기</button>
+          <button class="btn-secondary" onclick="resetForm()">초기화</button>
+          <div class="saving-indicator" id="savingIndicator"><div class="spinner"></div>저장 중...</div>
+        </div>
+      </div>
+      <div class="form-section">
+        <p class="form-section-title">입력된 데이터 목록 <span style="font-size:12px;color:#aaa;font-weight:400">— 상태 칸에서 직접 수정 가능</span></p>
+        <div class="records-table-wrap">
+          <table><thead><tr><th>날짜</th><th>위반 유형</th><th>상세 위반 유형</th><th>브랜드</th><th>건수</th><th>상태</th><th>비고</th><th>작성자</th><th></th></tr></thead>
+          <tbody id="inputTbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-admin" class="page">
+    <p class="page-title">관리자 페이지</p>
+    <p class="page-sub">사용자 계정을 직접 추가하고 관리하세요.</p>
+    <div class="form-section">
+      <p class="form-section-title">새 계정 추가</p>
+      <div class="form-grid">
+        <div class="form-group"><label>이름</label><input type="text" id="new-name" placeholder="홍길동"></div>
+        <div class="form-group"><label>아이디</label><input type="text" id="new-id" placeholder="영문/숫자 조합"></div>
+        <div class="form-group"><label>임시 비밀번호</label><input type="text" id="new-pw" placeholder="6자 이상"></div>
+      </div>
+      <div class="form-actions" style="margin-top:1rem">
+        <button class="btn-primary" onclick="createUser()">계정 추가</button>
+      </div>
+      <div id="newUserResult" style="display:none;margin-top:1rem">
+        <div class="invite-box">
+          <span class="invite-url" id="newUserInfo"></span>
+          <button class="copy-btn" onclick="copyUserInfo()">복사</button>
+        </div>
+        <p style="font-size:12px;color:#aaa">위 정보를 팀원에게 전달하세요.</p>
+      </div>
+    </div>
+    <div class="form-section">
+      <p class="form-section-title">가입된 사용자</p>
+      <div class="records-table-wrap">
+        <table><thead><tr><th>아이디</th><th>이름</th><th>권한</th><th>가입일</th><th></th></tr></thead>
+        <tbody id="userTbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="modal-bg hide" id="loginModal">
+  <div class="modal">
+    <p class="modal-title">로그인</p>
+    <p class="modal-sub">승인된 계정으로 로그인하세요.</p>
+    <div class="modal-err" id="loginErr"></div>
+    <div class="form-group"><label>아이디</label><input type="text" id="li-id" placeholder="아이디 입력"></div>
+    <div class="form-group"><label>비밀번호</label><input type="password" id="li-pw" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="modal-actions">
+      <button class="btn-full" onclick="doLogin()">로그인</button>
+      <button class="btn-link" onclick="hideLogin()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="undo-toast" id="undoToast">
+  <span>삭제되었습니다.</span>
+  <button class="undo-btn" onclick="undoDelete()">되돌리기</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── Supabase 설정 ── */
+const SUPABASE_URL = 'https://ajxtcrnqmsgvyaondifp.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqeHRjcm5xbXNndnlhb25kaWZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NDgwMjMsImV4cCI6MjA5MjQyNDAyM30.6-1w4RUg0b-cjkYtrQ7f2FIvD2ajteBBcZMj5Z9ie9I';
+const H = { 'Content-Type':'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY };
+
+async function sbGet(table) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*&order=date.desc`, { headers: H });
+  return r.ok ? r.json() : [];
+}
+async function sbInsert(table, data) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method:'POST', headers:{...H,'Prefer':'return=representation'}, body: JSON.stringify(data) });
+  return r.ok;
+}
+async function sbUpdate(table, id, data) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method:'PATCH', headers:{...H,'Prefer':'return=representation'}, body: JSON.stringify(data) });
+  return r.ok;
+}
+async function sbDelete(table, id) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method:'DELETE', headers: H });
+  return r.ok;
+}
+async function sbGetBy(table, col, val) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${col}=eq.${encodeURIComponent(val)}&select=*`, { headers: H });
+  return r.ok ? r.json() : [];
+}
+
+/* ── 상수 ── */
+const SUB_TYPES = {
+  '가맹':['예상매출액 임의산정','필수품목 임의 변경','차액가맹금 임의 수취','불이익 변경 등 기타 불공정 거래 행위','광고 판촉행사 임의 진행','부당 계약해지'],
+  '불법파견':['피드백 표준 양식 미사용','현장대리인 외 소통','도급범위 초과 업무','채용공고문 노출','고용 미승계 확약서 미징구','자재/소모품 지급','손해배상청구','물량 단가 지급','임차료 수령','근로시간 통제','작업방식 관리','복리후생 간섭','작업환경 결정'],
+  '표시광고':['거짓표시/광고','허위/과장 표시/광고','뒷광고'],
+  '노무':[], '영업비밀':[]
+};
+const TYPES = ['가맹','불법파견','표시광고','노무','영업비밀'];
+const BRANDS = ['애슐리','피자몰','로운','자연별곡','델리바이애슐리','리미니','프랑제리','카페','프랜차이즈'];
+const TYPE_COLORS = ['#378ADD','#1D9E75','#BA7517','#D4537E','#7F77DD'];
+const BRAND_COLORS = ['#378ADD','#85B7EB','#85B7EB','#85B7EB','#85B7EB','#85B7EB','#85B7EB','#85B7EB','#85B7EB'];
+const SUB_COLORS = ['#378ADD','#1D9E75','#BA7517','#D4537E','#7F77DD','#5DCAA5','#F0997B','#97C459','#EF9F27','#85B7EB','#9FE1CB','#FAC775','#F4C0D1'];
+const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const STATUSES = ['모니터링','적발(조치중)','완료'];
+const ADMIN_ID = 'admin';
+
+let records = [], users = [];
+let rightChart, lineChart, barChart;
+let currentFilter = 'all';
+let sessionUser = null;
+let deletedRecord = null, undoTimer = null;
+
+/* ── 초기화 ── */
+async function init() {
+  await loadUsers();
+  if (!users.find(u=>u.id===ADMIN_ID)) {
+    await sbInsert('users', { id:ADMIN_ID, name:'관리자', pw:hashPw('admin1234'), role:'admin', joined:today() });
+    await loadUsers();
+  }
+  await loadData();
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+}
+
+async function loadData() {
+  setSyncBadge('불러오는 중...','#888','#f0f0f0');
+  try { records = await sbGet('records'); } catch(e){ records=[]; }
+  records.sort((a,b)=>b.date.localeCompare(a.date));
+  setSyncBadge('동기화됨','#3B6D11','#EAF3DE');
+  renderDashboard(currentFilter);
+  if(sessionUser) renderInputTable();
+}
+async function loadUsers() {
+  try { users = await sbGet('users'); } catch(e){ users=[]; }
+}
+
+function setSyncBadge(t,c,b){ const el=document.getElementById('syncBadge'); el.textContent=t; el.style.color=c; el.style.background=b; }
+function hashPw(pw){ let h=0; for(let i=0;i<pw.length;i++){h=((h<<5)-h)+pw.charCodeAt(i);h|=0;} return h.toString(36); }
+function today(){ return new Date().toISOString().split('T')[0]; }
+function sc(s){ return s==='완료'?'s-done':s==='적발(조치중)'?'s-ing':'s-monitor'; }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+function showErr(id,msg){ const el=document.getElementById(id); el.textContent=msg; el.classList.toggle('show',!!msg); }
+
+/* ── 탭 ── */
+function switchTab(page,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  btn.classList.add('active');
+  if(page==='dashboard') loadData();
+  if(page==='input') renderInputPage();
+  if(page==='admin') renderAdminPage();
+}
+
+/* ── 인증 ── */
+function showLogin(){ document.getElementById('loginModal').classList.remove('hide'); document.getElementById('li-id').focus(); }
+function hideLogin(){ document.getElementById('loginModal').classList.add('hide'); showErr('loginErr',''); }
+
+async function doLogin(){
+  const id=document.getElementById('li-id').value.trim();
+  const pw=document.getElementById('li-pw').value;
+  if(!id||!pw){ showErr('loginErr','아이디와 비밀번호를 입력하세요.'); return; }
+  await loadUsers();
+  const u=users.find(u=>u.id===id&&u.pw===hashPw(pw));
+  if(!u){ showErr('loginErr','아이디 또는 비밀번호가 올바르지 않습니다.'); return; }
+  sessionUser=u; hideLogin(); applySession();
+  showToast(`${u.name}님, 환영합니다!`);
+  renderInputPage();
+}
+function logout(){ sessionUser=null; applySession(); renderInputPage(); showToast('로그아웃 되었습니다.'); }
+function applySession(){
+  const chip=document.getElementById('userChip');
+  if(sessionUser){ chip.classList.add('show'); document.getElementById('userChipName').textContent=sessionUser.name; document.getElementById('adminTabBtn').style.display=sessionUser.role==='admin'?'':'none'; }
+  else { chip.classList.remove('show'); document.getElementById('adminTabBtn').style.display='none'; }
+}
+function renderInputPage(){
+  document.getElementById('inputLock').style.display=sessionUser?'none':'';
+  document.getElementById('inputForm').style.display=sessionUser?'':'none';
+  if(sessionUser) renderInputTable();
+}
+
+/* ── 관리자 ── */
+async function createUser(){
+  const name=document.getElementById('new-name').value.trim();
+  const id=document.getElementById('new-id').value.trim();
+  const pw=document.getElementById('new-pw').value.trim();
+  if(!name||!id||!pw){ showToast('모든 항목을 입력하세요.'); return; }
+  if(pw.length<6){ showToast('비밀번호는 6자 이상이어야 합니다.'); return; }
+  await loadUsers();
+  if(users.find(u=>u.id===id)){ showToast('이미 사용 중인 아이디입니다.'); return; }
+  await sbInsert('users', { id, name, pw:hashPw(pw), role:'user', joined:today() });
+  document.getElementById('newUserInfo').textContent=`아이디: ${id} / 임시 비밀번호: ${pw}`;
+  document.getElementById('newUserResult').style.display='';
+  document.getElementById('new-name').value=''; document.getElementById('new-id').value=''; document.getElementById('new-pw').value='';
+  await loadUsers(); renderAdminPage(); showToast(`${name}님 계정이 추가되었습니다.`);
+}
+function copyUserInfo(){
+  const info=document.getElementById('newUserInfo').textContent;
+  navigator.clipboard.writeText(info).then(()=>showToast('복사되었습니다!')).catch(()=>{ const ta=document.createElement('textarea');ta.value=info;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();showToast('복사되었습니다!'); });
+}
+async function renderAdminPage(){
+  await loadUsers();
+  document.getElementById('userTbody').innerHTML=users.map(u=>`
+    <tr><td>${u.id}</td><td>${u.name}</td>
+    <td>${u.role==='admin'?'<span class="admin-badge">관리자</span>':'일반'}</td>
+    <td>${u.joined||'-'}</td>
+    <td>${u.id===ADMIN_ID?'':'<button class="del-btn" onclick="deleteUser(\''+u.id+'\')">✕</button>'}</td></tr>`).join('');
+}
+async function deleteUser(id){
+  await sbDelete('users', id); await loadUsers(); renderAdminPage(); showToast('삭제되었습니다.');
+}
+
+/* ── 입력 폼 ── */
+function updateSubTypes(){
+  const type=document.getElementById('f-type').value;
+  const sel=document.getElementById('f-subtype');
+  if(!type||!SUB_TYPES[type]||!SUB_TYPES[type].length){ sel.innerHTML='<option value="">해당 없음</option>'; sel.disabled=false; return; }
+  sel.disabled=false;
+  sel.innerHTML='<option value="">선택하세요</option>'+SUB_TYPES[type].map(s=>`<option>${s}</option>`).join('');
+}
+
+async function addRecord(){
+  const date=document.getElementById('f-date').value;
+  const type=document.getElementById('f-type').value;
+  const subtype=document.getElementById('f-subtype').value;
+  const brand=document.getElementById('f-brand').value;
+  const count=parseInt(document.getElementById('f-count').value)||0;
+  const note=document.getElementById('f-note').value;
+  if(!date||!type||!brand||count<1){ showToast('필수 항목을 모두 입력해 주세요.'); return; }
+  const btn=document.getElementById('submitBtn'), ind=document.getElementById('savingIndicator');
+  btn.disabled=true; ind.classList.add('show');
+  const id = Date.now();
+  await sbInsert('records', { id, date, type, subtype:subtype||'-', brand, status:'모니터링', count, note, author:sessionUser.name });
+  await loadData();
+  btn.disabled=false; ind.classList.remove('show');
+  renderInputTable(); showToast('저장 완료!'); resetForm();
+}
+
+async function updateStatus(id, newStatus){
+  await sbUpdate('records', id, { status: newStatus });
+  await loadData();
+  renderInputTable();
+  showToast(`상태 → "${newStatus}"`);
+}
+
+async function deleteRecord(id){
+  const rec = records.find(r=>r.id===id);
+  if(!rec) return;
+  deletedRecord = rec;
+  await sbDelete('records', id);
+  await loadData();
+  renderInputTable();
+  showUndoToast();
+}
+
+function showUndoToast(){
+  const t=document.getElementById('undoToast');
+  t.classList.add('show');
+  if(undoTimer) clearTimeout(undoTimer);
+  undoTimer=setTimeout(()=>{ t.classList.remove('show'); deletedRecord=null; }, 5000);
+}
+
+async function undoDelete(){
+  if(!deletedRecord) return;
+  await sbInsert('records', deletedRecord);
+  await loadData();
+  renderInputTable();
+  document.getElementById('undoToast').classList.remove('show');
+  clearTimeout(undoTimer);
+  deletedRecord=null;
+  showToast('복원되었습니다.');
+}
+
+function resetForm(){
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  ['f-type','f-brand'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-subtype').innerHTML='<option value="">위반 유형을 먼저 선택하세요</option>';
+  document.getElementById('f-subtype').disabled=true;
+  document.getElementById('f-count').value=1;
+  document.getElementById('f-note').value='';
+}
+
+function renderInputTable(){
+  const tbody=document.getElementById('inputTbody');
+  if(!records.length){ tbody.innerHTML='<tr><td colspan="9"><div class="empty-state">입력된 데이터가 없습니다</div></td></tr>'; return; }
+  tbody.innerHTML=records.map(r=>`
+    <tr>
+      <td>${r.date}</td><td>${r.type}</td><td style="font-size:12px;color:#555">${r.subtype||'-'}</td>
+      <td>${r.brand}</td><td>${r.count.toLocaleString()}</td>
+      <td><select class="status-select" onchange="updateStatus(${r.id},this.value)">${STATUSES.map(s=>`<option value="${s}"${r.status===s?' selected':''}>${s}</option>`).join('')}</select></td>
+      <td style="color:#aaa">${r.note||'-'}</td>
+      <td style="color:#888;font-size:12px">${r.author||'-'}</td>
+      <td><button class="del-btn" onclick="deleteRecord(${r.id})">✕</button></td>
+    </tr>`).join('');
+}
+
+/* ── 대시보드 ── */
+function setFilter(btn,key){ document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentFilter=key; renderDashboard(key); }
+function getFR(key){ return key==='all'?records:records.filter(r=>r.type===key); }
+
+function renderDashboard(key){
+  const data=getFR(key);
+  const totalMonitor=data.reduce((s,r)=>s+r.count,0);
+  const totalDetect=data.filter(r=>r.status==='적발(조치중)'||r.status==='완료').reduce((s,r)=>s+r.count,0);
+  const now=new Date(), ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const monthMonitor=data.filter(r=>r.date.startsWith(ym)).reduce((s,r)=>s+r.count,0);
+  const monthDetect=data.filter(r=>r.date.startsWith(ym)&&(r.status==='적발(조치중)'||r.status==='완료')).reduce((s,r)=>s+r.count,0);
+  const doneCount=data.filter(r=>r.status==='완료').reduce((s,r)=>s+r.count,0);
+  const actCount=data.filter(r=>r.status==='적발(조치중)').reduce((s,r)=>s+r.count,0);
+  const doneRate=totalDetect?(doneCount/totalDetect*100).toFixed(1):0;
+  const detectRate=totalMonitor?(totalDetect/totalMonitor*100).toFixed(1):0;
+  const mDetectRate=monthMonitor?(monthDetect/monthMonitor*100).toFixed(1):0;
+
+  document.getElementById('kpi1').textContent=`${totalDetect.toLocaleString()} / ${totalMonitor.toLocaleString()}`;
+  document.getElementById('kpi1-rate').textContent=totalMonitor?`적발율 ${detectRate}%`:'-';
+  document.getElementById('kpi1s').textContent='적발 / 전체 모니터링';
+  document.getElementById('kpi2').textContent=`${monthDetect.toLocaleString()} / ${monthMonitor.toLocaleString()}`;
+  document.getElementById('kpi2-rate').textContent=monthMonitor?`적발율 ${mDetectRate}%`:'-';
+  document.getElementById('kpi2s').textContent=`${now.getMonth()+1}월 기준`;
+  document.getElementById('kpi3').textContent=doneRate+'%';
+  document.getElementById('kpi3s').textContent=`완료 ${doneCount.toLocaleString()} / 적발 ${totalDetect.toLocaleString()}건`;
+  document.getElementById('kpi4').textContent=actCount.toLocaleString();
+  document.getElementById('kpi4s').textContent='적발(조치중) 상태 건수';
+
+  renderLineChart(data,now); renderRightChart(data,key,now); renderBarChart(data); renderRecentTable(data);
+}
+
+function renderLineChart(data,now){
+  const yr=now.getFullYear(); document.getElementById('lineYear').textContent=yr+'년';
+  const m=Array(12).fill(0);
+  data.forEach(r=>{const d=new Date(r.date);if(d.getFullYear()===yr)m[d.getMonth()]+=r.count;});
+  if(lineChart)lineChart.destroy();
+  lineChart=new Chart(document.getElementById('lineChart'),{type:'line',data:{labels:MONTHS,datasets:[{label:'모니터링',data:m,borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.07)',tension:0.4,pointRadius:4,pointBackgroundColor:'#378ADD',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#aaa',autoSkip:false,maxRotation:0}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#aaa'},beginAtZero:true}}}});
+}
+
+function renderRightChart(data,key,now){
+  if(rightChart){ rightChart.destroy(); rightChart=null; }
+  const legend=document.getElementById('rightChartLegend');
+  const tag=document.getElementById('rightChartTag');
+  const title=document.getElementById('rightChartTitle');
+  if(key==='all'){
+    title.textContent='위반 유형별 분포'; tag.textContent=now.getFullYear()+'년';
+    const counts=TYPES.map(t=>data.filter(r=>r.type===t).reduce((s,r)=>s+r.count,0));
+    const total=counts.reduce((a,b)=>a+b,0);
+    legend.innerHTML=TYPES.map((t,i)=>`<span><span class="leg-dot" style="background:${TYPE_COLORS[i]}"></span>${t} ${total?Math.round(counts[i]/total*100):0}%</span>`).join('');
+    rightChart=new Chart(document.getElementById('rightChart'),{type:'doughnut',data:{labels:TYPES,datasets:[{data:counts,backgroundColor:TYPE_COLORS,borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}});
+  } else {
+    title.textContent='상세 위반 유형별 분포'; tag.textContent=key;
+    const subs=SUB_TYPES[key];
+    if(!subs||!subs.length){ legend.innerHTML='<span style="color:#aaa;font-size:12px">등록된 상세 유형이 없습니다</span>'; return; }
+    const counts=subs.map(s=>data.filter(r=>r.subtype===s).reduce((sum,r)=>sum+r.count,0));
+    const total=counts.reduce((a,b)=>a+b,0);
+    legend.innerHTML=subs.map((s,i)=>`<span><span class="leg-dot" style="background:${SUB_COLORS[i%SUB_COLORS.length]}"></span>${s} ${total?Math.round(counts[i]/total*100):0}%</span>`).join('');
+    rightChart=new Chart(document.getElementById('rightChart'),{type:'doughnut',data:{labels:subs,datasets:[{data:counts,backgroundColor:subs.map((_,i)=>SUB_COLORS[i%SUB_COLORS.length]),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}});
+  }
+}
+
+function renderBarChart(data){
+  const counts=BRANDS.map(b=>data.filter(r=>r.brand===b).reduce((s,r)=>s+r.count,0));
+  if(barChart)barChart.destroy();
+  barChart=new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:BRANDS,datasets:[{label:'건수',data:counts,backgroundColor:BRAND_COLORS,borderRadius:5,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#aaa'},beginAtZero:true},y:{grid:{display:false},ticks:{font:{size:11},color:'#555'}}}}});
+}
+
+function renderRecentTable(data){
+  const tbody=document.getElementById('recentTbody'), top=data.slice(0,8);
+  if(!top.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty-state">데이터를 입력해 주세요</div></td></tr>';return;}
+  tbody.innerHTML=top.map(r=>`<tr><td>${r.date.slice(5).replace('-','/')}</td><td>${r.type}</td><td style="font-size:12px;color:#555">${r.subtype||'-'}</td><td>${r.brand}</td><td><span class="status ${sc(r.status)}">${r.status}</span></td></tr>`).join('');
+}
+
+init();
+</script>
+</body>
+</html>
