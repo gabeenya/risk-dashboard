@@ -232,6 +232,7 @@
               <option value="">선택하세요</option>
               <option>애슐리</option><option>피자몰</option><option>로운</option><option>자연별곡</option>
               <option>델리바이애슐리</option><option>리미니</option><option>프랑제리</option><option>카페</option><option>프랜차이즈</option>
+              <option>광주ck</option><option>주안ck</option><option>기흥ck</option><option>CX팀</option>
             </select>
           </div>
           <div class="form-group"><label>건수</label><input type="number" id="f-count" min="1" value="1"></div>
@@ -335,12 +336,12 @@ const SUB_TYPES = {
   '노무':[], '영업비밀':[]
 };
 const TYPES = ['가맹','불법파견','표시광고','노무','영업비밀'];
-const BRANDS = ['애슐리','피자몰','로운','자연별곡','델리바이애슐리','리미니','프랑제리','카페','프랜차이즈'];
+const BRANDS = ['애슐리','피자몰','로운','자연별곡','델리바이애슐리','리미니','프랑제리','카페','프랜차이즈','광주ck','주안ck','기흥ck','CX팀'];
 const TYPE_COLORS = ['#378ADD','#1D9E75','#BA7517','#D4537E','#7F77DD'];
 const BRAND_COLORS = ['#378ADD','#85B7EB','#85B7EB','#85B7EB','#85B7EB','#85B7EB','#85B7EB','#85B7EB','#85B7EB'];
 const SUB_COLORS = ['#378ADD','#1D9E75','#BA7517','#D4537E','#7F77DD','#5DCAA5','#F0997B','#97C459','#EF9F27','#85B7EB','#9FE1CB','#FAC775','#F4C0D1'];
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-const STATUSES = ['모니터링','적발(조치중)','완료'];
+const STATUSES = ['모니터링','위반(처리중)','완료'];
 const ADMIN_ID = 'admin';
 
 let records = [], users = [];
@@ -375,7 +376,7 @@ async function loadUsers() {
 function setSyncBadge(t,c,b){ const el=document.getElementById('syncBadge'); el.textContent=t; el.style.color=c; el.style.background=b; }
 function hashPw(pw){ let h=0; for(let i=0;i<pw.length;i++){h=((h<<5)-h)+pw.charCodeAt(i);h|=0;} return h.toString(36); }
 function today(){ return new Date().toISOString().split('T')[0]; }
-function sc(s){ return s==='완료'?'s-done':s==='적발(조치중)'?'s-ing':'s-monitor'; }
+  function sc(s){ return s==='완료'?'s-done':s==='위반(처리중)'?'s-ing':'s-monitor'; }
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
 function showErr(id,msg){ const el=document.getElementById(id); el.textContent=msg; el.classList.toggle('show',!!msg); }
 
@@ -548,26 +549,26 @@ function getFR(key){ return key==='all'?records:records.filter(r=>r.type===key);
 function renderDashboard(key){
   const data=getFR(key);
   const totalMonitor=data.reduce((s,r)=>s+r.count,0);
-  const totalDetect=data.filter(r=>r.status==='적발(조치중)'||r.status==='완료').reduce((s,r)=>s+r.count,0);
+  const totalDetect=data.filter(r=>r.status==='위반(처리중)'||r.status==='완료').reduce((s,r)=>s+r.count,0);
   const now=new Date(), ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const monthMonitor=data.filter(r=>r.date.startsWith(ym)).reduce((s,r)=>s+r.count,0);
-  const monthDetect=data.filter(r=>r.date.startsWith(ym)&&(r.status==='적발(조치중)'||r.status==='완료')).reduce((s,r)=>s+r.count,0);
+  const monthDetect=data.filter(r=>r.date.startsWith(ym)&&(r.status==='위반(처리중)'||r.status==='완료')).reduce((s,r)=>s+r.count,0);
   const doneCount=data.filter(r=>r.status==='완료').reduce((s,r)=>s+r.count,0);
-  const actCount=data.filter(r=>r.status==='적발(조치중)').reduce((s,r)=>s+r.count,0);
+  const actCount=data.filter(r=>r.status==='위반(처리중)').reduce((s,r)=>s+r.count,0);
   const doneRate=totalDetect?(doneCount/totalDetect*100).toFixed(1):0;
   const detectRate=totalMonitor?(totalDetect/totalMonitor*100).toFixed(1):0;
   const mDetectRate=monthMonitor?(monthDetect/monthMonitor*100).toFixed(1):0;
 
   document.getElementById('kpi1').textContent=`${totalDetect.toLocaleString()} / ${totalMonitor.toLocaleString()}`;
-  document.getElementById('kpi1-rate').textContent=totalMonitor?`적발율 ${detectRate}%`:'-';
-  document.getElementById('kpi1s').textContent='적발 / 전체 모니터링';
+  document.getElementById('kpi1-rate').textContent=totalMonitor?`위반율 ${detectRate}%`:'-';
+  document.getElementById('kpi1s').textContent='위반 / 전체 모니터링';
   document.getElementById('kpi2').textContent=`${monthDetect.toLocaleString()} / ${monthMonitor.toLocaleString()}`;
-  document.getElementById('kpi2-rate').textContent=monthMonitor?`적발율 ${mDetectRate}%`:'-';
+  document.getElementById('kpi2-rate').textContent=monthMonitor?`위반율 ${mDetectRate}%`:'-';
   document.getElementById('kpi2s').textContent=`${now.getMonth()+1}월 기준`;
   document.getElementById('kpi3').textContent=doneRate+'%';
-  document.getElementById('kpi3s').textContent=`완료 ${doneCount.toLocaleString()} / 적발 ${totalDetect.toLocaleString()}건`;
+  document.getElementById('kpi3s').textContent=`완료 ${doneCount.toLocaleString()} / 위반 ${totalDetect.toLocaleString()}건`;
   document.getElementById('kpi4').textContent=actCount.toLocaleString();
-  document.getElementById('kpi4s').textContent='적발(조치중) 상태 건수';
+  document.getElementById('kpi4s').textContent='위반(처리중) 상태 건수';
 
   renderLineChart(data,now); renderRightChart(data,key,now); renderBarChart(data); renderRecentTable(data);
 }
