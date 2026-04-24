@@ -640,7 +640,7 @@ async function generatePPT() {
 
     // ── 슬라이드 3: 브랜드별 현황 ──
     const s3 = pres.addSlide();
-    addHeader(s3, '브랜드별 현황', monthName+'월 기준');
+    addHeader(s3, '브랜드별 현황', yr+'년 '+monthName+'월 기준');
 
     const brandTableData = [];
 
@@ -746,15 +746,23 @@ async function generatePPT() {
     const ILLEGAL_ONLY_BRANDS = ['광주ck','주안ck','기흥ck','CX팀'];
     const COMMON_BRANDS = BRANDS.filter(b=>!ILLEGAL_ONLY_BRANDS.includes(b));
 
+    // 슬라이드 크기: 10" x 5.625"
+    // 헤더 높이: 0.7"
+    // 표 영역: y=0.75 ~ 2.85 (약 2.1")
+    // 하단 영역: y=2.9 ~ 5.525 (약 2.625")
+    const TABLE_Y = 0.75;
+    const TABLE_H = 2.1;
+    const BTM_Y = 2.9;
+    const BTM_H = 2.55;
+    const SLIDE_W = 9.7;
+    const TABLE_X = 0.15;
+
     TYPES.forEach((type, typeIdx)=>{
       const typeRecs = d.filter(r=>r.type===type);
       if(!typeRecs.length) return;
 
-      // 해당 영역에 사용할 브랜드 목록
       const useBrands = type==='불법파견' ? BRANDS : COMMON_BRANDS;
-
       const sN = pres.addSlide();
-      // 제목: "가맹 모니터링 상세 현황", 18pt, 연도포함 기준
       addHeader(sN, type+' 모니터링 상세 현황', yr+'년 '+String(now.getMonth()+1).padStart(2,'0')+'월 기준');
       const typeColor = TYPE_COLORS[typeIdx];
 
@@ -764,15 +772,23 @@ async function generatePPT() {
       const typeAct = typeRecs.filter(r=>r.status==='위반(처리중)').reduce((s,r)=>s+r.count,0);
       const typeRate = typeVio?Math.round(typeDone/typeVio*100):0;
 
-      // ── 표 (상단 전체 너비) ──
+      // ── 표 (상단 절반) ──
       if(type==='불법파견'){
-        const tableData = [];
-        const h=[{text:'구분',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:7,align:'center',valign:'middle',colspan:2}}];
-        useBrands.forEach(b=>h.push({text:b,options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:6,align:'center',colspan:2}}));
-        h.push({text:'소계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:7,align:'center',colspan:2}});
-        tableData.push(h);
+        // 불법파견: 브랜드 13개 × 2열 + 구분2열 + 소계2열
+        // 총열: 2 + 13*2 + 2 = 30열
+        // 전체너비 9.7" → 구분(0.4+1.0) + 브랜드13*(0.31+0.31) + 소계(0.31+0.31)
+        const bW = 0.31;
+        const bCW = useBrands.flatMap(()=>[bW,bW]);
+        const colWs = [0.4,1.0,...bCW,bW,bW];
 
-        const h2=[{},{}];
+        const tableData = [];
+        // 헤더행1
+        const h=[{text:'구분',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:6,align:'center',valign:'middle',rowspan:2,colspan:2}}];
+        useBrands.forEach(b=>h.push({text:b,options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:5,align:'center',colspan:2}}));
+        h.push({text:'소계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:6,align:'center',colspan:2}});
+        tableData.push(h);
+        // 헤더행2 (구분 rowspan이므로 셀 없음)
+        const h2=[];
         useBrands.forEach(()=>{
           h2.push({text:'전체',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:5,align:'center'}});
           h2.push({text:'위반',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:5,align:'center'}});
@@ -782,60 +798,63 @@ async function generatePPT() {
         tableData.push(h2);
 
         Object.entries(ILLEGAL_DISPATCH_CATS).forEach(([cat,items])=>{
-          const catRow=[{text:cat,options:{bold:true,fill:{color:'dbeafe'},color:'1e3a8a',fontSize:6,colspan:2}}];
+          const catRow=[{text:cat,options:{bold:true,fill:{color:'dbeafe'},color:'1e3a8a',fontSize:5,colspan:2}}];
           useBrands.forEach(()=>{catRow.push({text:'',options:{fill:{color:'dbeafe'}}});catRow.push({text:'',options:{fill:{color:'dbeafe'}}});});
           catRow.push({text:'',options:{fill:{color:'dbeafe'}}});catRow.push({text:'',options:{fill:{color:'dbeafe'}}});
           tableData.push(catRow);
-
           items.forEach((item,idx)=>{
             const bg=idx%2===0?'f8fafc':WHITE;
-            const row=[{text:'',options:{fill:{color:bg}}},{text:item,options:{fontSize:6,fill:{color:bg}}}];
+            const row=[{text:'',options:{fill:{color:bg}}},{text:item,options:{fontSize:5,fill:{color:bg},valign:'middle'}}];
             let rTot=0,rVio=0;
             useBrands.forEach(brand=>{
               const recs=typeRecs.filter(r=>r.brand===brand&&r.subtype===item);
               const t=recs.reduce((s,r)=>s+r.count,0);
               const v=recs.filter(r=>r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
               rTot+=t; rVio+=v;
-              row.push({text:t||'-',options:{fontSize:6,align:'center',fill:{color:bg}}});
-              row.push({text:v||'-',options:{fontSize:6,align:'center',color:v>0?'dc2626':'94a3b8',bold:v>0,fill:{color:bg}}});
+              row.push({text:t||'-',options:{fontSize:5,align:'center',fill:{color:bg}}});
+              row.push({text:v||'-',options:{fontSize:5,align:'center',color:v>0?'dc2626':'94a3b8',bold:v>0,fill:{color:bg}}});
             });
-            row.push({text:rTot||'-',options:{fontSize:6,align:'center',bold:true,fill:{color:'eef2ff'}}});
-            row.push({text:rVio||'-',options:{fontSize:6,align:'center',bold:rVio>0,color:rVio>0?'dc2626':'94a3b8',fill:{color:'eef2ff'}}});
+            row.push({text:rTot||'-',options:{fontSize:5,align:'center',bold:true,fill:{color:'eef2ff'}}});
+            row.push({text:rVio||'-',options:{fontSize:5,align:'center',bold:rVio>0,color:rVio>0?'dc2626':'94a3b8',fill:{color:'eef2ff'}}});
             tableData.push(row);
           });
         });
 
-        const sumR=[{text:'합계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:7,colspan:2,align:'center'}}];
+        const sumR=[{text:'합계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:6,colspan:2,align:'center'}}];
         let gT=0,gV=0;
         useBrands.forEach(brand=>{
           const t=typeRecs.filter(r=>r.brand===brand).reduce((s,r)=>s+r.count,0);
           const v=typeRecs.filter(r=>r.brand===brand&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
           gT+=t; gV+=v;
-          sumR.push({text:t||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:NAVY},color:WHITE}});
-          sumR.push({text:v||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:NAVY},color:v>0?'fca5a5':WHITE}});
+          sumR.push({text:t||'-',options:{bold:true,fontSize:5,align:'center',fill:{color:NAVY},color:WHITE}});
+          sumR.push({text:v||'-',options:{bold:true,fontSize:5,align:'center',fill:{color:NAVY},color:v>0?'fca5a5':WHITE}});
         });
-        sumR.push({text:gT||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:NAVY},color:WHITE}});
-        sumR.push({text:gV||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:NAVY},color:gV>0?'fca5a5':WHITE}});
+        sumR.push({text:gT||'-',options:{bold:true,fontSize:5,align:'center',fill:{color:NAVY},color:WHITE}});
+        sumR.push({text:gV||'-',options:{bold:true,fontSize:5,align:'center',fill:{color:NAVY},color:gV>0?'fca5a5':WHITE}});
         tableData.push(sumR);
 
-        // 불법파견: 브랜드 13개 × 2열 + 구분2열 + 소계2열
-        const bCW = useBrands.flatMap(()=>[0.36,0.36]);
-        sN.addTable(tableData,{
-          x:0.15,y:0.8,w:9.7,
-          border:{pt:0.3,color:'e2e8f0'},
-          colW:[0.45,1.05,...bCW,0.36,0.36]
-        });
+        sN.addTable(tableData,{x:TABLE_X,y:TABLE_Y,w:SLIDE_W,border:{pt:0.3,color:'e2e8f0'},colW:colWs,rowH:0.18});
 
       } else {
         // 일반 영역: 세부항목 × COMMON_BRANDS (9개)
+        // 총열: 1 + 9*2 + 2 = 21열
+        // 전체너비 9.7" → 세부항목(1.6) + 브랜드9*(0.38+0.38) + 소계(0.38+0.38)
+        const bW = 0.42;
+        const bCW2 = useBrands.flatMap(()=>[bW,bW]);
+        const itemColW = SLIDE_W - useBrands.length*bW*2 - bW*2;
+        const colWs2 = [itemColW,...bCW2,bW,bW];
+
         const subs2=SUB[type];
         const tableData=[];
-        const h=[{text:'세부 항목',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,align:'center',valign:'middle'}}];
+
+        // 헤더행1: "세부 항목"이 1행1열+2행1열 병합(rowspan:2), 브랜드들 colspan:2, 소계 colspan:2
+        const h=[{text:'세부 항목',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,align:'center',valign:'middle',rowspan:2}}];
         useBrands.forEach(b=>h.push({text:b,options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:7,align:'center',colspan:2}}));
         h.push({text:'소계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,align:'center',colspan:2}});
         tableData.push(h);
 
-        const h2=[{}];
+        // 헤더행2: 세부항목 rowspan이므로 셀 없음
+        const h2=[];
         useBrands.forEach(()=>{
           h2.push({text:'전체',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
           h2.push({text:'위반',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
@@ -874,40 +893,42 @@ async function generatePPT() {
         sumR.push({text:gV||'-',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:gV>0?'fca5a5':WHITE}});
         tableData.push(sumR);
 
-        // 일반영역: 브랜드 9개 × 2열 + 세부항목열 + 소계2열
-        const bCW2 = useBrands.flatMap(()=>[0.48,0.48]);
-        sN.addTable(tableData,{
-          x:0.15,y:0.8,w:9.7,
-          border:{pt:0.3,color:'e2e8f0'},
-          colW:[1.7,...bCW2,0.48,0.48]
-        });
+        sN.addTable(tableData,{x:TABLE_X,y:TABLE_Y,w:SLIDE_W,border:{pt:0.3,color:'e2e8f0'},colW:colWs2,rowH:0.22});
       }
 
-      // ── 도넛 차트 (하단 좌측) ──
+      // ── 하단 절반: 도넛(좌) + KPI요약(우) ──
       const subs = SUB[type];
       if(subs&&subs.length){
         const subCnts = subs.map(s=>typeRecs.filter(r=>r.subtype===s&&r.status!=='모니터링').reduce((a,r)=>a+r.count,0));
-        sN.addChart(pres.charts.DOUGHNUT,[{name:'건수',labels:subs,values:subCnts}],{
-          x:0.15,y:3.55,w:4.2,h:1.95,
-          chartColors:subColors,
+        // 0인 항목 제거 (0% 미표시)
+        const filteredLabels = subs.filter((_,i)=>subCnts[i]>0);
+        const filteredCnts = subCnts.filter(v=>v>0);
+        const chartColors14 = subColors.slice(0, filteredLabels.length);
+        sN.addChart(pres.charts.DOUGHNUT,[{name:'건수',labels:filteredLabels,values:filteredCnts}],{
+          x:TABLE_X,y:BTM_Y,w:4.7,h:BTM_H,
+          chartColors:chartColors14,
           showLegend:true,legendPos:'r',legendFontSize:7,
-          showPercent:true,dataLabelFontSize:8,
+          showPercent:true,
+          dataLabelColor:WHITE,
+          dataLabelFontSize:8,
           chartArea:{fill:{color:WHITE}},
           holeSize:55
         });
       }
 
-      // ── KPI 요약 박스 (하단 우측) ──
-      sN.addShape(pres.shapes.RECTANGLE,{x:4.55,y:3.55,w:5.3,h:1.95,fill:{color:WHITE},shadow:{type:'outer',blur:5,offset:2,angle:135,color:'000000',opacity:0.07}});
-      sN.addShape(pres.shapes.RECTANGLE,{x:4.55,y:3.55,w:0.06,h:1.95,fill:{color:typeColor}});
-      sN.addText(type+' 모니터링 결과 요약',{x:4.72,y:3.6,w:4.9,h:0.3,fontSize:10,bold:true,color:'334155',fontFace:'Calibri'});
+      // KPI 요약 박스 (하단 우측)
+      const kpiX = 5.05;
+      const kpiW = 4.8;
+      sN.addShape(pres.shapes.RECTANGLE,{x:kpiX,y:BTM_Y,w:kpiW,h:BTM_H,fill:{color:WHITE},shadow:{type:'outer',blur:5,offset:2,angle:135,color:'000000',opacity:0.07}});
+      sN.addShape(pres.shapes.RECTANGLE,{x:kpiX,y:BTM_Y,w:0.06,h:BTM_H,fill:{color:typeColor}});
+      sN.addText(type+' 모니터링 결과 요약',{x:kpiX+0.15,y:BTM_Y+0.1,w:kpiW-0.25,h:0.35,fontSize:10,bold:true,color:'334155',fontFace:'Calibri'});
       [['전체 모니터링',typeTot+'건'],
        ['위반 건수',typeVio+'건 ('+(typeTot?Math.round(typeVio/typeTot*100):0)+'%)'],
        ['처리 완료율',typeRate+'%'],
        ['조치중',typeAct+'건']
       ].forEach(([label,val],i)=>{
-        sN.addText(label+':',{x:4.72,y:4.0+i*0.35,w:2.5,h:0.28,fontSize:9,color:'64748b',fontFace:'Calibri'});
-        sN.addText(val,{x:7.2,y:4.0+i*0.35,w:2.4,h:0.28,fontSize:9,bold:true,color:'0f172a',fontFace:'Calibri',align:'right'});
+        sN.addText(label+':',{x:kpiX+0.15,y:BTM_Y+0.6+i*0.45,w:2.5,h:0.35,fontSize:10,color:'64748b',fontFace:'Calibri'});
+        sN.addText(val,{x:kpiX+2.6,y:BTM_Y+0.6+i*0.45,w:kpiW-2.7,h:0.35,fontSize:10,bold:true,color:'0f172a',fontFace:'Calibri',align:'right'});
       });
     });
 
