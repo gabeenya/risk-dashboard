@@ -227,7 +227,7 @@ tr:hover td { background: #f8fafc; }
       <div class="card">
         <div class="card-hd"><span class="card-tit">최근 모니터링 현황</span><span class="card-tag">최신순</span></div>
         <div class="recs">
-          <table><thead><tr><th>날짜</th><th>유형</th><th>상세</th><th>브랜드</th><th>상태</th></tr></thead>
+          <table><thead><tr><th>날짜</th><th>유형</th><th>상세</th><th>브랜드</th><th>상태</th><th>비고</th></tr></thead>
           <tbody id="recentTbody"></tbody></table>
         </div>
         <button class="more-btn" id="recentMoreBtn" onclick="toggleMore()">더보기</button>
@@ -566,7 +566,7 @@ function renderRecent(d){
   const tb=document.getElementById('recentTbody'),btn=document.getElementById('recentMoreBtn'),top=showAll?d:d.slice(0,10);
   btn.style.display=d.length>10?'':'none';
   if(!top.length){tb.innerHTML='<tr><td colspan="5"><div class="empty">데이터를 입력해 주세요</div></td></tr>';return;}
-  tb.innerHTML=top.map(r=>`<tr><td>${r.date.slice(5).replace('-','/')}</td><td>${r.type}</td><td style="font-size:11px;color:#64748b">${r.subtype||'-'}</td><td>${r.brand}</td><td><span class="st ${sc(r.status)}">${r.status}</span></td></tr>`).join('');
+  tb.innerHTML=top.map(r=>`<tr><td>${r.date.slice(5).replace('-','/')}</td><td>${r.type}</td><td style="font-size:11px;color:#64748b">${r.subtype||'-'}</td><td>${r.brand}</td><td><span class="st ${sc(r.status)}">${r.status}</span></td><td style="font-size:11px;color:#64748b">${r.note||'-'}</td></tr>`).join('');
 }
 
 async function runAI(){
