@@ -30,6 +30,7 @@ header { background: #fff; border-bottom: 1px solid #eaecf0; padding: 0 2rem; di
 .ppt-btn { font-size: 12px; padding: 5px 12px; border-radius: 6px; border: 1px solid #dbeafe; background: #eff6ff; color: #1e40af; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 5px; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
 .ppt-btn:hover { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
 .ppt-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ppt-btn.hidden { display: none; }
 .ppt-spin { display: none; width: 11px; height: 11px; border: 2px solid #bfdbfe; border-top-color: #1e40af; border-radius: 50%; animation: sp 0.7s linear infinite; }
 main { max-width: 1200px; margin: 0 auto; padding: 1.75rem 1.5rem; }
 .pg { display: none; } .pg.on { display: block; }
@@ -133,16 +134,8 @@ tr:hover td { background: #f8fafc; }
 .toast.show { opacity: 1; }
 .pg-title { font-size: 20px; font-weight: 600; color: #0f172a; margin-bottom: 4px; letter-spacing: -0.3px; }
 .pg-sub { font-size: 13px; color: #64748b; margin-bottom: 1.5rem; }
-@media (max-width: 900px) {
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .charts-row, .btm-row { grid-template-columns: 1fr; }
-  .fgrid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 500px) {
-  .fgrid { grid-template-columns: 1fr; }
-  main { padding: 1rem; }
-  header { padding: 0 1rem; }
-}
+@media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .charts-row, .btm-row { grid-template-columns: 1fr; } .fgrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .fgrid { grid-template-columns: 1fr; } main { padding: 1rem; } header { padding: 0 1rem; } }
 </style>
 </head>
 <body>
@@ -166,7 +159,7 @@ tr:hover td { background: #f8fafc; }
     </div>
     <button class="ppt-btn" id="pptHeaderBtn" onclick="generatePPT()">
       <span class="ppt-spin" id="pptSpinIcon"></span>
-      📊 PPT 보고서
+      📊 보고서 생성
     </button>
   </div>
 </header>
@@ -340,6 +333,7 @@ const sbGet = async t => { const r=await fetch(`${SB_URL}/rest/v1/${t}?select=*`
 const sbIns = async (t,d) => { const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(d)}); return r.ok; };
 const sbUpd = async (t,id,d) => { const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(d)}); return r.ok; };
 const sbDel = async (t,id) => { const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:H}); return r.ok; };
+
 const SUB = {
   '가맹':['예상매출액 임의산정','필수품목 임의 변경','차액가맹금 임의 수취','불이익 변경 등 기타 불공정 거래 행위','광고 판촉행사 임의 진행','부당 계약해지'],
   '불법파견':['피드백 표준 양식 미사용','현장대리인 외 소통','도급범위 초과 업무','채용공고문 노출','고용 미승계 확약서 미징구','자재/소모품 지급','손해배상청구','물량 단가 지급','임차료 수령','근로시간 통제','작업방식 관리','복리후생 간섭','작업환경 결정'],
@@ -348,10 +342,16 @@ const SUB = {
   '영업비밀':[],
   'IP(지식재산)':[]
 };
+const ILLEGAL_DISPATCH_CATS = {
+  '상당한 지위 명령 차단': ['피드백 표준 양식 미사용'],
+  '묵시적 근로관계 차단': ['현장대리인 외 소통','도급범위 초과 업무','채용공고문 노출','고용 미승계 확약서 미징구'],
+  '사업에 대한 실질적 편입 차단': ['자재/소모품 지급','손해배상청구','물량 단가 지급','임차료 수령'],
+  '근로조건 구조적 통제': ['근로시간 통제','작업방식 관리','복리후생 간섭','작업환경 결정']
+};
 const TYPES=['가맹','불법파견','표시광고','노무','영업비밀','IP(지식재산)'];
 const BRANDS=['애슐리','피자몰','로운','자연별곡','델리바이애슐리','리미니','프랑제리','카페','프랜차이즈','광주ck','주안ck','기흥ck','CX팀'];
 const TC=['#4f86c6','#e8845a','#5eba8a','#e8c35a','#9b7ed4','#e87a9f'];
-const COLORS=['4f86c6','e8845a','5eba8a','e8c35a','9b7ed4','e87a9f'];
+const TYPE_COLORS=['4f86c6','e8845a','5eba8a','e8c35a','9b7ed4','e87a9f'];
 const BC=BRANDS.map(()=>'#9e9e9e');
 const SC=['#4f86c6','#e8845a','#5eba8a','#e8c35a','#9b7ed4','#e87a9f','#5abfbf','#c4a86e','#7ab8d4','#d4846e','#82c4a0','#b8a0d4','#e8a05a'];
 const MONTHS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -381,6 +381,7 @@ function td(){return new Date().toISOString().split('T')[0];}
 function sc(s){return s==='완료'?'s-done':s==='위반(처리중)'?'s-ing':'s-mon';}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function err(id,m){const el=document.getElementById(id);el.textContent=m;el.classList.toggle('show',!!m);}
+
 function goHome(){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
@@ -426,8 +427,14 @@ async function doLogin(){
 function logout(){user=null;applyUser();renderInputPg();toast('로그아웃 되었습니다.');}
 function applyUser(){
   const c=document.getElementById('userChip');
-  if(user){c.classList.add('show');document.getElementById('userChipName').textContent=user.name;document.getElementById('adminTabBtn').style.display=user.role==='admin'?'':'none';}
-  else{c.classList.remove('show');document.getElementById('adminTabBtn').style.display='none';}
+  if(user){
+    c.classList.add('show');
+    document.getElementById('userChipName').textContent=user.name;
+    document.getElementById('adminTabBtn').style.display=user.role==='admin'?'':'none';
+  } else {
+    c.classList.remove('show');
+    document.getElementById('adminTabBtn').style.display='none';
+  }
 }
 function renderInputPg(){
   document.getElementById('inputLock').style.display=user?'none':'';
@@ -526,20 +533,20 @@ function renderRight(d,k,now){
   const lg=document.getElementById('rChartLeg'),tag=document.getElementById('rChartTag'),tit=document.getElementById('rChartTit');
   if(k==='all'){
     tit.textContent='위반 유형별 분포';tag.textContent=now.getFullYear()+'년';
-    const cnt=TYPES.map(t=>d.filter(r=>r.type===t).reduce((s,r)=>s+r.count,0)),tot=cnt.reduce((a,b)=>a+b,0);
+    const cnt=TYPES.map(t=>d.filter(r=>r.type===t&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0)),tot=cnt.reduce((a,b)=>a+b,0);
     lg.innerHTML=TYPES.map((t,i)=>`<span><span class="ld" style="background:${TC[i]}"></span>${t} ${tot?Math.round(cnt[i]/tot*100):0}%</span>`).join('');
     rChart=new Chart(document.getElementById('rightChart'),{type:'doughnut',data:{labels:TYPES,datasets:[{data:cnt,backgroundColor:TC,borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}});
   } else {
     tit.textContent='상세 위반 유형별 분포';tag.textContent=k;
     const subs=SUB[k];
     if(!subs||!subs.length){lg.innerHTML='<span style="color:#94a3b8;font-size:11px">등록된 상세 유형이 없습니다</span>';return;}
-    const cnt=subs.map(s=>d.filter(r=>r.subtype===s).reduce((x,r)=>x+r.count,0)),tot=cnt.reduce((a,b)=>a+b,0);
+    const cnt=subs.map(s=>d.filter(r=>r.subtype===s&&r.status!=='모니터링').reduce((x,r)=>x+r.count,0)),tot=cnt.reduce((a,b)=>a+b,0);
     lg.innerHTML=subs.map((s,i)=>`<span><span class="ld" style="background:${SC[i%SC.length]}"></span>${s} ${tot?Math.round(cnt[i]/tot*100):0}%</span>`).join('');
     rChart=new Chart(document.getElementById('rightChart'),{type:'doughnut',data:{labels:subs,datasets:[{data:cnt,backgroundColor:subs.map((_,i)=>SC[i%SC.length]),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}});
   }
 }
 function renderBar(d){
-  const cnt=BRANDS.map(b=>d.filter(r=>r.brand===b).reduce((s,r)=>s+r.count,0));
+  const cnt=BRANDS.map(b=>d.filter(r=>r.brand===b&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0));
   if(bChart)bChart.destroy();
   bChart=new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:BRANDS,datasets:[{label:'건수',data:cnt,backgroundColor:BC,borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,0,0,0.03)'},ticks:{font:{size:10},color:'#94a3b8'},beginAtZero:true},y:{grid:{display:false},ticks:{font:{size:10},color:'#475569'}}}}});
 }
@@ -550,122 +557,363 @@ function renderRecent(d){
   tb.innerHTML=top.map(r=>`<tr><td>${r.date.slice(5).replace('-','/')}</td><td>${r.type}</td><td style="font-size:11px;color:#64748b">${r.subtype||'-'}</td><td>${r.brand}</td><td><span class="st ${sc(r.status)}">${r.status}</span></td><td style="font-size:11px;color:#64748b">${r.note||'-'}</td></tr>`).join('');
 }
 
+// ── PPT 보고서 생성 ──────────────────────────────────
 async function generatePPT() {
   if (!records.length) { toast('데이터가 없습니다. 새로고침 후 다시 시도해주세요.'); return; }
   const btn = document.getElementById('pptHeaderBtn');
   const spin = document.getElementById('pptSpinIcon');
   btn.disabled = true;
   spin.style.display = 'inline-block';
+
   try {
     const pres = new PptxGenJS();
     pres.layout = 'LAYOUT_16x9';
     const now = new Date();
-    const dateStr = now.toLocaleDateString('ko-KR');
-    const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const monthName = now.getMonth() + 1;
+    const yr = now.getFullYear();
+    const ym = yr + '-' + String(now.getMonth()+1).padStart(2,'0');
     const NAVY='1e3a8a', WHITE='FFFFFF', GBG='f8f9fc';
-    const filterLabel = curFilter==='all'?'전체':curFilter;
-    const d = getFR(curFilter);
-    const tot=d.reduce((s,r)=>s+r.count,0);
-    const vio=d.filter(r=>r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
-    const done=d.filter(r=>r.status==='완료').reduce((s,r)=>s+r.count,0);
-    const act=d.filter(r=>r.status==='위반(처리중)').reduce((s,r)=>s+r.count,0);
-    const rate=vio?Math.round(done/vio*100):0;
-    const vr=tot?Math.round(vio/tot*100):0;
-    const mTot=d.filter(r=>r.date&&r.date.startsWith(ym)).reduce((s,r)=>s+r.count,0);
-    const mVio=d.filter(r=>r.date&&r.date.startsWith(ym)&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
 
-    // 슬라이드 1: 표지
-    const s1=pres.addSlide();
-    s1.background={color:NAVY};
+    const d = records;
+    const tot = d.reduce((s,r)=>s+r.count,0);
+    const vio = d.filter(r=>r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
+    const done = d.filter(r=>r.status==='완료').reduce((s,r)=>s+r.count,0);
+    const act = d.filter(r=>r.status==='위반(처리중)').reduce((s,r)=>s+r.count,0);
+    const rate = vio ? Math.round(done/vio*100) : 0;
+    const vr = tot ? Math.round(vio/tot*100) : 0;
+    const mTot = d.filter(r=>r.date&&r.date.startsWith(ym)).reduce((s,r)=>s+r.count,0);
+    const mVio = d.filter(r=>r.date&&r.date.startsWith(ym)&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
+    const mArr = MONTHS.map((_,i)=>{
+      const pfx = yr+'-'+String(i+1).padStart(2,'0');
+      return {
+        mon: d.filter(r=>r.date&&r.date.startsWith(pfx)).reduce((s,r)=>s+r.count,0),
+        vio: d.filter(r=>r.date&&r.date.startsWith(pfx)&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0)
+      };
+    });
+
+    function addHeader(slide, title, sub) {
+      slide.background = {color:GBG};
+      slide.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:10,h:0.65,fill:{color:NAVY}});
+      slide.addText(title,{x:0.4,y:0.1,w:7,h:0.45,fontSize:15,bold:true,color:WHITE,fontFace:'Calibri'});
+      if(sub) slide.addText(sub,{x:7.5,y:0.1,w:2.2,h:0.45,fontSize:11,color:'CADCFC',fontFace:'Calibri',align:'right'});
+    }
+
+    // ── 슬라이드 1: 표지 ──
+    const s1 = pres.addSlide();
+    s1.background = {color:NAVY};
     s1.addShape(pres.shapes.RECTANGLE,{x:0,y:4.3,w:10,h:1.325,fill:{color:'16307a'}});
-    s1.addShape(pres.shapes.RECTANGLE,{x:0.6,y:1.3,w:0.08,h:2.2,fill:{color:'CADCFC'}});
-    s1.addText('외식 BG 리스크',{x:0.85,y:1.25,w:8.5,h:0.9,fontSize:36,bold:true,color:WHITE,fontFace:'Calibri'});
-    s1.addText('적발 및 처리 분석',{x:0.85,y:2.1,w:8.5,h:0.9,fontSize:36,bold:true,color:'CADCFC',fontFace:'Calibri'});
-    s1.addText('Risk Monitoring & Analytics Report  |  '+filterLabel+' 영역',{x:0.85,y:3.1,w:8.5,h:0.45,fontSize:14,color:'8fa8c8',fontFace:'Calibri',italic:true});
-    s1.addText('기준일: '+dateStr+'   |   외식BG RO실',{x:0.85,y:4.55,w:8.5,h:0.4,fontSize:11,color:'8fa8c8',fontFace:'Calibri'});
+    s1.addShape(pres.shapes.RECTANGLE,{x:0.6,y:1.5,w:0.08,h:1.8,fill:{color:'CADCFC'}});
+    s1.addText('외식 BG 리스크',{x:0.85,y:1.45,w:8.5,h:0.75,fontSize:32,bold:true,color:WHITE,fontFace:'Calibri'});
+    s1.addText(monthName+'월 리스크 관리 현황',{x:0.85,y:2.15,w:8.5,h:0.75,fontSize:32,bold:true,color:'CADCFC',fontFace:'Calibri'});
+    s1.addText('Risk Monitoring & Analytics Report',{x:0.85,y:3.05,w:8.5,h:0.4,fontSize:13,color:'8fa8c8',fontFace:'Calibri',italic:true});
+    s1.addText('기준일: '+now.toLocaleDateString('ko-KR')+'   |   외식BG RO실',{x:0.85,y:4.5,w:8.5,h:0.4,fontSize:11,color:'8fa8c8',fontFace:'Calibri'});
 
-    // 슬라이드 2: KPI
-    const s2=pres.addSlide();
-    s2.background={color:GBG};
-    s2.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:10,h:0.65,fill:{color:NAVY}});
-    s2.addText('핵심 현황 요약',{x:0.4,y:0.1,w:6,h:0.45,fontSize:15,bold:true,color:WHITE,fontFace:'Calibri'});
-    s2.addText(now.getFullYear()+'년 '+(now.getMonth()+1)+'월 기준',{x:7,y:0.1,w:2.8,h:0.45,fontSize:11,color:'CADCFC',fontFace:'Calibri',align:'right'});
-    [{label:'누적',sub:'위반 / 모니터링',value:vio+' / '+tot,detail:'위반율 '+vr+'%',color:NAVY},
-     {label:'당월',sub:'위반 / 모니터링',value:mVio+' / '+mTot,detail:'위반율 '+(mTot?Math.round(mVio/mTot*100):0)+'%',color:'2563eb'},
-     {label:'처리',sub:'완료율',value:rate+'%',detail:'완료 '+done+' / 위반 '+vio+'건',color:'15803d'},
-     {label:'현재',sub:'조치중 건수',value:''+act,detail:'위반(처리중) 상태',color:'64748b'}
+    // ── 슬라이드 2: 법인 전체 리스크 한판 ──
+    const s2 = pres.addSlide();
+    addHeader(s2, '법인 전체 리스크 한판', yr+'년 '+monthName+'월 기준');
+
+    [{label:'누적 모니터링',value:tot+'건',sub:'위반 '+vio+'건 ('+vr+'%)',color:NAVY},
+     {label:'당월 모니터링',value:mTot+'건',sub:'위반 '+mVio+'건 ('+(mTot?Math.round(mVio/mTot*100):0)+'%)',color:'2563eb'},
+     {label:'처리 완료율',value:rate+'%',sub:'완료 '+done+' / 위반 '+vio+'건',color:'15803d'},
+     {label:'조치중',value:act+'건',sub:'위반(처리중) 상태',color:'94a3b8'}
     ].forEach((k,i)=>{
-      const x=0.3+i*2.37;
-      s2.addShape(pres.shapes.RECTANGLE,{x,y:0.85,w:2.2,h:2.1,fill:{color:WHITE},shadow:{type:'outer',blur:8,offset:2,angle:135,color:'000000',opacity:0.08}});
-      s2.addShape(pres.shapes.RECTANGLE,{x,y:0.85,w:0.06,h:2.1,fill:{color:k.color}});
-      s2.addText(k.label,{x:x+0.15,y:0.94,w:2,h:0.25,fontSize:9,color:'94a3b8',fontFace:'Calibri',bold:true});
-      s2.addText(k.sub,{x:x+0.15,y:1.17,w:2,h:0.25,fontSize:10,color:'64748b',fontFace:'Calibri'});
-      s2.addText(k.value,{x:x+0.15,y:1.42,w:2,h:0.65,fontSize:k.value.length>5?22:28,bold:true,color:'0f172a',fontFace:'Calibri'});
-      s2.addText(k.detail,{x:x+0.15,y:2.1,w:2.1,h:0.35,fontSize:9,color:k.color==='15803d'?'15803d':'c0603a',fontFace:'Calibri'});
-    });
-    s2.addShape(pres.shapes.RECTANGLE,{x:0.3,y:3.15,w:9.4,h:0.75,fill:{color:'eff6ff'}});
-    s2.addText('누적 모니터링 '+tot+'건 중 위반 '+vio+'건('+vr+'%) · 처리 완료율 '+rate+'% · 현재 조치중 '+act+'건',{x:0.5,y:3.22,w:9,h:0.55,fontSize:11,color:'1e40af',fontFace:'Calibri',align:'center'});
-
-    // 슬라이드 3: 위반 유형별 분포
-    const s3=pres.addSlide();
-    s3.background={color:GBG};
-    s3.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:10,h:0.65,fill:{color:NAVY}});
-    s3.addText('위반 유형별 분포',{x:0.4,y:0.1,w:7,h:0.45,fontSize:15,bold:true,color:WHITE,fontFace:'Calibri'});
-    s3.addText(filterLabel,{x:7.5,y:0.1,w:2.2,h:0.45,fontSize:11,color:'CADCFC',fontFace:'Calibri',align:'right'});
-    const tCnts=TYPES.map((t,i)=>({type:t,cnt:d.filter(r=>r.type===t).reduce((s,r)=>s+r.count,0),color:COLORS[i]}));
-    const tTot=tCnts.reduce((s,t)=>s+t.cnt,0);
-    s3.addChart(pres.charts.PIE,[{name:'건수',labels:TYPES,values:tCnts.map(t=>t.cnt)}],{x:0.3,y:0.8,w:4.8,h:4.4,showPercent:true,chartColors:COLORS,showLegend:false,dataLabelFontSize:10,dataLabelColor:WHITE,chartArea:{fill:{color:GBG}}});
-    tCnts.forEach((t,i)=>{
-      const y=0.9+i*0.58,pct=tTot?Math.round(t.cnt/tTot*100):0;
-      s3.addShape(pres.shapes.RECTANGLE,{x:5.4,y,w:4.3,h:0.46,fill:{color:WHITE},shadow:{type:'outer',blur:4,offset:1,angle:135,color:'000000',opacity:0.06}});
-      s3.addShape(pres.shapes.RECTANGLE,{x:5.4,y,w:0.05,h:0.46,fill:{color:t.color}});
-      s3.addText(t.type,{x:5.55,y:y+0.05,w:2.6,h:0.2,fontSize:10,color:'334155',fontFace:'Calibri'});
-      s3.addText(t.cnt+'건 ('+pct+'%)',{x:8.5,y:y+0.05,w:0.9,h:0.2,fontSize:10,color:t.color,fontFace:'Calibri',align:'right',bold:true});
-      const mx=Math.max(...tCnts.map(x=>x.cnt),1);
-      s3.addShape(pres.shapes.RECTANGLE,{x:5.55,y:y+0.3,w:(t.cnt/mx)*2.8,h:0.08,fill:{color:t.color}});
+      const x = 0.25+i*2.42;
+      s2.addShape(pres.shapes.RECTANGLE,{x,y:0.8,w:2.25,h:1.1,fill:{color:WHITE},shadow:{type:'outer',blur:5,offset:2,angle:135,color:'000000',opacity:0.07}});
+      s2.addShape(pres.shapes.RECTANGLE,{x,y:0.8,w:0.05,h:1.1,fill:{color:k.color}});
+      s2.addText(k.label,{x:x+0.12,y:0.85,w:2.1,h:0.22,fontSize:9,color:'94a3b8',fontFace:'Calibri',bold:true});
+      s2.addText(k.value,{x:x+0.12,y:1.07,w:2.1,h:0.38,fontSize:20,bold:true,color:'0f172a',fontFace:'Calibri'});
+      s2.addText(k.sub,{x:x+0.12,y:1.45,w:2.1,h:0.2,fontSize:9,color:k.color==='15803d'?'15803d':'c0603a',fontFace:'Calibri'});
     });
 
-    // 슬라이드 4: 브랜드별
-    const s4=pres.addSlide();
-    s4.background={color:GBG};
-    s4.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:10,h:0.65,fill:{color:NAVY}});
-    s4.addText('브랜드별 적발 현황',{x:0.4,y:0.1,w:7,h:0.45,fontSize:15,bold:true,color:WHITE,fontFace:'Calibri'});
-    s4.addText('전체 브랜드',{x:7.5,y:0.1,w:2.2,h:0.45,fontSize:11,color:'CADCFC',fontFace:'Calibri',align:'right'});
-    const bCnts=BRANDS.map(b=>({brand:b,cnt:d.filter(r=>r.brand===b).reduce((s,r)=>s+r.count,0)})).filter(b=>b.cnt>0).sort((a,b)=>b.cnt-a.cnt);
-    if(bCnts.length) s4.addChart(pres.charts.BAR,[{name:'적발 건수',labels:bCnts.map(b=>b.brand),values:bCnts.map(b=>b.cnt)}],{x:0.3,y:0.8,w:9.4,h:4.5,barDir:'bar',chartColors:[NAVY],showValue:true,dataLabelColor:NAVY,dataLabelFontSize:10,catAxisLabelColor:'475569',valAxisLabelColor:'94a3b8',valGridLine:{color:'e2e8f0',size:0.5},catGridLine:{style:'none'},chartArea:{fill:{color:WHITE}},showLegend:false});
-
-    // 슬라이드 5: 월별 추이
-    const s5=pres.addSlide();
-    s5.background={color:GBG};
-    s5.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:10,h:0.65,fill:{color:NAVY}});
-    s5.addText('월별 모니터링 / 위반 건수 추이',{x:0.4,y:0.1,w:7,h:0.45,fontSize:15,bold:true,color:WHITE,fontFace:'Calibri'});
-    s5.addText(now.getFullYear()+'년',{x:7.5,y:0.1,w:2.2,h:0.45,fontSize:11,color:'CADCFC',fontFace:'Calibri',align:'right'});
-    const yr=now.getFullYear();
-    const mArr=MONTHS.map((_,i)=>{
-      const pfx=yr+'-'+String(i+1).padStart(2,'0');
-      return{mon:d.filter(r=>r.date&&r.date.startsWith(pfx)).reduce((s,r)=>s+r.count,0),vio:d.filter(r=>r.date&&r.date.startsWith(pfx)&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0)};
+    s2.addChart(pres.charts.LINE,[
+      {name:'모니터링',labels:MONTHS,values:mArr.map(m=>m.mon)},
+      {name:'위반',labels:MONTHS,values:mArr.map(m=>m.vio)}
+    ],{
+      x:0.25,y:2.05,w:9.5,h:3.25,
+      lineSize:2,lineSmooth:true,
+      chartColors:['8fa8c8','e8845a'],
+      showLegend:true,legendPos:'b',
+      catAxisLabelColor:'94a3b8',valAxisLabelColor:'94a3b8',
+      valGridLine:{color:'e2e8f0',size:0.5},
+      chartArea:{fill:{color:WHITE}}
     });
-    s5.addChart(pres.charts.LINE,[{name:'모니터링',labels:MONTHS,values:mArr.map(m=>m.mon)},{name:'위반',labels:MONTHS,values:mArr.map(m=>m.vio)}],{x:0.3,y:0.8,w:6.3,h:3.5,lineSize:2,lineSmooth:true,chartColors:['8fa8c8','e8845a'],showLegend:true,legendPos:'b',catAxisLabelColor:'94a3b8',valAxisLabelColor:'94a3b8',valGridLine:{color:'e2e8f0',size:0.5},chartArea:{fill:{color:WHITE}}});
-    s5.addText('처리 상태별 현황',{x:6.9,y:0.85,w:2.8,h:0.35,fontSize:12,bold:true,color:'334155',fontFace:'Calibri'});
-    [{label:'모니터링',cnt:d.filter(r=>r.status==='모니터링').reduce((s,r)=>s+r.count,0),color:'8fa8c8'},{label:'위반(처리중)',cnt:act,color:'e8845a'},{label:'완료',cnt:done,color:'5eba8a'}].forEach((st,i)=>{
-      const y=1.3+i*0.85;
-      s5.addShape(pres.shapes.RECTANGLE,{x:6.9,y,w:2.8,h:0.7,fill:{color:WHITE},shadow:{type:'outer',blur:4,offset:1,angle:135,color:'000000',opacity:0.06}});
-      s5.addShape(pres.shapes.RECTANGLE,{x:6.9,y,w:0.06,h:0.7,fill:{color:st.color}});
-      s5.addText(st.label,{x:7.06,y:y+0.08,w:2.2,h:0.25,fontSize:10,color:'64748b',fontFace:'Calibri'});
-      s5.addText(st.cnt+'건',{x:7.06,y:y+0.35,w:2.2,h:0.28,fontSize:14,bold:true,color:'0f172a',fontFace:'Calibri'});
-    });
-    s5.addShape(pres.shapes.RECTANGLE,{x:0.3,y:4.45,w:9.4,h:0.75,fill:{color:'f0fdf4'}});
-    s5.addText('처리 완료율 '+rate+'%  |  위반 '+vio+'건 → 완료 '+done+'건  |  현재 조치중 '+act+'건',{x:0.5,y:4.55,w:9,h:0.45,fontSize:12,color:'15803d',fontFace:'Calibri',align:'center',bold:true});
 
-    const fn='외식BG_리스크_분석_'+now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+'_'+filterLabel+'.pptx';
+    // ── 슬라이드 3: 브랜드별 현황 ──
+    const s3 = pres.addSlide();
+    addHeader(s3, '브랜드별 현황', monthName+'월 기준');
+
+    const brandTableData = [];
+
+    // 헤더행1: 브랜드 | 연누적(영역별 colspan=2) | 당월(영역별 colspan=2) | 연누적합계 | 당월합계
+    const hRow1 = [
+      {text:'브랜드',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,align:'center',valign:'middle',rowspan:3}},
+      {text:'연 누 적',options:{bold:true,fill:{color:'1e3a8a'},color:WHITE,fontSize:8,align:'center',colspan:TYPES.length*2}},
+      {text:'당 월 ('+monthName+'월)',options:{bold:true,fill:{color:'2563eb'},color:WHITE,fontSize:8,align:'center',colspan:TYPES.length*2}},
+      {text:'합계',options:{bold:true,fill:{color:'334155'},color:WHITE,fontSize:8,align:'center',valign:'middle',colspan:2,rowspan:2}}
+    ];
+    brandTableData.push(hRow1);
+
+    // 헤더행2: 영역명 (연누적) | 영역명 (당월)
+    const hRow2 = [{}];
+    TYPES.forEach(t=>{
+      hRow2.push({text:t,options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:7,align:'center',colspan:2}});
+    });
+    TYPES.forEach(t=>{
+      hRow2.push({text:t,options:{bold:true,fill:{color:'1d4ed8'},color:WHITE,fontSize:7,align:'center',colspan:2}});
+    });
+    brandTableData.push(hRow2);
+
+    // 헤더행3: 전체/위반 반복
+    const hRow3 = [{}];
+    // 연누적 전체/위반
+    TYPES.forEach(()=>{
+      hRow3.push({text:'전체',options:{bold:true,fill:{color:'1e3a8a'},color:'CADCFC',fontSize:6,align:'center'}});
+      hRow3.push({text:'위반',options:{bold:true,fill:{color:'1e3a8a'},color:'CADCFC',fontSize:6,align:'center'}});
+    });
+    // 당월 전체/위반
+    TYPES.forEach(()=>{
+      hRow3.push({text:'전체',options:{bold:true,fill:{color:'2563eb'},color:'BFDBFE',fontSize:6,align:'center'}});
+      hRow3.push({text:'위반',options:{bold:true,fill:{color:'2563eb'},color:'BFDBFE',fontSize:6,align:'center'}});
+    });
+    // 합계 전체/위반
+    hRow3.push({text:'전체',options:{bold:true,fill:{color:'475569'},color:WHITE,fontSize:6,align:'center'}});
+    hRow3.push({text:'위반',options:{bold:true,fill:{color:'475569'},color:WHITE,fontSize:6,align:'center'}});
+    brandTableData.push(hRow3);
+
+    // 데이터행: 브랜드별
+    BRANDS.forEach((brand,bi)=>{
+      const bg = bi%2===0?'f8fafc':WHITE;
+      const row = [{text:brand,options:{fontSize:7,bold:true,align:'center',fill:{color:bg}}}];
+      let bYearTot=0,bYearVio=0,bMonTot=0,bMonVio=0;
+
+      // 연누적
+      TYPES.forEach(type=>{
+        const recs = d.filter(r=>r.brand===brand&&r.type===type);
+        const t = recs.reduce((s,r)=>s+r.count,0);
+        const v = recs.filter(r=>r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
+        bYearTot+=t; bYearVio+=v;
+        row.push({text:t||'-',options:{fontSize:6,align:'center',fill:{color:bg}}});
+        row.push({text:v||'-',options:{fontSize:6,align:'center',color:v>0?'dc2626':'94a3b8',bold:v>0,fill:{color:bg}}});
+      });
+
+      // 당월
+      TYPES.forEach(type=>{
+        const recs = d.filter(r=>r.brand===brand&&r.type===type&&r.date&&r.date.startsWith(ym));
+        const t = recs.reduce((s,r)=>s+r.count,0);
+        const v = recs.filter(r=>r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
+        bMonTot+=t; bMonVio+=v;
+        row.push({text:t||'-',options:{fontSize:6,align:'center',fill:{color:bg}}});
+        row.push({text:v||'-',options:{fontSize:6,align:'center',color:v>0?'dc2626':'94a3b8',bold:v>0,fill:{color:bg}}});
+      });
+
+      // 합계
+      row.push({text:bYearTot||'-',options:{fontSize:6,align:'center',bold:true,fill:{color:'eef2ff'}}});
+      row.push({text:bYearVio||'-',options:{fontSize:6,align:'center',bold:bYearVio>0,color:bYearVio>0?'dc2626':'94a3b8',fill:{color:'eef2ff'}}});
+      brandTableData.push(row);
+    });
+
+    // 합계행
+    const sumRow = [{text:'합계',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:WHITE}}];
+    let gYearTot=0,gYearVio=0,gMonTot=0,gMonVio=0;
+    // 연누적 합계
+    TYPES.forEach(type=>{
+      const t=d.filter(r=>r.type===type).reduce((s,r)=>s+r.count,0);
+      const v=d.filter(r=>r.type===type&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
+      gYearTot+=t; gYearVio+=v;
+      sumRow.push({text:t||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:NAVY},color:WHITE}});
+      sumRow.push({text:v||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:NAVY},color:v>0?'fca5a5':WHITE}});
+    });
+    // 당월 합계
+    TYPES.forEach(type=>{
+      const t=d.filter(r=>r.type===type&&r.date&&r.date.startsWith(ym)).reduce((s,r)=>s+r.count,0);
+      const v=d.filter(r=>r.type===type&&r.date&&r.date.startsWith(ym)&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
+      gMonTot+=t; gMonVio+=v;
+      sumRow.push({text:t||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:'2563eb'},color:WHITE}});
+      sumRow.push({text:v||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:'2563eb'},color:v>0?'fca5a5':WHITE}});
+    });
+    sumRow.push({text:gYearTot||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:'334155'},color:WHITE}});
+    sumRow.push({text:gYearVio||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:'334155'},color:gYearVio>0?'fca5a5':WHITE}});
+    brandTableData.push(sumRow);
+
+    // 열 너비: 브랜드(0.8) + 연누적(영역*2*0.38) + 당월(영역*2*0.38) + 합계(0.38*2)
+    const typeColW = TYPES.flatMap(()=>[0.38,0.38]);
+    s3.addTable(brandTableData,{
+      x:0.15,y:0.8,w:9.7,
+      border:{pt:0.3,color:'e2e8f0'},
+      colW:[0.8,...typeColW,...typeColW,0.38,0.38]
+    });
+
+    // ── 슬라이드 4~: 영역별 상세 현황 ──
+    const subColors = ['1e3a8a','e8845a','5eba8a','e8c35a','9b7ed4','e87a9f','5abfbf','c4a86e','7ab8d4','d4846e','82c4a0','b8a0d4','e8a05a'];
+
+    TYPES.forEach((type, typeIdx)=>{
+      const typeRecs = d.filter(r=>r.type===type);
+      if(!typeRecs.length) return;
+
+      const sN = pres.addSlide();
+      addHeader(sN, type+' 상세 현황', monthName+'월 기준');
+      const typeColor = TYPE_COLORS[typeIdx];
+
+      // 도넛 차트 (우측 상단)
+      const subs = SUB[type];
+      if(subs&&subs.length){
+        const subCnts = subs.map(s=>typeRecs.filter(r=>r.subtype===s).reduce((a,r)=>a+r.count,0));
+        sN.addChart(pres.charts.DOUGHNUT,[{name:'건수',labels:subs,values:subCnts}],{
+          x:6.5,y:0.75,w:3.3,h:2.8,
+          chartColors:subColors,
+          showLegend:true,legendPos:'b',legendFontSize:7,
+          showPercent:true,dataLabelFontSize:9,
+          chartArea:{fill:{color:GBG}},
+          holeSize:55
+        });
+      }
+
+      // KPI 요약 박스 (우측 하단)
+      const typeTot = typeRecs.reduce((s,r)=>s+r.count,0);
+      const typeVio = typeRecs.filter(r=>r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
+      const typeDone = typeRecs.filter(r=>r.status==='완료').reduce((s,r)=>s+r.count,0);
+      const typeAct = typeRecs.filter(r=>r.status==='위반(처리중)').reduce((s,r)=>s+r.count,0);
+      const typeRate = typeVio?Math.round(typeDone/typeVio*100):0;
+
+      sN.addShape(pres.shapes.RECTANGLE,{x:6.5,y:3.65,w:3.3,h:1.6,fill:{color:WHITE},shadow:{type:'outer',blur:5,offset:2,angle:135,color:'000000',opacity:0.07}});
+      sN.addShape(pres.shapes.RECTANGLE,{x:6.5,y:3.65,w:0.06,h:1.6,fill:{color:typeColor}});
+      sN.addText(type+' 요약',{x:6.65,y:3.7,w:3,h:0.25,fontSize:9,bold:true,color:'334155',fontFace:'Calibri'});
+      [['전체 모니터링',typeTot+'건'],
+       ['위반 건수',typeVio+'건 ('+(typeTot?Math.round(typeVio/typeTot*100):0)+'%)'],
+       ['처리 완료율',typeRate+'%'],
+       ['조치중',typeAct+'건']
+      ].forEach(([label,val],i)=>{
+        sN.addText(label+':',{x:6.65,y:4.0+i*0.28,w:1.5,h:0.22,fontSize:8,color:'64748b',fontFace:'Calibri'});
+        sN.addText(val,{x:8.1,y:4.0+i*0.28,w:1.5,h:0.22,fontSize:8,bold:true,color:'0f172a',fontFace:'Calibri',align:'right'});
+      });
+
+      // 표 (좌측)
+      if(type==='불법파견'){
+        // 불법파견: 대분류 → 세부항목 × 브랜드
+        const tableData = [];
+        const h=[{text:'구분',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,align:'center',colspan:2}}];
+        BRANDS.forEach(b=>h.push({text:b,options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:7,align:'center',colspan:2}}));
+        h.push({text:'소계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,align:'center',colspan:2}});
+        tableData.push(h);
+
+        const h2=[{},{},];
+        BRANDS.forEach(()=>{
+          h2.push({text:'전체',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
+          h2.push({text:'위반',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
+        });
+        h2.push({text:'전체',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
+        h2.push({text:'위반',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
+        tableData.push(h2);
+
+        Object.entries(ILLEGAL_DISPATCH_CATS).forEach(([cat,items])=>{
+          const catRow=[{text:cat,options:{bold:true,fill:{color:'dbeafe'},color:'1e3a8a',fontSize:7,colspan:2}}];
+          BRANDS.forEach(()=>{catRow.push({text:'',options:{fill:{color:'dbeafe'}}});catRow.push({text:'',options:{fill:{color:'dbeafe'}}});});
+          catRow.push({text:'',options:{fill:{color:'dbeafe'}}});catRow.push({text:'',options:{fill:{color:'dbeafe'}}});
+          tableData.push(catRow);
+
+          items.forEach((item,idx)=>{
+            const bg=idx%2===0?'f8fafc':WHITE;
+            const row=[{text:'',options:{fill:{color:bg}}},{text:item,options:{fontSize:7,fill:{color:bg}}}];
+            let rTot=0,rVio=0;
+            BRANDS.forEach(brand=>{
+              const recs=typeRecs.filter(r=>r.brand===brand&&r.subtype===item);
+              const t=recs.reduce((s,r)=>s+r.count,0);
+              const v=recs.filter(r=>r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
+              rTot+=t; rVio+=v;
+              row.push({text:t||'-',options:{fontSize:7,align:'center',fill:{color:bg}}});
+              row.push({text:v||'-',options:{fontSize:7,align:'center',color:v>0?'dc2626':'94a3b8',bold:v>0,fill:{color:bg}}});
+            });
+            row.push({text:rTot||'-',options:{fontSize:7,align:'center',bold:true,fill:{color:'eef2ff'}}});
+            row.push({text:rVio||'-',options:{fontSize:7,align:'center',bold:rVio>0,color:rVio>0?'dc2626':'94a3b8',fill:{color:'eef2ff'}}});
+            tableData.push(row);
+          });
+        });
+
+        const sumR=[{text:'합계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,colspan:2,align:'center'}}];
+        let gT=0,gV=0;
+        BRANDS.forEach(brand=>{
+          const t=typeRecs.filter(r=>r.brand===brand).reduce((s,r)=>s+r.count,0);
+          const v=typeRecs.filter(r=>r.brand===brand&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
+          gT+=t; gV+=v;
+          sumR.push({text:t||'-',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:WHITE}});
+          sumR.push({text:v||'-',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:v>0?'fca5a5':WHITE}});
+        });
+        sumR.push({text:gT||'-',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:WHITE}});
+        sumR.push({text:gV||'-',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:gV>0?'fca5a5':WHITE}});
+        tableData.push(sumR);
+
+        sN.addTable(tableData,{
+          x:0.2,y:0.75,w:6.1,
+          border:{pt:0.3,color:'e2e8f0'},
+          colW:[0.5,1.1,...BRANDS.flatMap(()=>[0.42,0.42]),0.42,0.42]
+        });
+
+      } else {
+        // 일반 영역: 세부항목 × 브랜드
+        const subs2=SUB[type];
+        const tableData=[];
+        const h=[{text:'세부 항목',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,align:'center'}}];
+        BRANDS.forEach(b=>h.push({text:b,options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:7,align:'center',colspan:2}}));
+        h.push({text:'소계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,align:'center',colspan:2}});
+        tableData.push(h);
+
+        const h2=[{}];
+        BRANDS.forEach(()=>{
+          h2.push({text:'전체',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
+          h2.push({text:'위반',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
+        });
+        h2.push({text:'전체',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
+        h2.push({text:'위반',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
+        tableData.push(h2);
+
+        (subs2&&subs2.length?subs2:['(세부 항목 없음)']).forEach((item,idx)=>{
+          const bg=idx%2===0?'f8fafc':WHITE;
+          const row=[{text:item,options:{fontSize:7,fill:{color:bg}}}];
+          let rTot=0,rVio=0;
+          BRANDS.forEach(brand=>{
+            const recs=typeRecs.filter(r=>r.brand===brand&&(subs2&&subs2.length?r.subtype===item:true));
+            const t=recs.reduce((s,r)=>s+r.count,0);
+            const v=recs.filter(r=>r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
+            rTot+=t; rVio+=v;
+            row.push({text:t||'-',options:{fontSize:7,align:'center',fill:{color:bg}}});
+            row.push({text:v||'-',options:{fontSize:7,align:'center',color:v>0?'dc2626':'94a3b8',bold:v>0,fill:{color:bg}}});
+          });
+          row.push({text:rTot||'-',options:{fontSize:7,align:'center',bold:true,fill:{color:'eef2ff'}}});
+          row.push({text:rVio||'-',options:{fontSize:7,align:'center',bold:rVio>0,color:rVio>0?'dc2626':'94a3b8',fill:{color:'eef2ff'}}});
+          tableData.push(row);
+        });
+
+        const sumR=[{text:'합계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,align:'center'}}];
+        let gT=0,gV=0;
+        BRANDS.forEach(brand=>{
+          const t=typeRecs.filter(r=>r.brand===brand).reduce((s,r)=>s+r.count,0);
+          const v=typeRecs.filter(r=>r.brand===brand&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
+          gT+=t; gV+=v;
+          sumR.push({text:t||'-',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:WHITE}});
+          sumR.push({text:v||'-',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:v>0?'fca5a5':WHITE}});
+        });
+        sumR.push({text:gT||'-',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:WHITE}});
+        sumR.push({text:gV||'-',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:gV>0?'fca5a5':WHITE}});
+        tableData.push(sumR);
+
+        sN.addTable(tableData,{
+          x:0.2,y:0.75,w:6.1,
+          border:{pt:0.3,color:'e2e8f0'},
+          colW:[1.5,...BRANDS.flatMap(()=>[0.42,0.42]),0.42,0.42]
+        });
+      }
+    });
+
+    const fn = '외식BG_리스크_'+yr+'년_'+monthName+'월_리스크관리현황.pptx';
     await pres.writeFile({fileName:fn});
-    toast('✅ PPT 저장 완료!');
+    toast('✅ 보고서 저장 완료!');
+
   } catch(e) {
-    toast('❌ PPT 생성 오류: '+e.message);
+    toast('❌ 생성 오류: '+e.message);
     console.error(e);
   }
-  btn.disabled=false;
-  spin.style.display='none';
+  btn.disabled = false;
+  spin.style.display = 'none';
 }
 
 async function runAI(){
