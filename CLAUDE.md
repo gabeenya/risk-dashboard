@@ -2,7 +2,7 @@
 
 이 파일은 이 저장소에서 작업할 때 Claude Code가 참고할 가이드입니다.
 
-## 프로젝트 개요
+## 프로젝트 개요 
 
 **외식BG RO실 리스크 관리 시스템 (Risk Monitoring & Analytics Platform)**
 
