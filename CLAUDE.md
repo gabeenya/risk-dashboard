@@ -74,9 +74,16 @@ Supabase에 두 개의 테이블이 있습니다:
 
 ## 개발 / 실행
 
-- 빌드 도구가 없습니다. `index.html`을 더블클릭하거나 단순 정적 서버(`python -m http.server`, `npx serve` 등)로 띄우면 됩니다.
+- 빌드 도구가 없습니다. 로컬에서는 `index.html`을 더블클릭하거나 단순 정적 서버(`python -m http.server`, `npx serve` 등)로 띄우면 됩니다.
 - 데이터를 보려면 Supabase에 `records`, `users` 테이블이 존재해야 합니다.
 - 변경 후에는 브라우저에서 직접 확인 — 자동 테스트가 없습니다. UI 변경 시 4개 탭(대시보드/데이터 입력/AI 분석/관리자)을 모두 한 번씩 열어 회귀를 확인하세요.
+
+## 배포 (GitHub Pages)
+
+- 배포 방식: **GitHub Pages**. `main` 브랜치에 푸시하면 자동으로 반영됩니다 (별도 빌드/배포 워크플로 없음).
+- 운영 반영 절차: 변경 사항을 커밋 → `git push origin main` → 잠시(보통 1~2분) 후 Pages가 새 버전을 서빙.
+- 최근 커밋이 모두 `Update index.html`인 것은 GitHub 웹 에디터로 수정한 흔적으로 보입니다 — 의미 있는 변경에는 어떤 영역/기능을 바꿨는지 알 수 있는 커밋 메시지를 권장합니다.
+- **클라이언트 노출 주의**: GitHub Pages는 공개 URL입니다. `index.html`에 들어간 모든 키와 코드는 그대로 인터넷에 공개됩니다. Anthropic API 키처럼 비밀이어야 하는 값은 절대 코드에 직접 박지 마세요(보안 주의사항 4번 참조). Supabase publishable key는 공개 전제 키이지만, RLS가 켜져 있는지 반드시 확인하고 변경하세요.
 
 ## PPT 생성 (`generatePPT`, index.html:561-945)
 
