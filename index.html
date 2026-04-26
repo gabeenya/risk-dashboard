@@ -10,13 +10,13 @@
 <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fc; color: #0f172a; min-height: 100vh; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fc; color: #0f172a; min-height: 100vh; overflow-x: hidden; }
 header { background: #fff; border-bottom: 1px solid #eaecf0; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
 .logo { display: flex; align-items: center; gap: 12px; cursor: pointer; text-decoration: none; flex-shrink: 0; }
 .logo:hover { opacity: 0.85; }
 .logo-e { width: 32px; height: 32px; background: #1e3a8a; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff; font-family: Georgia, serif; flex-shrink: 0; }
 .logo-text { display: flex; flex-direction: column; }
-.logo-main { font-size: 14px; font-weight: 600; color: #0f172a; letter-spacing: -0.3px; white-space: nowrap; }
+.logo-main { font-size: 14px; font-weight: 600; color: #0f172a; letter-spacing: -0.5px; white-space: nowrap; }
 .logo-sub { font-size: 9px; color: #94a3b8; letter-spacing: 0.8px; text-transform: uppercase; }
 .hd-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .yr-badge { font-size: 11px; background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; border-radius: 20px; padding: 3px 10px; font-weight: 500; white-space: nowrap; }
@@ -34,7 +34,7 @@ header { background: #fff; border-bottom: 1px solid #eaecf0; padding: 0 2rem; di
 .ppt-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .ppt-btn.hidden { display: none; }
 .ppt-spin { display: none; width: 11px; height: 11px; border: 2px solid #bfdbfe; border-top-color: #1e40af; border-radius: 50%; animation: sp 0.7s linear infinite; }
-main { max-width: 1200px; margin: 0 auto; padding: 1.75rem 1.5rem; }
+main { max-width: 1300px; margin: 0 auto; padding: 1.75rem 1.5rem; }
 .pg { display: none; } .pg.on { display: block; }
 .mb { position: fixed; inset: 0; background: rgba(15,23,42,0.45); backdrop-filter: blur(2px); z-index: 200; display: flex; align-items: center; justify-content: center; }
 .mb.hide { display: none; }
@@ -88,6 +88,12 @@ tr:hover td { background: #f8fafc; }
 .empty { text-align: center; color: #94a3b8; padding: 3rem 1rem; font-size: 13px; }
 .more-btn { font-size: 11px; padding: 6px 20px; border-radius: 20px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; margin-top: 10px; display: block; margin-left: auto; margin-right: auto; }
 .more-btn:hover { border-color: #1e3a8a; color: #1e3a8a; }
+.pager { display: flex; justify-content: center; gap: 4px; margin-top: 12px; flex-wrap: wrap; }
+.pg-btn { font-size: 11px; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #475569; cursor: pointer; transition: all 0.15s; }
+.pg-btn:hover:not(:disabled) { border-color: #1e3a8a; color: #1e3a8a; }
+.pg-btn.on { background: #1e3a8a; color: #fff; border-color: #1e3a8a; font-weight: 600; }
+.pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pg-dot { padding: 0 4px; color: #94a3b8; font-size: 11px; align-self: center; }
 .note-wrap { position: relative; display: flex; align-items: center; min-width: 140px; }
 .note-inp { width: 100%; padding: 5px 34px 5px 8px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px; color: #334155; background: #fff; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
 .note-inp:focus { border-color: #1e3a8a; box-shadow: 0 0 0 2px rgba(30,58,138,0.08); }
@@ -137,7 +143,31 @@ tr:hover td { background: #f8fafc; }
 .pg-title { font-size: 20px; font-weight: 600; color: #0f172a; margin-bottom: 4px; letter-spacing: -0.3px; }
 .pg-sub { font-size: 13px; color: #64748b; margin-bottom: 1.5rem; }
 @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .charts-row, .btm-row { grid-template-columns: 1fr; } .fgrid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 500px) { .fgrid { grid-template-columns: 1fr; } main { padding: 1rem; } header { padding: 0 1rem; } }
+
+/* ── 태블릿/큰 폰 (≤768px): 헤더 두 줄로 접기 ── */
+@media (max-width: 768px) {
+  header { padding: 8px 1rem; height: auto; flex-wrap: wrap; gap: 8px; }
+  .logo-sub { display: none; }
+  .logo-main { font-size: 12px; }
+  .yr-badge { display: none; }
+  .sy-badge { font-size: 10px; padding: 2px 8px; }
+  .hd-right { flex-wrap: wrap; gap: 6px; flex: 1 1 auto; justify-content: flex-end; }
+  .nav-group { order: 99; flex: 1 1 100%; justify-content: center; }
+  .tb { padding: 5px 10px; font-size: 11px; }
+  .ppt-btn { padding: 5px 10px; font-size: 11px; }
+  .ppt-btn span:not(.ppt-spin) { display: inline; }
+}
+
+/* ── 작은 폰 (≤500px): 더 압축 ── */
+@media (max-width: 500px) {
+  .fgrid { grid-template-columns: 1fr; }
+  main { padding: 1rem; }
+  .logo-main { font-size: 11px; max-width: 150px; line-height: 1.25; white-space: normal; }
+  .sy-badge { display: none; }
+  .uchip { font-size: 10px; padding: 3px 8px; }
+  .ppt-btn { font-size: 10px; padding: 4px 8px; }
+  .tb { padding: 4px 8px; font-size: 10px; }
+}
 
 /* ── AI 마크다운 공통 ── */
 .ai-md { line-height: 1.7; color: #334155; font-size: 13px; }
@@ -275,7 +305,7 @@ tr:hover td { background: #f8fafc; }
           <table><thead><tr><th>날짜</th><th>유형</th><th>상세</th><th>브랜드</th><th>상태</th><th>비고</th></tr></thead>
           <tbody id="recentTbody"></tbody></table>
         </div>
-        <button class="more-btn" id="recentMoreBtn" onclick="toggleMore()">더보기</button>
+        <div class="pager" id="recentPager"></div>
       </div>
     </div>
   </div>
@@ -430,7 +460,7 @@ const SC=['#4f86c6','#e8845a','#5eba8a','#e8c35a','#9b7ed4','#e87a9f','#5abfbf',
 const MONTHS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 const STATS=['모니터링','위반(처리중)','완료'];
 const ADMIN='admin';
-let records=[],users=[],lChart,rChart,bChart,curFilter='all',curType='가맹',user=null,deleted=null,uTimer=null,showAll=false;
+let records=[],users=[],lChart,rChart,bChart,curFilter='all',curType='가맹',user=null,deleted=null,uTimer=null,recentPage=0;
 
 async function init() {
   await loadUsers();
@@ -571,8 +601,8 @@ function renderInputTable(){
     <td><button class="del-btn" onclick="delRecord(${r.id})">✕</button></td>
   </tr>`).join('');
 }
-function toggleMore(){showAll=!showAll;document.getElementById('recentMoreBtn').textContent=showAll?'접기':'더보기';renderRecent(getFR(curFilter));}
-function setFilter(btn,key){document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');curFilter=key;renderDash(key);}
+function gotoPage(p){recentPage=p;renderRecent(getFR(curFilter));}
+function setFilter(btn,key){document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');curFilter=key;recentPage=0;renderDash(key);}
 function getFR(k){return k==='all'?records:records.filter(r=>r.type===k);}
 function renderDash(k){
   const d=getFR(k),tot=d.reduce((s,r)=>s+r.count,0);
@@ -625,10 +655,34 @@ function renderBar(d){
   bChart=new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:BRANDS,datasets:[{label:'건수',data:cnt,backgroundColor:BC,borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,0,0,0.03)'},ticks:{font:{size:10},color:'#94a3b8'},beginAtZero:true},y:{grid:{display:false},ticks:{font:{size:10},color:'#475569'}}}}});
 }
 function renderRecent(d){
-  const tb=document.getElementById('recentTbody'),btn=document.getElementById('recentMoreBtn'),top=showAll?d:d.slice(0,10);
-  btn.style.display=d.length>10?'':'none';
-  if(!top.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">데이터를 입력해 주세요</div></td></tr>';return;}
-  tb.innerHTML=top.map(r=>`<tr><td>${r.date.slice(5).replace('-','/')}</td><td>${r.type}</td><td style="font-size:11px;color:#64748b">${r.subtype||'-'}</td><td>${r.brand}</td><td><span class="st ${sc(r.status)}">${r.status}</span></td><td style="font-size:11px;color:#64748b">${r.note||'-'}</td></tr>`).join('');
+  const tb=document.getElementById('recentTbody'),pg=document.getElementById('recentPager');
+  const PAGE_SIZE=10;
+  const totalPages=Math.max(1,Math.ceil(d.length/PAGE_SIZE));
+  if(recentPage>=totalPages)recentPage=totalPages-1;
+  if(recentPage<0)recentPage=0;
+  const start=recentPage*PAGE_SIZE,slice=d.slice(start,start+PAGE_SIZE);
+  if(!slice.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">데이터를 입력해 주세요</div></td></tr>';pg.innerHTML='';return;}
+  tb.innerHTML=slice.map(r=>`<tr><td>${r.date.slice(5).replace('-','/')}</td><td>${r.type}</td><td style="font-size:11px;color:#64748b">${r.subtype||'-'}</td><td>${r.brand}</td><td><span class="st ${sc(r.status)}">${r.status}</span></td><td style="font-size:11px;color:#64748b">${r.note||'-'}</td></tr>`).join('');
+  renderPager(pg,recentPage,totalPages);
+}
+function renderPager(c,curr,total){
+  if(total<=1){c.innerHTML='';return;}
+  let html=`<button class="pg-btn" ${curr===0?'disabled':''} onclick="gotoPage(${curr-1})">‹</button>`;
+  const pages=[];
+  if(total<=7){for(let i=0;i<total;i++)pages.push(i);}
+  else {
+    pages.push(0);
+    if(curr>2)pages.push('...');
+    for(let i=Math.max(1,curr-1);i<=Math.min(total-2,curr+1);i++)pages.push(i);
+    if(curr<total-3)pages.push('...');
+    pages.push(total-1);
+  }
+  pages.forEach(p=>{
+    if(p==='...')html+=`<span class="pg-dot">…</span>`;
+    else html+=`<button class="pg-btn${p===curr?' on':''}" onclick="gotoPage(${p})">${p+1}</button>`;
+  });
+  html+=`<button class="pg-btn" ${curr===total-1?'disabled':''} onclick="gotoPage(${curr+1})">›</button>`;
+  c.innerHTML=html;
 }
 
 // ── PPT 보고서 생성 ──────────────────────────────────
