@@ -6,6 +6,7 @@
 <title>외식 BG 리스크 적발 및 처리 분석</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fc; color: #0f172a; min-height: 100vh; }
@@ -136,6 +137,70 @@ tr:hover td { background: #f8fafc; }
 .pg-sub { font-size: 13px; color: #64748b; margin-bottom: 1.5rem; }
 @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .charts-row, .btm-row { grid-template-columns: 1fr; } .fgrid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 500px) { .fgrid { grid-template-columns: 1fr; } main { padding: 1rem; } header { padding: 0 1rem; } }
+
+/* ── AI 마크다운 공통 ── */
+.ai-md { line-height: 1.7; color: #334155; font-size: 13px; }
+.ai-md > *:first-child { margin-top: 0; }
+.ai-md > *:last-child { margin-bottom: 0; }
+
+/* ── 노션 스타일 ── */
+.ai-md.theme-notion h1, .ai-md.theme-notion h2, .ai-md.theme-notion h3 { font-weight: 600; color: #0f172a; letter-spacing: -0.3px; }
+.ai-md.theme-notion h1 { font-size: 22px; margin: 1.8rem 0 0.6rem; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
+.ai-md.theme-notion h2 { font-size: 18px; margin: 1.6rem 0 0.5rem; }
+.ai-md.theme-notion h3 { font-size: 15px; margin: 1.2rem 0 0.4rem; color: #1e3a8a; }
+.ai-md.theme-notion p { margin: 0.5rem 0; }
+.ai-md.theme-notion ul, .ai-md.theme-notion ol { margin: 0.5rem 0 0.5rem 1.4rem; padding-left: 0.5rem; }
+.ai-md.theme-notion li { margin: 0.25rem 0; }
+.ai-md.theme-notion strong { color: #0f172a; font-weight: 600; background: linear-gradient(transparent 60%, #fef3c7 60%); padding: 0 1px; }
+.ai-md.theme-notion code { background: #f1f5f9; color: #be185d; padding: 1px 6px; border-radius: 4px; font-size: 12px; font-family: ui-monospace, 'SF Mono', Consolas, monospace; }
+.ai-md.theme-notion pre { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.8rem; overflow-x: auto; margin: 0.8rem 0; }
+.ai-md.theme-notion pre code { background: none; color: #0f172a; padding: 0; }
+.ai-md.theme-notion blockquote { border-left: 3px solid #cbd5e1; padding: 0.2rem 0.8rem; margin: 0.7rem 0; color: #64748b; background: #f8fafc; }
+.ai-md.theme-notion table { border-collapse: collapse; width: 100%; margin: 0.8rem 0; font-size: 12px; }
+.ai-md.theme-notion th, .ai-md.theme-notion td { border: 1px solid #e2e8f0; padding: 6px 10px; text-align: left; }
+.ai-md.theme-notion th { background: #f8fafc; font-weight: 600; color: #475569; }
+.ai-md.theme-notion hr { border: none; border-top: 1px solid #e2e8f0; margin: 1.2rem 0; }
+
+/* ── 신문 스타일 ── */
+.ai-md.theme-newspaper { font-family: Georgia, 'Times New Roman', serif; line-height: 1.85; color: #1f2937; text-align: justify; }
+.ai-md.theme-newspaper h1, .ai-md.theme-newspaper h2, .ai-md.theme-newspaper h3 { font-family: Georgia, serif; font-weight: 700; color: #111827; text-align: left; }
+.ai-md.theme-newspaper h1 { font-size: 26px; margin: 1.5rem 0 0.5rem; border-bottom: 3px double #111827; padding-bottom: 6px; }
+.ai-md.theme-newspaper h2 { font-size: 20px; margin: 1.4rem 0 0.5rem; border-bottom: 1px solid #d1d5db; padding-bottom: 4px; }
+.ai-md.theme-newspaper h3 { font-size: 16px; margin: 1.1rem 0 0.4rem; font-style: italic; }
+.ai-md.theme-newspaper p { margin: 0.6rem 0; text-indent: 1.2em; }
+.ai-md.theme-newspaper p:first-of-type::first-letter { font-size: 2.6em; font-weight: 700; float: left; line-height: 0.9; padding: 4px 6px 0 0; color: #1e3a8a; }
+.ai-md.theme-newspaper ul, .ai-md.theme-newspaper ol { margin: 0.5rem 0 0.7rem 1.6rem; }
+.ai-md.theme-newspaper li { margin: 0.3rem 0; }
+.ai-md.theme-newspaper strong { font-weight: 700; color: #111827; }
+.ai-md.theme-newspaper code { background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 12px; }
+.ai-md.theme-newspaper pre { background: #f9fafb; border: 1px solid #d1d5db; padding: 0.8rem; margin: 0.8rem 0; }
+.ai-md.theme-newspaper blockquote { border-left: 4px solid #1e3a8a; padding: 0.4rem 1rem; margin: 0.8rem 0; font-style: italic; color: #4b5563; }
+.ai-md.theme-newspaper table { border-collapse: collapse; width: 100%; margin: 0.8rem 0; font-size: 12px; }
+.ai-md.theme-newspaper th, .ai-md.theme-newspaper td { border: 1px solid #9ca3af; padding: 6px 10px; }
+.ai-md.theme-newspaper th { background: #f3f4f6; font-weight: 700; }
+
+/* ── 터미널 스타일 ── */
+.ai-md.theme-terminal { font-family: 'Consolas', 'Courier New', ui-monospace, monospace; background: #0a0e1a; color: #4ade80; padding: 1.2rem; border-radius: 8px; border: 1px solid #1f2937; line-height: 1.6; font-size: 12px; }
+.ai-md.theme-terminal h1, .ai-md.theme-terminal h2, .ai-md.theme-terminal h3 { color: #fbbf24; font-weight: 700; font-family: inherit; letter-spacing: 0; }
+.ai-md.theme-terminal h1 { font-size: 16px; margin: 1.2rem 0 0.4rem; }
+.ai-md.theme-terminal h1::before { content: '## '; color: #6b7280; }
+.ai-md.theme-terminal h2 { font-size: 14px; margin: 1rem 0 0.3rem; }
+.ai-md.theme-terminal h2::before { content: '### '; color: #6b7280; }
+.ai-md.theme-terminal h3 { font-size: 13px; margin: 0.8rem 0 0.3rem; color: #60a5fa; }
+.ai-md.theme-terminal h3::before { content: '> '; color: #6b7280; }
+.ai-md.theme-terminal p { margin: 0.4rem 0; }
+.ai-md.theme-terminal strong { color: #fff; font-weight: 700; }
+.ai-md.theme-terminal ul, .ai-md.theme-terminal ol { margin: 0.4rem 0 0.4rem 1.2rem; }
+.ai-md.theme-terminal li { margin: 0.2rem 0; }
+.ai-md.theme-terminal li::marker { color: #6b7280; }
+.ai-md.theme-terminal code { background: #1f2937; color: #fbbf24; padding: 1px 5px; border-radius: 3px; }
+.ai-md.theme-terminal pre { background: #1f2937; border: 1px solid #374151; border-radius: 4px; padding: 0.7rem; margin: 0.6rem 0; }
+.ai-md.theme-terminal pre code { background: none; color: #4ade80; }
+.ai-md.theme-terminal blockquote { border-left: 2px solid #4ade80; padding-left: 0.7rem; color: #94a3b8; margin: 0.5rem 0; }
+.ai-md.theme-terminal table { border-collapse: collapse; margin: 0.6rem 0; font-size: 11px; }
+.ai-md.theme-terminal th, .ai-md.theme-terminal td { border: 1px solid #374151; padding: 4px 8px; }
+.ai-md.theme-terminal th { background: #1f2937; color: #fbbf24; }
+.ai-md.theme-terminal hr { border: none; border-top: 1px dashed #374151; margin: 0.8rem 0; }
 </style>
 </head>
 <body>
@@ -274,7 +339,14 @@ tr:hover td { background: #f8fafc; }
           <p style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:4px">종합 리스크 분석 리포트</p>
           <p style="font-size:12px;color:#64748b">위험도 식별 · 트렌드 분석 · 완료율 · 권고사항 · 액션 플랜</p>
         </div>
-        <button id="aiBtn" onclick="runAI()" style="padding:9px 20px;background:#1e3a8a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;">✦ AI 분석 시작</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="aiStyle" onchange="changeAIStyle()" style="padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;font-size:12px;color:#475569;cursor:pointer;outline:none;">
+            <option value="notion">📝 노션 스타일</option>
+            <option value="newspaper">📰 신문 스타일</option>
+            <option value="terminal">💻 터미널 스타일</option>
+          </select>
+          <button id="aiBtn" onclick="runAI()" style="padding:9px 20px;background:#1e3a8a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;">✦ AI 분석 시작</button>
+        </div>
       </div>
       <div id="aiLoad" style="display:none;text-align:center;padding:3rem;">
         <div class="spin" style="width:32px;height:32px;border-width:3px;margin:0 auto 1rem;"></div>
@@ -365,6 +437,7 @@ async function init() {
   await loadData();
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
   setInputType(document.querySelector('.tt.on'),'가맹');
+  initAIStyle();
 }
 async function loadData() {
   setSy('불러오는 중...','#15803d','#f0fdf4');
@@ -594,8 +667,8 @@ async function generatePPT() {
     function addHeader(slide, title, sub) {
       slide.background = {color:GBG};
       slide.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:10,h:0.7,fill:{color:NAVY}});
-      slide.addText(title,{x:0.35,y:0.08,w:7.5,h:0.54,fontSize:18,bold:true,color:WHITE,fontFace:'Calibri',valign:'middle'});
-      if(sub) slide.addText(sub,{x:7.6,y:0.08,w:2.2,h:0.54,fontSize:11,color:'CADCFC',fontFace:'Calibri',align:'right',valign:'middle'});
+      slide.addText(title,{x:0.15,y:0.05,w:7.4,h:0.6,fontSize:24,bold:true,color:WHITE,fontFace:'Calibri',valign:'middle'});
+      if(sub) slide.addText(sub,{x:7.6,y:0.05,w:2.25,h:0.6,fontSize:13,color:'CADCFC',fontFace:'Calibri',align:'right',valign:'middle'});
     }
 
     // ── 슬라이드 1: 표지 ──
@@ -603,10 +676,10 @@ async function generatePPT() {
     s1.background = {color:NAVY};
     s1.addShape(pres.shapes.RECTANGLE,{x:0,y:4.3,w:10,h:1.325,fill:{color:'16307a'}});
     s1.addShape(pres.shapes.RECTANGLE,{x:0.6,y:1.5,w:0.08,h:1.8,fill:{color:'CADCFC'}});
-    s1.addText('외식 BG 리스크',{x:0.85,y:1.45,w:8.5,h:0.75,fontSize:32,bold:true,color:WHITE,fontFace:'Calibri'});
-    s1.addText(monthName+'월 리스크 관리 현황',{x:0.85,y:2.15,w:8.5,h:0.75,fontSize:32,bold:true,color:'CADCFC',fontFace:'Calibri'});
-    s1.addText('Risk Monitoring & Analytics Report',{x:0.85,y:3.05,w:8.5,h:0.4,fontSize:13,color:'8fa8c8',fontFace:'Calibri',italic:true});
-    s1.addText('기준일: '+now.toLocaleDateString('ko-KR')+'   |   외식BG RO실',{x:0.85,y:4.5,w:8.5,h:0.4,fontSize:11,color:'8fa8c8',fontFace:'Calibri'});
+    s1.addText('외식 BG 리스크',{x:0.85,y:1.45,w:8.5,h:0.75,fontSize:36,bold:true,color:WHITE,fontFace:'Calibri'});
+    s1.addText(monthName+'월 리스크 관리 현황',{x:0.85,y:2.15,w:8.5,h:0.75,fontSize:36,bold:true,color:'CADCFC',fontFace:'Calibri'});
+    s1.addText('Risk Monitoring & Analytics Report',{x:0.85,y:3.05,w:8.5,h:0.4,fontSize:15,color:'8fa8c8',fontFace:'Calibri',italic:true});
+    s1.addText('기준일: '+now.toLocaleDateString('ko-KR')+'   |   외식BG RO실',{x:0.85,y:4.5,w:8.5,h:0.4,fontSize:13,color:'8fa8c8',fontFace:'Calibri'});
 
     // ── 슬라이드 2: 법인 전체 리스크 한판 ──
     const s2 = pres.addSlide();
@@ -618,18 +691,18 @@ async function generatePPT() {
      {label:'조치중',value:act+'건',sub:'위반(처리중) 상태',color:'94a3b8'}
     ].forEach((k,i)=>{
       const x = 0.25+i*2.42;
-      s2.addShape(pres.shapes.RECTANGLE,{x,y:0.8,w:2.25,h:1.1,fill:{color:WHITE},shadow:{type:'outer',blur:5,offset:2,angle:135,color:'000000',opacity:0.07}});
-      s2.addShape(pres.shapes.RECTANGLE,{x,y:0.8,w:0.05,h:1.1,fill:{color:k.color}});
-      s2.addText(k.label,{x:x+0.12,y:0.85,w:2.1,h:0.22,fontSize:9,color:'94a3b8',fontFace:'Calibri',bold:true});
-      s2.addText(k.value,{x:x+0.12,y:1.07,w:2.1,h:0.38,fontSize:20,bold:true,color:'0f172a',fontFace:'Calibri'});
-      s2.addText(k.sub,{x:x+0.12,y:1.45,w:2.1,h:0.2,fontSize:9,color:k.color==='15803d'?'15803d':'c0603a',fontFace:'Calibri'});
+      s2.addShape(pres.shapes.RECTANGLE,{x,y:0.8,w:2.25,h:1.3,fill:{color:WHITE},shadow:{type:'outer',blur:5,offset:2,angle:135,color:'000000',opacity:0.07}});
+      s2.addShape(pres.shapes.RECTANGLE,{x,y:0.8,w:0.05,h:1.3,fill:{color:k.color}});
+      s2.addText(k.label,{x:x+0.12,y:0.88,w:2.1,h:0.26,fontSize:11,color:'94a3b8',fontFace:'Calibri',bold:true});
+      s2.addText(k.value,{x:x+0.12,y:1.16,w:2.1,h:0.5,fontSize:26,bold:true,color:'0f172a',fontFace:'Calibri'});
+      s2.addText(k.sub,{x:x+0.12,y:1.72,w:2.1,h:0.3,fontSize:11,color:k.color==='15803d'?'15803d':'c0603a',fontFace:'Calibri'});
     });
 
     s2.addChart(pres.charts.LINE,[
       {name:'모니터링',labels:MONTHS,values:mArr.map(m=>m.mon)},
       {name:'위반',labels:MONTHS,values:mArr.map(m=>m.vio)}
     ],{
-      x:0.25,y:2.05,w:9.5,h:3.25,
+      x:0.25,y:2.25,w:9.5,h:3.05,
       lineSize:2,lineSmooth:true,
       chartColors:['8fa8c8','e8845a'],
       showLegend:true,legendPos:'b',
@@ -647,39 +720,41 @@ async function generatePPT() {
     // 헤더행1: 브랜드 | 연누적(영역별 colspan=2) | 당월(영역별 colspan=2) | 연누적합계 | 당월합계
     // 헤더행1: 브랜드 | 연누적 | 당월 | 합계
     const hRow1 = [
-      {text:'브랜드',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,align:'center',valign:'middle',rowspan:3}},
-      {text:'연 누 적',options:{bold:true,fill:{color:'1e3a8a'},color:WHITE,fontSize:8,align:'center',colspan:TYPES.length*2}},
-      {text:'당 월 ('+monthName+'월)',options:{bold:true,fill:{color:'2563eb'},color:WHITE,fontSize:8,align:'center',colspan:TYPES.length*2}},
-      {text:'합계',options:{bold:true,fill:{color:'334155'},color:WHITE,fontSize:8,align:'center',valign:'middle',colspan:2,rowspan:3}}
+      {text:'브랜드',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:10,align:'center',valign:'middle',rowspan:3}},
+      {text:'연 누 적',options:{bold:true,fill:{color:'1e3a8a'},color:WHITE,fontSize:10,align:'center',colspan:TYPES.length*2}},
+      {text:'당 월 ('+monthName+'월)',options:{bold:true,fill:{color:'2563eb'},color:WHITE,fontSize:10,align:'center',colspan:TYPES.length*2}},
+      {text:'합계',options:{bold:true,fill:{color:'334155'},color:WHITE,fontSize:10,align:'center',valign:'middle',colspan:2,rowspan:3}}
     ];
     brandTableData.push(hRow1);
 
     // 헤더행2: 영역명 (연누적 | 당월) - 브랜드/합계 rowspan이므로 셀 없음
     const hRow2 = [];
-    TYPES.forEach(t=>{
-      hRow2.push({text:t,options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:7,align:'center',colspan:2}});
+    TYPES.slice(0, TYPES.length - 1).forEach(t=>{
+      hRow2.push({text:t,options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:8,align:'center',colspan:2}});
     });
-    TYPES.forEach(t=>{
-      hRow2.push({text:t,options:{bold:true,fill:{color:'1d4ed8'},color:WHITE,fontSize:7,align:'center',colspan:2}});
+    hRow2.push({text:TYPES[5],options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center',colspan:2}});
+    TYPES.slice(0, TYPES.length - 1).forEach(t=>{
+      hRow2.push({text:t,options:{bold:true,fill:{color:'1d4ed8'},color:WHITE,fontSize:8,align:'center',colspan:2}});
     });
+    hRow2.push({text:TYPES[5],options:{bold:true,fill:{color:'1d4ed8'},color:WHITE,fontSize:6,align:'center',colspan:2}});
     brandTableData.push(hRow2);
 
     // 헤더행3: 전체/위반 반복 - 브랜드/합계 rowspan이므로 셀 없음
     const hRow3 = [];
     TYPES.forEach(()=>{
-      hRow3.push({text:'전체',options:{bold:true,fill:{color:'1e3a8a'},color:'CADCFC',fontSize:6,align:'center'}});
-      hRow3.push({text:'위반',options:{bold:true,fill:{color:'1e3a8a'},color:'CADCFC',fontSize:6,align:'center'}});
+      hRow3.push({text:'전체',options:{bold:true,fill:{color:'1e3a8a'},color:'CADCFC',fontSize:8,align:'center'}});
+      hRow3.push({text:'위반',options:{bold:true,fill:{color:'1e3a8a'},color:'CADCFC',fontSize:8,align:'center'}});
     });
     TYPES.forEach(()=>{
-      hRow3.push({text:'전체',options:{bold:true,fill:{color:'2563eb'},color:'BFDBFE',fontSize:6,align:'center'}});
-      hRow3.push({text:'위반',options:{bold:true,fill:{color:'2563eb'},color:'BFDBFE',fontSize:6,align:'center'}});
+      hRow3.push({text:'전체',options:{bold:true,fill:{color:'2563eb'},color:'BFDBFE',fontSize:8,align:'center'}});
+      hRow3.push({text:'위반',options:{bold:true,fill:{color:'2563eb'},color:'BFDBFE',fontSize:8,align:'center'}});
     });
     brandTableData.push(hRow3);
 
     // 데이터행: 브랜드별
     BRANDS.forEach((brand,bi)=>{
       const bg = bi%2===0?'f8fafc':WHITE;
-      const row = [{text:brand,options:{fontSize:7,bold:true,align:'center',fill:{color:bg}}}];
+      const row = [{text:brand,options:{fontSize:9,bold:true,align:'center',fill:{color:bg}}}];
       let bYearTot=0,bYearVio=0,bMonTot=0,bMonVio=0;
 
       // 연누적
@@ -688,8 +763,8 @@ async function generatePPT() {
         const t = recs.reduce((s,r)=>s+r.count,0);
         const v = recs.filter(r=>r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
         bYearTot+=t; bYearVio+=v;
-        row.push({text:t||'-',options:{fontSize:6,align:'center',fill:{color:bg}}});
-        row.push({text:v||'-',options:{fontSize:6,align:'center',color:v>0?'dc2626':'94a3b8',bold:v>0,fill:{color:bg}}});
+        row.push({text:t||'-',options:{fontSize:8,align:'center',fill:{color:bg}}});
+        row.push({text:v||'-',options:{fontSize:8,align:'center',color:v>0?'dc2626':'94a3b8',bold:v>0,fill:{color:bg}}});
       });
 
       // 당월
@@ -698,45 +773,49 @@ async function generatePPT() {
         const t = recs.reduce((s,r)=>s+r.count,0);
         const v = recs.filter(r=>r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
         bMonTot+=t; bMonVio+=v;
-        row.push({text:t||'-',options:{fontSize:6,align:'center',fill:{color:bg}}});
-        row.push({text:v||'-',options:{fontSize:6,align:'center',color:v>0?'dc2626':'94a3b8',bold:v>0,fill:{color:bg}}});
+        row.push({text:t||'-',options:{fontSize:8,align:'center',fill:{color:bg}}});
+        row.push({text:v||'-',options:{fontSize:8,align:'center',color:v>0?'dc2626':'94a3b8',bold:v>0,fill:{color:bg}}});
       });
 
       // 합계
-      row.push({text:bYearTot||'-',options:{fontSize:6,align:'center',bold:true,fill:{color:'eef2ff'}}});
-      row.push({text:bYearVio||'-',options:{fontSize:6,align:'center',bold:bYearVio>0,color:bYearVio>0?'dc2626':'94a3b8',fill:{color:'eef2ff'}}});
+      row.push({text:bYearTot||'-',options:{fontSize:8,align:'center',bold:true,fill:{color:'eef2ff'}}});
+      row.push({text:bYearVio||'-',options:{fontSize:8,align:'center',bold:bYearVio>0,color:bYearVio>0?'dc2626':'94a3b8',fill:{color:'eef2ff'}}});
       brandTableData.push(row);
     });
 
     // 합계행
-    const sumRow = [{text:'합계',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:WHITE}}];
+    const sumRow = [{text:'합계',options:{bold:true,fontSize:9,align:'center',fill:{color:NAVY},color:WHITE}}];
     let gYearTot=0,gYearVio=0,gMonTot=0,gMonVio=0;
     // 연누적 합계
     TYPES.forEach(type=>{
       const t=d.filter(r=>r.type===type).reduce((s,r)=>s+r.count,0);
       const v=d.filter(r=>r.type===type&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
       gYearTot+=t; gYearVio+=v;
-      sumRow.push({text:t||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:NAVY},color:WHITE}});
-      sumRow.push({text:v||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:NAVY},color:v>0?'fca5a5':WHITE}});
+      sumRow.push({text:t||'-',options:{bold:true,fontSize:8,align:'center',fill:{color:NAVY},color:WHITE}});
+      sumRow.push({text:v||'-',options:{bold:true,fontSize:8,align:'center',fill:{color:NAVY},color:v>0?'fca5a5':WHITE}});
     });
     // 당월 합계
     TYPES.forEach(type=>{
       const t=d.filter(r=>r.type===type&&r.date&&r.date.startsWith(ym)).reduce((s,r)=>s+r.count,0);
       const v=d.filter(r=>r.type===type&&r.date&&r.date.startsWith(ym)&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
       gMonTot+=t; gMonVio+=v;
-      sumRow.push({text:t||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:'2563eb'},color:WHITE}});
-      sumRow.push({text:v||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:'2563eb'},color:v>0?'fca5a5':WHITE}});
+      sumRow.push({text:t||'-',options:{bold:true,fontSize:8,align:'center',fill:{color:'2563eb'},color:WHITE}});
+      sumRow.push({text:v||'-',options:{bold:true,fontSize:8,align:'center',fill:{color:'2563eb'},color:v>0?'fca5a5':WHITE}});
     });
-    sumRow.push({text:gYearTot||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:'334155'},color:WHITE}});
-    sumRow.push({text:gYearVio||'-',options:{bold:true,fontSize:6,align:'center',fill:{color:'334155'},color:gYearVio>0?'fca5a5':WHITE}});
+    sumRow.push({text:gYearTot||'-',options:{bold:true,fontSize:8,align:'center',fill:{color:'334155'},color:WHITE}});
+    sumRow.push({text:gYearVio||'-',options:{bold:true,fontSize:8,align:'center',fill:{color:'334155'},color:gYearVio>0?'fca5a5':WHITE}});
     brandTableData.push(sumRow);
 
-    // 열 너비: 브랜드(0.8) + 연누적(영역*2*0.38) + 당월(영역*2*0.38) + 합계(0.38*2)
-    const typeColW = TYPES.flatMap(()=>[0.38,0.38]);
+    // 열 너비: 브랜드(0.7) + 연누적(영역*2*0.34) + 당월(영역*2*0.34) + 합계(0.42*2) = 9.70"
+    // 0.34" → "전체"/"위반" 가로 1줄, 0.42" → 3자리 숫자(284, 356) 가로 1줄
+    const typeColW = TYPES.flatMap(()=>[0.34,0.34]);
+    // 슬라이드 5.625" - 헤더 0.7" - 상하 여백 0.15" × 2 = 4.625" 사용 가능
+    // 17행(헤더3 + 브랜드13 + 합계1) × rowH 0.27 = 4.59" → 안전하게 들어맞음
     s3.addTable(brandTableData,{
-      x:0.15,y:0.8,w:9.7,
+      x:0.15,y:0.85,w:9.7,
       border:{pt:0.3,color:'e2e8f0'},
-      colW:[0.8,...typeColW,...typeColW,0.38,0.38]
+      colW:[0.7,...typeColW,...typeColW,0.42,0.42],
+      rowH:0.27
     });
 
     // ── 슬라이드 4~: 영역별 상세 현황 ──
@@ -747,21 +826,24 @@ async function generatePPT() {
     const COMMON_BRANDS = BRANDS.filter(b=>!ILLEGAL_ONLY_BRANDS.includes(b));
 
     // 슬라이드 크기: 10" x 5.625"
-    // 헤더 높이: 0.7"
-    // 표 영역: y=0.75 ~ 2.85 (약 2.1")
-    // 하단 영역: y=2.9 ~ 5.525 (약 2.625")
-    const TABLE_Y = 0.75;
-    const TABLE_H = 2.1;
-    const BTM_Y = 2.9;
-    const BTM_H = 2.55;
+    // 헤더 0.7" + 상단 여백 0.15" → 표 시작 0.85"
+    // 표 영역: y=0.85 ~ 4.10 (약 3.25")
+    // 하단 영역: y=4.20 ~ 5.55 (약 1.35")
+    const TABLE_Y = 0.85;
+    const TABLE_H = 3.25;
+    const BTM_Y = 4.20;
+    const BTM_H = 1.35;
     const SLIDE_W = 9.7;
     const TABLE_X = 0.15;
+    // 불법파견 보고서 대상 브랜드 (프랑제리/카페/프랜차이즈 제외)
+    const ILLEGAL_REPORT_EXCLUDE = ['프랑제리','카페','프랜차이즈'];
+    const ILLEGAL_REPORT_BRANDS = BRANDS.filter(b=>!ILLEGAL_REPORT_EXCLUDE.includes(b));
 
     TYPES.forEach((type, typeIdx)=>{
       const typeRecs = d.filter(r=>r.type===type);
       if(!typeRecs.length) return;
 
-      const useBrands = type==='불법파견' ? BRANDS : COMMON_BRANDS;
+      const useBrands = type==='불법파견' ? ILLEGAL_REPORT_BRANDS : COMMON_BRANDS;
       const sN = pres.addSlide();
       addHeader(sN, type+' 모니터링 상세 현황', yr+'년 '+String(now.getMonth()+1).padStart(2,'0')+'월 기준');
       const typeColor = TYPE_COLORS[typeIdx];
@@ -772,163 +854,103 @@ async function generatePPT() {
       const typeAct = typeRecs.filter(r=>r.status==='위반(처리중)').reduce((s,r)=>s+r.count,0);
       const typeRate = typeVio?Math.round(typeDone/typeVio*100):0;
 
-      // ── 표 (상단 절반) ──
-      if(type==='불법파견'){
-        // 불법파견: 브랜드 13개 × 2열 + 구분2열 + 소계2열
-        // 총열: 2 + 13*2 + 2 = 30열
-        // 전체너비 9.7" → 구분(0.4+1.0) + 브랜드13*(0.31+0.31) + 소계(0.31+0.31)
-        const bW = 0.31;
-        const bCW = useBrands.flatMap(()=>[bW,bW]);
-        const colWs = [0.4,1.0,...bCW,bW,bW];
+      // ── 표 (상단 메인 영역) — 모든 영역 동일 양식 ──
+      // 10브랜드(불법파견)와 9브랜드(일반)에 맞춰 셀 폭 분기
+      const bW = type==='불법파견' ? 0.38 : 0.42;
+      const bCW2 = useBrands.flatMap(()=>[bW,bW]);
+      const itemColW = SLIDE_W - useBrands.length*bW*2 - bW*2;
+      const colWs2 = [itemColW,...bCW2,bW,bW];
+      const dataFs = type==='불법파견' ? 8 : 9;
 
-        const tableData = [];
-        // 헤더행1
-        const h=[{text:'구분',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:6,align:'center',valign:'middle',rowspan:2,colspan:2}}];
-        useBrands.forEach(b=>h.push({text:b,options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:5,align:'center',colspan:2}}));
-        h.push({text:'소계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:6,align:'center',colspan:2}});
-        tableData.push(h);
-        // 헤더행2 (구분 rowspan이므로 셀 없음)
-        const h2=[];
-        useBrands.forEach(()=>{
-          h2.push({text:'전체',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:5,align:'center'}});
-          h2.push({text:'위반',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:5,align:'center'}});
-        });
-        h2.push({text:'전체',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:5,align:'center'}});
-        h2.push({text:'위반',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:5,align:'center'}});
-        tableData.push(h2);
+      const subs2 = SUB[type];
+      const tableData = [];
 
-        Object.entries(ILLEGAL_DISPATCH_CATS).forEach(([cat,items])=>{
-          const catRow=[{text:cat,options:{bold:true,fill:{color:'dbeafe'},color:'1e3a8a',fontSize:5,colspan:2}}];
-          useBrands.forEach(()=>{catRow.push({text:'',options:{fill:{color:'dbeafe'}}});catRow.push({text:'',options:{fill:{color:'dbeafe'}}});});
-          catRow.push({text:'',options:{fill:{color:'dbeafe'}}});catRow.push({text:'',options:{fill:{color:'dbeafe'}}});
-          tableData.push(catRow);
-          items.forEach((item,idx)=>{
-            const bg=idx%2===0?'f8fafc':WHITE;
-            const row=[{text:'',options:{fill:{color:bg}}},{text:item,options:{fontSize:5,fill:{color:bg},valign:'middle'}}];
-            let rTot=0,rVio=0;
-            useBrands.forEach(brand=>{
-              const recs=typeRecs.filter(r=>r.brand===brand&&r.subtype===item);
-              const t=recs.reduce((s,r)=>s+r.count,0);
-              const v=recs.filter(r=>r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
-              rTot+=t; rVio+=v;
-              row.push({text:t||'-',options:{fontSize:5,align:'center',fill:{color:bg}}});
-              row.push({text:v||'-',options:{fontSize:5,align:'center',color:v>0?'dc2626':'94a3b8',bold:v>0,fill:{color:bg}}});
-            });
-            row.push({text:rTot||'-',options:{fontSize:5,align:'center',bold:true,fill:{color:'eef2ff'}}});
-            row.push({text:rVio||'-',options:{fontSize:5,align:'center',bold:rVio>0,color:rVio>0?'dc2626':'94a3b8',fill:{color:'eef2ff'}}});
-            tableData.push(row);
-          });
-        });
+      // 헤더행1: "세부 항목"(rowspan:2) + 브랜드(colspan:2) + 소계(colspan:2)
+      const h=[{text:'세부 항목',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:10,align:'center',valign:'middle',rowspan:2}}];
+      useBrands.forEach(b=>h.push({text:b,options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:9,align:'center',colspan:2}}));
+      h.push({text:'소계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:10,align:'center',colspan:2}});
+      tableData.push(h);
 
-        const sumR=[{text:'합계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:6,colspan:2,align:'center'}}];
-        let gT=0,gV=0;
+      // 헤더행2: 전체/위반
+      const h2=[];
+      useBrands.forEach(()=>{
+        h2.push({text:'전체',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:8,align:'center'}});
+        h2.push({text:'위반',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:8,align:'center'}});
+      });
+      h2.push({text:'전체',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:8,align:'center'}});
+      h2.push({text:'위반',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:8,align:'center'}});
+      tableData.push(h2);
+
+      (subs2&&subs2.length?subs2:['(세부 항목 없음)']).forEach((item,idx)=>{
+        const bg=idx%2===0?'f8fafc':WHITE;
+        const row=[{text:item,options:{fontSize:dataFs,fill:{color:bg},valign:'middle'}}];
+        let rTot=0,rVio=0;
         useBrands.forEach(brand=>{
-          const t=typeRecs.filter(r=>r.brand===brand).reduce((s,r)=>s+r.count,0);
-          const v=typeRecs.filter(r=>r.brand===brand&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
-          gT+=t; gV+=v;
-          sumR.push({text:t||'-',options:{bold:true,fontSize:5,align:'center',fill:{color:NAVY},color:WHITE}});
-          sumR.push({text:v||'-',options:{bold:true,fontSize:5,align:'center',fill:{color:NAVY},color:v>0?'fca5a5':WHITE}});
+          const recs=typeRecs.filter(r=>r.brand===brand&&(subs2&&subs2.length?r.subtype===item:true));
+          const t=recs.reduce((s,r)=>s+r.count,0);
+          const v=recs.filter(r=>r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
+          rTot+=t; rVio+=v;
+          row.push({text:t||'-',options:{fontSize:dataFs,align:'center',fill:{color:bg}}});
+          row.push({text:v||'-',options:{fontSize:dataFs,align:'center',color:v>0?'dc2626':'94a3b8',bold:v>0,fill:{color:bg}}});
         });
-        sumR.push({text:gT||'-',options:{bold:true,fontSize:5,align:'center',fill:{color:NAVY},color:WHITE}});
-        sumR.push({text:gV||'-',options:{bold:true,fontSize:5,align:'center',fill:{color:NAVY},color:gV>0?'fca5a5':WHITE}});
-        tableData.push(sumR);
+        row.push({text:rTot||'-',options:{fontSize:dataFs,align:'center',bold:true,fill:{color:'eef2ff'}}});
+        row.push({text:rVio||'-',options:{fontSize:dataFs,align:'center',bold:rVio>0,color:rVio>0?'dc2626':'94a3b8',fill:{color:'eef2ff'}}});
+        tableData.push(row);
+      });
 
-        sN.addTable(tableData,{x:TABLE_X,y:TABLE_Y,w:SLIDE_W,border:{pt:0.3,color:'e2e8f0'},colW:colWs,rowH:0.18});
+      const sumR=[{text:'합계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:10,align:'center'}}];
+      let gT=0,gV=0;
+      useBrands.forEach(brand=>{
+        const t=typeRecs.filter(r=>r.brand===brand).reduce((s,r)=>s+r.count,0);
+        const v=typeRecs.filter(r=>r.brand===brand&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
+        gT+=t; gV+=v;
+        sumR.push({text:t||'-',options:{bold:true,fontSize:dataFs,align:'center',fill:{color:NAVY},color:WHITE}});
+        sumR.push({text:v||'-',options:{bold:true,fontSize:dataFs,align:'center',fill:{color:NAVY},color:v>0?'fca5a5':WHITE}});
+      });
+      sumR.push({text:gT||'-',options:{bold:true,fontSize:dataFs,align:'center',fill:{color:NAVY},color:WHITE}});
+      sumR.push({text:gV||'-',options:{bold:true,fontSize:dataFs,align:'center',fill:{color:NAVY},color:gV>0?'fca5a5':WHITE}});
+      tableData.push(sumR);
 
-      } else {
-        // 일반 영역: 세부항목 × COMMON_BRANDS (9개)
-        // 총열: 1 + 9*2 + 2 = 21열
-        // 전체너비 9.7" → 세부항목(1.6) + 브랜드9*(0.38+0.38) + 소계(0.38+0.38)
-        const bW = 0.42;
-        const bCW2 = useBrands.flatMap(()=>[bW,bW]);
-        const itemColW = SLIDE_W - useBrands.length*bW*2 - bW*2;
-        const colWs2 = [itemColW,...bCW2,bW,bW];
+      // 불법파견: 16행(헤더2 + 세부13 + 합계1) → rowH 0.18로 압축, 그 외는 0.28
+      const rowHeight = type==='불법파견' ? 0.18 : 0.28;
+      sN.addTable(tableData,{x:TABLE_X,y:TABLE_Y,w:SLIDE_W,border:{pt:0.3,color:'e2e8f0'},colW:colWs2,rowH:rowHeight});
 
-        const subs2=SUB[type];
-        const tableData=[];
-
-        // 헤더행1: "세부 항목"이 1행1열+2행1열 병합(rowspan:2), 브랜드들 colspan:2, 소계 colspan:2
-        const h=[{text:'세부 항목',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,align:'center',valign:'middle',rowspan:2}}];
-        useBrands.forEach(b=>h.push({text:b,options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:7,align:'center',colspan:2}}));
-        h.push({text:'소계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,align:'center',colspan:2}});
-        tableData.push(h);
-
-        // 헤더행2: 세부항목 rowspan이므로 셀 없음
-        const h2=[];
-        useBrands.forEach(()=>{
-          h2.push({text:'전체',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
-          h2.push({text:'위반',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
-        });
-        h2.push({text:'전체',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
-        h2.push({text:'위반',options:{bold:true,fill:{color:'1a3270'},color:WHITE,fontSize:6,align:'center'}});
-        tableData.push(h2);
-
-        (subs2&&subs2.length?subs2:['(세부 항목 없음)']).forEach((item,idx)=>{
-          const bg=idx%2===0?'f8fafc':WHITE;
-          const row=[{text:item,options:{fontSize:7,fill:{color:bg},valign:'middle'}}];
-          let rTot=0,rVio=0;
-          useBrands.forEach(brand=>{
-            const recs=typeRecs.filter(r=>r.brand===brand&&(subs2&&subs2.length?r.subtype===item:true));
-            const t=recs.reduce((s,r)=>s+r.count,0);
-            const v=recs.filter(r=>r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
-            rTot+=t; rVio+=v;
-            row.push({text:t||'-',options:{fontSize:7,align:'center',fill:{color:bg}}});
-            row.push({text:v||'-',options:{fontSize:7,align:'center',color:v>0?'dc2626':'94a3b8',bold:v>0,fill:{color:bg}}});
-          });
-          row.push({text:rTot||'-',options:{fontSize:7,align:'center',bold:true,fill:{color:'eef2ff'}}});
-          row.push({text:rVio||'-',options:{fontSize:7,align:'center',bold:rVio>0,color:rVio>0?'dc2626':'94a3b8',fill:{color:'eef2ff'}}});
-          tableData.push(row);
-        });
-
-        const sumR=[{text:'합계',options:{bold:true,fill:{color:NAVY},color:WHITE,fontSize:8,align:'center'}}];
-        let gT=0,gV=0;
-        useBrands.forEach(brand=>{
-          const t=typeRecs.filter(r=>r.brand===brand).reduce((s,r)=>s+r.count,0);
-          const v=typeRecs.filter(r=>r.brand===brand&&r.status!=='모니터링').reduce((s,r)=>s+r.count,0);
-          gT+=t; gV+=v;
-          sumR.push({text:t||'-',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:WHITE}});
-          sumR.push({text:v||'-',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:v>0?'fca5a5':WHITE}});
-        });
-        sumR.push({text:gT||'-',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:WHITE}});
-        sumR.push({text:gV||'-',options:{bold:true,fontSize:7,align:'center',fill:{color:NAVY},color:gV>0?'fca5a5':WHITE}});
-        tableData.push(sumR);
-
-        sN.addTable(tableData,{x:TABLE_X,y:TABLE_Y,w:SLIDE_W,border:{pt:0.3,color:'e2e8f0'},colW:colWs2,rowH:0.22});
-      }
-
-      // ── 하단 절반: 도넛(좌) + KPI요약(우) ──
+      // ── 하단 영역: 도넛(좌, 축소) + KPI요약(우, 2×2 그리드) ──
       const subs = SUB[type];
       if(subs&&subs.length){
         const subCnts = subs.map(s=>typeRecs.filter(r=>r.subtype===s&&r.status!=='모니터링').reduce((a,r)=>a+r.count,0));
-        // 0인 항목 제거 (0% 미표시)
         const filteredLabels = subs.filter((_,i)=>subCnts[i]>0);
         const filteredCnts = subCnts.filter(v=>v>0);
         const chartColors14 = subColors.slice(0, filteredLabels.length);
         sN.addChart(pres.charts.DOUGHNUT,[{name:'건수',labels:filteredLabels,values:filteredCnts}],{
-          x:TABLE_X,y:BTM_Y,w:4.7,h:BTM_H,
+          x:TABLE_X,y:BTM_Y,w:3.5,h:BTM_H,
           chartColors:chartColors14,
-          showLegend:true,legendPos:'r',legendFontSize:7,
+          showLegend:true,legendPos:'r',legendFontSize:9,
           showPercent:true,
           dataLabelColor:WHITE,
-          dataLabelFontSize:8,
+          dataLabelFontSize:6,
           chartArea:{fill:{color:WHITE}},
           holeSize:55
         });
       }
 
-      // KPI 요약 박스 (하단 우측)
-      const kpiX = 5.05;
-      const kpiW = 4.8;
+      // KPI 요약 박스 (하단 우측, 2×2)
+      const kpiX = 3.85;
+      const kpiW = 6.0;
       sN.addShape(pres.shapes.RECTANGLE,{x:kpiX,y:BTM_Y,w:kpiW,h:BTM_H,fill:{color:WHITE},shadow:{type:'outer',blur:5,offset:2,angle:135,color:'000000',opacity:0.07}});
       sN.addShape(pres.shapes.RECTANGLE,{x:kpiX,y:BTM_Y,w:0.06,h:BTM_H,fill:{color:typeColor}});
-      sN.addText(type+' 모니터링 결과 요약',{x:kpiX+0.15,y:BTM_Y+0.1,w:kpiW-0.25,h:0.35,fontSize:10,bold:true,color:'334155',fontFace:'Calibri'});
+      sN.addText(type+' 모니터링 결과 요약',{x:kpiX+0.15,y:BTM_Y+0.05,w:kpiW-0.25,h:0.3,fontSize:12,bold:true,color:'334155',fontFace:'Calibri'});
+      const cellW = (kpiW-0.3)/2;
       [['전체 모니터링',typeTot+'건'],
        ['위반 건수',typeVio+'건 ('+(typeTot?Math.round(typeVio/typeTot*100):0)+'%)'],
        ['처리 완료율',typeRate+'%'],
        ['조치중',typeAct+'건']
       ].forEach(([label,val],i)=>{
-        sN.addText(label+':',{x:kpiX+0.15,y:BTM_Y+0.6+i*0.45,w:2.5,h:0.35,fontSize:10,color:'64748b',fontFace:'Calibri'});
-        sN.addText(val,{x:kpiX+2.6,y:BTM_Y+0.6+i*0.45,w:kpiW-2.7,h:0.35,fontSize:10,bold:true,color:'0f172a',fontFace:'Calibri',align:'right'});
+        const col=i%2, rowI=Math.floor(i/2);
+        const cx=kpiX+0.15+col*cellW;
+        const cy=BTM_Y+0.4+rowI*0.45;
+        sN.addText(label+':',{x:cx,y:cy,w:cellW*0.55,h:0.4,fontSize:10,color:'64748b',fontFace:'Calibri',valign:'middle'});
+        sN.addText(val,{x:cx+cellW*0.55,y:cy,w:cellW*0.45,h:0.4,fontSize:12,bold:true,color:'0f172a',fontFace:'Calibri',align:'right',valign:'middle'});
       });
     });
 
@@ -959,20 +981,33 @@ async function runAI(){
   const monthly=Array(12).fill(0).map((_,i)=>{const ym=now.getFullYear()+'-'+String(i+1).padStart(2,'0');return{m:i+1,t:records.filter(r=>r.date.startsWith(ym)).reduce((s,r)=>s+r.count,0),v:records.filter(r=>r.date.startsWith(ym)&&(r.status==='위반(처리중)'||r.status==='완료')).reduce((s,r)=>s+r.count,0)};}).filter(m=>m.t>0);
   const prompt='당신은 기업 법무팀의 공정거래 리스크 분석 전문가입니다. 외식BG RO실의 리스크 현황을 종합 분석해주세요.\n\n## 전체 현황\n- 총 모니터링: '+tot+'건 | 위반(처리중): '+vio+'건 | 완료: '+done+'건\n- 위반율: '+(tot?(((vio+done)/tot)*100).toFixed(1):0)+'% | 처리완료율: '+((vio+done)?((done/(vio+done))*100).toFixed(1):0)+'%\n\n## 영역별\n'+byT.map(t=>'- '+t.type+': '+t.cnt+'건').join('\n')+'\n\n## 브랜드별\n'+byB.sort((a,b)=>b.cnt-a.cnt).slice(0,8).map(b=>'- '+b.brand+': '+b.cnt+'건').join('\n')+'\n\n## 월별 추이\n'+monthly.map(m=>'- '+m.m+'월: 모니터링 '+m.t+'건, 위반 '+m.v+'건').join('\n')+'\n\n다음을 포함해 한국어로 분석해주세요:\n1. **위험도 높은 브랜드/영역 식별**\n2. **월별 트렌드 분석 및 예측**\n3. **조치 완료율 및 처리 현황**\n4. **개선 권고사항 및 액션 플랜**\n5. **종합 리스크 등급 (상/중/하)**';
   try {
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':'','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:prompt}]})});
-    if(!res.ok)throw new Error('API 오류');
-    const data=await res.json(),text=data.content[0].text;
-    const html=text.replace(/^## (.*)/gm,'<h3 style="font-size:13px;font-weight:600;color:#1e3a8a;margin:1.2rem 0 0.5rem;border-bottom:1px solid #eff6ff;padding-bottom:5px">$1</h3>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^(\d+\. .*)/gm,'<p style="margin:5px 0;padding-left:8px;font-size:12px;color:#334155">$1</p>').replace(/^- (.*)/gm,'<p style="margin:3px 0;padding-left:12px;font-size:12px;color:#475569">• $1</p>').replace(/\n/g,'<br>');
-    document.getElementById('aiResult').innerHTML='<div style="border-top:1px solid #f1f5f9;padding-top:1rem;line-height:1.8">'+html+'</div><div style="margin-top:1.2rem;padding-top:1rem;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;"><p style="font-size:10px;color:#94a3b8">분석 기준: '+now.toLocaleDateString('ko-KR')+'</p><button onclick="copyAI()" style="font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer;">복사</button></div>';
+    const res=await fetch(`${SB_URL}/functions/v1/ai-analyze`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||'API 오류 ('+res.status+')');
+    const text=data.content[0].text;
+    const theme=localStorage.getItem('aiStyle')||'notion';
+    const html=marked.parse(text);
+    document.getElementById('aiResult').innerHTML='<div style="border-top:1px solid #f1f5f9;padding-top:1rem;"><div class="ai-md theme-'+theme+'">'+html+'</div></div><div style="margin-top:1.2rem;padding-top:1rem;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;"><p style="font-size:10px;color:#94a3b8">분석 기준: '+now.toLocaleDateString('ko-KR')+'</p><button onclick="copyAI()" style="font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer;">복사</button></div>';
     document.getElementById('aiResult').style.display='';
   } catch(e) {
-    document.getElementById('aiResult').innerHTML='<div style="color:#dc2626;padding:1rem;background:#fef2f2;border-radius:8px;margin-top:1rem;">분석 오류: API 키를 확인해주세요.<br><small>'+e.message+'</small></div>';
+    document.getElementById('aiResult').innerHTML='<div style="color:#dc2626;padding:1rem;background:#fef2f2;border-radius:8px;margin-top:1rem;">분석 오류 (Edge Function 또는 API 키 확인 필요)<br><small>'+e.message+'</small></div>';
     document.getElementById('aiResult').style.display='';
   }
   document.getElementById('aiLoad').style.display='none';
   document.getElementById('aiBtn').disabled=false;
 }
 function copyAI(){navigator.clipboard.writeText(document.getElementById('aiResult').innerText).then(()=>toast('복사되었습니다!'));}
+function changeAIStyle(){
+  const style=document.getElementById('aiStyle').value;
+  localStorage.setItem('aiStyle',style);
+  const md=document.querySelector('#aiResult .ai-md');
+  if(md){md.className='ai-md theme-'+style;}
+}
+function initAIStyle(){
+  const saved=localStorage.getItem('aiStyle')||'notion';
+  const sel=document.getElementById('aiStyle');
+  if(sel)sel.value=saved;
+}
 
 init();
 </script>
