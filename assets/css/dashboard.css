@@ -1,0 +1,45 @@
+/* ── Filter bar ───────────────────────────────────── */
+.filter-bar { display: flex; gap: 4px; margin-bottom: 1.4rem; align-items: center; background: #fff; padding: 5px; border-radius: 10px; border: 1px solid #eaecf0; flex-wrap: wrap; }
+.fb { font-size: 14px; padding: 5px 14px; border-radius: 6px; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+.fb.on, .fb:hover { background: #1e3a8a; color: #fff; }
+.rf-btn { margin-left: auto; font-size: 11px; padding: 5px 12px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; }
+.rf-btn:hover { border-color: #1e3a8a; color: #1e3a8a; }
+
+/* ── KPI grid ─────────────────────────────────────── */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.4rem; }
+.kpi { background: #fff; border-radius: 12px; padding: 1.1rem 1.2rem; border: 1px solid #eaecf0; border-left: 3px solid #1e3a8a; }
+.kpi.dim { border-left-color: #cbd5e1; }
+.kpi-lbl { font-size: 10px; color: #94a3b8; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 4px; }
+.kpi-str { font-size: 11px; font-weight: 600; color: #334155; margin-bottom: 6px; }
+.kpi-val { font-size: 20px; font-weight: 700; color: #0f172a; letter-spacing: -0.5px; line-height: 1; margin-bottom: 4px; }
+.kpi-rate { font-size: 11px; color: #c0603a; font-weight: 500; margin-bottom: 2px; }
+.kpi-sub { font-size: 10px; color: #94a3b8; }
+
+/* ── Chart layout ─────────────────────────────────── */
+.charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px; }
+.btm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.card { background: #fff; border-radius: 12px; border: 1px solid #eaecf0; padding: 1.1rem 1.2rem; }
+.card-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.card-tit { font-size: 12px; font-weight: 600; color: #0f172a; }
+.card-tag { font-size: 10px; background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 8px; font-weight: 500; }
+
+/* 차트 캔버스 래퍼 */
+.chart-box { position: relative; width: 100%; }
+.chart-box-line { height: 230px; }
+.chart-box-right { height: 200px; }
+.chart-box-bar { height: 300px; }
+
+/* ── Legend ───────────────────────────────────────── */
+.leg { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 11px; color: #64748b; }
+.leg-line { margin-top: 10px; margin-bottom: 0; }
+.ld { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; vertical-align: middle; }
+
+/* ── More button / pagination ─────────────────────── */
+.more-btn { font-size: 11px; padding: 6px 20px; border-radius: 20px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; margin-top: 10px; display: block; margin-left: auto; margin-right: auto; }
+.more-btn:hover { border-color: #1e3a8a; color: #1e3a8a; }
+.pager { display: flex; justify-content: center; gap: 4px; margin-top: 12px; flex-wrap: wrap; }
+.pg-btn { font-size: 11px; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #475569; cursor: pointer; transition: all 0.15s; }
+.pg-btn:hover:not(:disabled) { border-color: #1e3a8a; color: #1e3a8a; }
+.pg-btn.on { background: #1e3a8a; color: #fff; border-color: #1e3a8a; font-weight: 600; }
+.pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pg-dot { padding: 0 4px; color: #94a3b8; font-size: 11px; align-self: center; }

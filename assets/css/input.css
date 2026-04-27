@@ -1,0 +1,38 @@
+/* ── Type tabs (영역 선택) ─────────────────────────── */
+.type-tabs { display: flex; gap: 4px; margin-bottom: 1.4rem; background: #fff; padding: 5px; border-radius: 10px; border: 1px solid #eaecf0; flex-wrap: wrap; }
+.tt { font-size: 11px; padding: 6px 16px; border-radius: 6px; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+.tt:hover { background: #f1f5f9; }
+.tt.on { background: #1e3a8a; color: #fff; }
+
+/* ── Form grid ────────────────────────────────────── */
+.fgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.fgroup { display: flex; flex-direction: column; gap: 6px; }
+.fgroup.full { grid-column: 1 / -1; }
+.fgroup label { font-size: 10px; color: #94a3b8; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+.fgroup input, .fgroup select { padding: 9px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: #0f172a; background: #fff; outline: none; transition: border 0.15s; }
+.fgroup input:focus, .fgroup select:focus { border-color: #1e3a8a; }
+.fgroup select:disabled { background: #f8fafc; color: #94a3b8; }
+.fgroup input[readonly] { background: #f8fafc; color: #94a3b8; }
+
+.f-acts { display: flex; gap: 10px; margin-top: 1.1rem; align-items: center; }
+
+/* ── Lock screen (비로그인 시) ─────────────────────── */
+.lock { text-align: center; padding: 4rem 1rem; }
+.lock-icon { font-size: 48px; margin-bottom: 1rem; }
+.lock h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #0f172a; }
+.lock p { font-size: 14px; color: #64748b; margin-bottom: 1.5rem; }
+.lock-btn { margin: 0 auto; display: block; width: fit-content; padding: 10px 28px; }
+
+/* ── Status select / note input (테이블 안) ────────── */
+.st-sel { font-size: 11px; padding: 3px 6px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #334155; cursor: pointer; outline: none; }
+.st-sel:focus { border-color: #1e3a8a; }
+.note-wrap { position: relative; display: flex; align-items: center; min-width: 140px; }
+.note-inp { width: 100%; padding: 5px 34px 5px 8px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px; color: #334155; background: #fff; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+.note-inp:focus { border-color: #1e3a8a; box-shadow: 0 0 0 2px rgba(30,58,138,0.08); }
+.note-save-btn { position: absolute; right: 5px; font-size: 9px; padding: 2px 5px; border-radius: 4px; border: 1px solid #e2e8f0; background: #f8fafc; color: #94a3b8; cursor: pointer; white-space: nowrap; transition: all 0.15s; line-height: 1.4; }
+.note-save-btn:hover { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
+.note-save-btn.saved { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+
+/* 작성자 셀 / 상세 셀 */
+.cell-muted { font-size: 11px; color: #64748b; }
+.cell-sub { font-size: 11px; color: #64748b; }

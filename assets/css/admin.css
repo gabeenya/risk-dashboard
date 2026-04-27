@@ -1,0 +1,10 @@
+/* ── Info box (새 계정 정보 안내) ───────────────────── */
+.ibox { background: #eff6ff; border-radius: 10px; padding: 1rem 1.2rem; display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; border: 1px solid #dbeafe; }
+.iurl { font-size: 12px; color: #1e40af; word-break: break-all; flex: 1; }
+.cp-btn { font-size: 12px; padding: 6px 14px; background: #1e3a8a; color: #fff; border: none; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+
+/* ── Admin badge ──────────────────────────────────── */
+.adm-badge { font-size: 10px; background: #eff6ff; color: #1e40af; border-radius: 4px; padding: 2px 8px; font-weight: 600; border: 1px solid #dbeafe; }
+
+/* 신규 계정 결과 안내 텍스트 */
+.new-user-hint { font-size: 12px; color: #94a3b8; }

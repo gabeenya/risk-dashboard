@@ -1,0 +1,86 @@
+/* ── AI 분석 페이지 헤더 (제목 + 컨트롤) ───────────── */
+.ai-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.ai-hd-tit { font-size: 13px; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
+.ai-hd-sub { font-size: 12px; color: #64748b; }
+.ai-ctrls { display: flex; gap: 8px; align-items: center; }
+.ai-style-sel { padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; font-size: 12px; color: #475569; cursor: pointer; outline: none; }
+.ai-run-btn { padding: 9px 20px; background: #1e3a8a; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.ai-run-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* 로딩 / 빈 상태 */
+.ai-load { display: none; text-align: center; padding: 3rem; }
+.ai-load .spin { width: 32px; height: 32px; border-width: 3px; margin: 0 auto 1rem; }
+.ai-load p { color: #64748b; font-size: 14px; }
+.ai-empty { text-align: center; color: #94a3b8; padding: 3rem; font-size: 13px; }
+
+/* 결과 영역 외곽 */
+.ai-result-wrap { display: none; }
+.ai-result-body { border-top: 1px solid #f1f5f9; padding-top: 1rem; }
+.ai-result-foot { margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+.ai-meta { font-size: 10px; color: #94a3b8; }
+.ai-copy-btn { font-size: 11px; padding: 4px 12px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; }
+.ai-error { color: #dc2626; padding: 1rem; background: #fef2f2; border-radius: 8px; margin-top: 1rem; }
+
+/* ── AI 마크다운 공통 ─────────────────────────────── */
+.ai-md { line-height: 1.7; color: #334155; font-size: 13px; }
+.ai-md > *:first-child { margin-top: 0; }
+.ai-md > *:last-child { margin-bottom: 0; }
+
+/* ── 노션 스타일 ──────────────────────────────────── */
+.ai-md.theme-notion h1, .ai-md.theme-notion h2, .ai-md.theme-notion h3 { font-weight: 600; color: #0f172a; letter-spacing: -0.3px; }
+.ai-md.theme-notion h1 { font-size: 22px; margin: 1.8rem 0 0.6rem; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
+.ai-md.theme-notion h2 { font-size: 18px; margin: 1.6rem 0 0.5rem; }
+.ai-md.theme-notion h3 { font-size: 15px; margin: 1.2rem 0 0.4rem; color: #1e3a8a; }
+.ai-md.theme-notion p { margin: 0.5rem 0; }
+.ai-md.theme-notion ul, .ai-md.theme-notion ol { margin: 0.5rem 0 0.5rem 1.4rem; padding-left: 0.5rem; }
+.ai-md.theme-notion li { margin: 0.25rem 0; }
+.ai-md.theme-notion strong { color: #0f172a; font-weight: 600; background: linear-gradient(transparent 60%, #fef3c7 60%); padding: 0 1px; }
+.ai-md.theme-notion code { background: #f1f5f9; color: #be185d; padding: 1px 6px; border-radius: 4px; font-size: 12px; font-family: ui-monospace, 'SF Mono', Consolas, monospace; }
+.ai-md.theme-notion pre { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.8rem; overflow-x: auto; margin: 0.8rem 0; }
+.ai-md.theme-notion pre code { background: none; color: #0f172a; padding: 0; }
+.ai-md.theme-notion blockquote { border-left: 3px solid #cbd5e1; padding: 0.2rem 0.8rem; margin: 0.7rem 0; color: #64748b; background: #f8fafc; }
+.ai-md.theme-notion table { border-collapse: collapse; width: 100%; margin: 0.8rem 0; font-size: 12px; }
+.ai-md.theme-notion th, .ai-md.theme-notion td { border: 1px solid #e2e8f0; padding: 6px 10px; text-align: left; }
+.ai-md.theme-notion th { background: #f8fafc; font-weight: 600; color: #475569; }
+.ai-md.theme-notion hr { border: none; border-top: 1px solid #e2e8f0; margin: 1.2rem 0; }
+
+/* ── 신문 스타일 ──────────────────────────────────── */
+.ai-md.theme-newspaper { font-family: Georgia, 'Times New Roman', serif; line-height: 1.85; color: #1f2937; text-align: justify; }
+.ai-md.theme-newspaper h1, .ai-md.theme-newspaper h2, .ai-md.theme-newspaper h3 { font-family: Georgia, serif; font-weight: 700; color: #111827; text-align: left; }
+.ai-md.theme-newspaper h1 { font-size: 26px; margin: 1.5rem 0 0.5rem; border-bottom: 3px double #111827; padding-bottom: 6px; }
+.ai-md.theme-newspaper h2 { font-size: 20px; margin: 1.4rem 0 0.5rem; border-bottom: 1px solid #d1d5db; padding-bottom: 4px; }
+.ai-md.theme-newspaper h3 { font-size: 16px; margin: 1.1rem 0 0.4rem; font-style: italic; }
+.ai-md.theme-newspaper p { margin: 0.6rem 0; text-indent: 1.2em; }
+.ai-md.theme-newspaper p:first-of-type::first-letter { font-size: 2.6em; font-weight: 700; float: left; line-height: 0.9; padding: 4px 6px 0 0; color: #1e3a8a; }
+.ai-md.theme-newspaper ul, .ai-md.theme-newspaper ol { margin: 0.5rem 0 0.7rem 1.6rem; }
+.ai-md.theme-newspaper li { margin: 0.3rem 0; }
+.ai-md.theme-newspaper strong { font-weight: 700; color: #111827; }
+.ai-md.theme-newspaper code { background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 12px; }
+.ai-md.theme-newspaper pre { background: #f9fafb; border: 1px solid #d1d5db; padding: 0.8rem; margin: 0.8rem 0; }
+.ai-md.theme-newspaper blockquote { border-left: 4px solid #1e3a8a; padding: 0.4rem 1rem; margin: 0.8rem 0; font-style: italic; color: #4b5563; }
+.ai-md.theme-newspaper table { border-collapse: collapse; width: 100%; margin: 0.8rem 0; font-size: 12px; }
+.ai-md.theme-newspaper th, .ai-md.theme-newspaper td { border: 1px solid #9ca3af; padding: 6px 10px; }
+.ai-md.theme-newspaper th { background: #f3f4f6; font-weight: 700; }
+
+/* ── 터미널 스타일 ────────────────────────────────── */
+.ai-md.theme-terminal { font-family: 'Consolas', 'Courier New', ui-monospace, monospace; background: #0a0e1a; color: #4ade80; padding: 1.2rem; border-radius: 8px; border: 1px solid #1f2937; line-height: 1.6; font-size: 12px; }
+.ai-md.theme-terminal h1, .ai-md.theme-terminal h2, .ai-md.theme-terminal h3 { color: #fbbf24; font-weight: 700; font-family: inherit; letter-spacing: 0; }
+.ai-md.theme-terminal h1 { font-size: 16px; margin: 1.2rem 0 0.4rem; }
+.ai-md.theme-terminal h1::before { content: '## '; color: #6b7280; }
+.ai-md.theme-terminal h2 { font-size: 14px; margin: 1rem 0 0.3rem; }
+.ai-md.theme-terminal h2::before { content: '### '; color: #6b7280; }
+.ai-md.theme-terminal h3 { font-size: 13px; margin: 0.8rem 0 0.3rem; color: #60a5fa; }
+.ai-md.theme-terminal h3::before { content: '> '; color: #6b7280; }
+.ai-md.theme-terminal p { margin: 0.4rem 0; }
+.ai-md.theme-terminal strong { color: #fff; font-weight: 700; }
+.ai-md.theme-terminal ul, .ai-md.theme-terminal ol { margin: 0.4rem 0 0.4rem 1.2rem; }
+.ai-md.theme-terminal li { margin: 0.2rem 0; }
+.ai-md.theme-terminal li::marker { color: #6b7280; }
+.ai-md.theme-terminal code { background: #1f2937; color: #fbbf24; padding: 1px 5px; border-radius: 3px; }
+.ai-md.theme-terminal pre { background: #1f2937; border: 1px solid #374151; border-radius: 4px; padding: 0.7rem; margin: 0.6rem 0; }
+.ai-md.theme-terminal pre code { background: none; color: #4ade80; }
+.ai-md.theme-terminal blockquote { border-left: 2px solid #4ade80; padding-left: 0.7rem; color: #94a3b8; margin: 0.5rem 0; }
+.ai-md.theme-terminal table { border-collapse: collapse; margin: 0.6rem 0; font-size: 11px; }
+.ai-md.theme-terminal th, .ai-md.theme-terminal td { border: 1px solid #374151; padding: 4px 8px; }
+.ai-md.theme-terminal th { background: #1f2937; color: #fbbf24; }
+.ai-md.theme-terminal hr { border: none; border-top: 1px dashed #374151; margin: 0.8rem 0; }
