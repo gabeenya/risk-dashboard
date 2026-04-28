@@ -1,6 +1,6 @@
 /* ── Type tabs (영역 선택) ─────────────────────────── */
 .type-tabs { display: flex; gap: 4px; margin-bottom: 1.4rem; background: #fff; padding: 5px; border-radius: 10px; border: 1px solid #eaecf0; flex-wrap: wrap; }
-.tt { font-size: 11px; padding: 6px 16px; border-radius: 6px; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+.tt { font-size: 13px; padding: 6px 16px; border-radius: 6px; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: 500; transition: all 0.15s; }
 .tt:hover { background: #f1f5f9; }
 .tt.on { background: #1e3a8a; color: #fff; }
 
