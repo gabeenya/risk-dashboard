@@ -45,3 +45,27 @@
 /* 작성자 셀 / 상세 셀 */
 .cell-muted { font-size: 11px; color: #64748b; }
 .cell-sub { font-size: 11px; color: #64748b; }
+
+/* ── 모바일 대응 ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .type-tabs { padding: 4px; gap: 2px; }
+  .tt { font-size: 10px; padding: 5px 12px; }
+  .fgrid { gap: 10px; }
+  .fgroup label { font-size: 9px; }
+  .fgroup input, .fgroup select { padding: 8px 10px; font-size: 12px; }
+  .f-acts { flex-wrap: wrap; gap: 8px; }
+  .btn-pri { padding: 8px 18px; font-size: 12px; }
+  .btn-sec { padding: 8px 14px; font-size: 12px; }
+  .sub-sel, .brand-sel { max-width: 130px; font-size: 10px; }
+  .count-wrap { min-width: 60px; max-width: 80px; }
+  .note-inp { font-size: 10px; }
+  .note-save-btn { font-size: 8px; padding: 2px 4px; }
+}
+@media (max-width: 500px) {
+  .type-tabs { flex-wrap: wrap; }
+  .tt { font-size: 10px; padding: 4px 10px; }
+  .lock { padding: 2.5rem 1rem; }
+  .lock-icon { font-size: 36px; }
+  .lock h2 { font-size: 16px; }
+  .lock p { font-size: 12px; }
+}

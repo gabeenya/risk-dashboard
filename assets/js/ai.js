@@ -39,12 +39,17 @@ function aiBrandAll(checked) {
 }
 
 async function runAI() {
-  if (!records.length) { alert('분석할 데이터가 없습니다.'); return; }
+  console.log('[AI] runAI 진입 — records:', records?.length);
+  if (!records || !records.length) {
+    alert('분석할 데이터가 없습니다. 데이터를 먼저 입력해주세요.');
+    return;
+  }
   const selected = Array.from(document.querySelectorAll('.ai-opt-cb:checked')).map(cb => cb.value);
+  console.log('[AI] 선택된 항목:', selected);
   if (!selected.length) { alert('분석할 항목을 1개 이상 선택해 주세요.'); return; }
 
   document.getElementById('aiBtn').disabled = true;
-  document.getElementById('aiLoad').style.display = '';
+  document.getElementById('aiLoad').style.display = 'block';
   document.getElementById('aiResult').style.display = 'none';
   document.getElementById('aiEmpty').style.display = 'none';
 
@@ -107,30 +112,65 @@ async function runAI() {
     + '다음 항목들에 대해서만 한국어로 분석해주세요. 선택되지 않은 항목은 다루지 마세요:\n'
     + sectionList;
 
+  console.log('[AI] prompt 길이:', prompt.length, 'chars');
+
+  // 60초 타임아웃 설정 (Anthropic은 보통 5-30초)
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 60000);
+
   try {
+    console.log('[AI] fetch 시작:', SB_URL + '/functions/v1/ai-analyze');
     const res = await fetch(`${SB_URL}/functions/v1/ai-analyze`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY
+      },
+      body: JSON.stringify({ prompt }),
+      signal: ctrl.signal
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'API 오류 (' + res.status + ')');
+    console.log('[AI] HTTP 응답:', res.status, res.statusText);
+
+    const rawText = await res.text();
+    console.log('[AI] 응답 본문 (첫 200자):', rawText.slice(0, 200));
+
+    let data;
+    try { data = JSON.parse(rawText); }
+    catch { throw new Error(`JSON 파싱 실패 (HTTP ${res.status}): ${rawText.slice(0,100)}`); }
+
+    if (!res.ok) {
+      const msg = (typeof data.error === 'string') ? data.error : (data.error?.message || JSON.stringify(data.error));
+      throw new Error(`서버 오류 (HTTP ${res.status}): ${msg}`);
+    }
+    if (data.type === 'error') {
+      throw new Error(`Anthropic API 오류: ${data.error?.message || JSON.stringify(data.error)}`);
+    }
+    if (!data.content || !Array.isArray(data.content) || !data.content[0]?.text) {
+      throw new Error('응답에 분석 텍스트 없음. 응답 키: ' + Object.keys(data).join(','));
+    }
+
     const text  = data.content[0].text;
+    console.log('[AI] 분석 텍스트 길이:', text.length, 'chars');
     const theme = localStorage.getItem('aiStyle') || 'notion';
-    const html  = marked.parse(text);
+    const html  = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(text) : text.replace(/\n/g, '<br>');
     document.getElementById('aiResult').innerHTML =
       `<div class="ai-result-body"><div class="ai-md theme-${theme}">${html}</div></div>` +
       `<div class="ai-result-foot"><p class="ai-meta">분석 기준: ${now.toLocaleDateString('ko-KR')}</p>` +
       `<button class="ai-copy-btn" onclick="copyAI()">복사</button></div>`;
-    document.getElementById('aiResult').style.display = '';
+    document.getElementById('aiResult').style.display = 'block';
+    console.log('[AI] 완료');
   } catch(e) {
+    console.error('[AI 분석] 오류 발생:', e);
+    const msg = e.name === 'AbortError' ? '60초 내에 응답 없음 (네트워크 또는 서버 지연)' : ((e && e.message) || String(e));
     document.getElementById('aiResult').innerHTML =
-      `<div class="ai-error">분석 오류 (Edge Function 또는 API 키 확인 필요)<br><small>${e.message}</small></div>`;
-    document.getElementById('aiResult').style.display = '';
+      `<div class="ai-error"><strong>분석 오류</strong><br><small>${msg}</small><br><small style="color:#94a3b8">F12 → Console 탭에서 [AI] 로그 확인</small></div>`;
+    document.getElementById('aiResult').style.display = 'block';
+  } finally {
+    clearTimeout(timer);
+    document.getElementById('aiLoad').style.display = 'none';
+    document.getElementById('aiBtn').disabled = false;
   }
-
-  document.getElementById('aiLoad').style.display = 'none';
-  document.getElementById('aiBtn').disabled = false;
 }
 
 function copyAI() {

@@ -125,33 +125,96 @@ tr:hover td { background: #f8fafc; }
 .a-badge { font-size: 11px; background: #eff6ff; color: #1e40af; border-radius: 20px; padding: 2px 12px; font-weight: 500; border: 1px solid #dbeafe; }
 
 /* ── Responsive ───────────────────────────────────── */
+
+/* 와이드 태블릿 ≤900px */
 @media (max-width: 900px) {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .charts-row, .btm-row { grid-template-columns: 1fr; }
   .fgrid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* 태블릿/큰 폰 (≤768px): 헤더 두 줄로 접기 */
+/* 태블릿/큰 폰 ≤768px — 헤더 접기 + 콘텐츠 컴팩트 */
 @media (max-width: 768px) {
+  /* 헤더 */
   header { padding: 8px 1rem; height: auto; flex-wrap: wrap; gap: 8px; }
+  .logo { gap: 8px; }
+  .logo-e { width: 32px; height: 32px; font-size: 16px; border-radius: 7px; }
   .logo-sub { display: none; }
-  .logo-main { font-size: 12px; }
+  .logo-main { font-size: 13px; }
   .yr-badge { display: none; }
   .sy-badge { font-size: 10px; padding: 2px 8px; }
   .hd-right { flex-wrap: wrap; gap: 6px; flex: 1 1 auto; justify-content: flex-end; }
-  .nav-group { order: 99; flex: 1 1 100%; justify-content: center; }
-  .tb { padding: 5px 10px; font-size: 11px; }
+  .nav-group { order: 99; flex: 1 1 100%; justify-content: center; padding: 2px; gap: 1px; }
+  .tb { padding: 5px 10px; font-size: 12px; }
   .ppt-btn { padding: 5px 10px; font-size: 11px; }
   .ppt-btn span:not(.ppt-spin) { display: inline; }
+  .uchip { font-size: 11px; padding: 3px 10px; gap: 5px; }
+  .lo-btn { font-size: 11px; }
+
+  /* 메인 영역 */
+  main { padding: 1rem; }
+  .pg-title { font-size: 17px; }
+  .pg-sub { font-size: 12px; margin-bottom: 1rem; }
+  .sec-label { font-size: 11px; margin-bottom: 12px; }
+
+  /* KPI */
+  .kpi-grid { gap: 8px; margin-bottom: 1rem; }
+  .kpi { padding: 0.75rem 0.85rem; border-radius: 10px; }
+  .kpi-lbl { font-size: 10px; margin-bottom: 2px; letter-spacing: 0.5px; }
+  .kpi-str { font-size: 11px; margin-bottom: 4px; }
+  .kpi-val { font-size: 17px; }
+  .kpi-rate, .kpi-sub { font-size: 11px; }
+
+  /* 카드 */
+  .card { padding: 0.85rem 0.95rem; border-radius: 10px; }
+  .card-hd { margin-bottom: 0.75rem; flex-wrap: wrap; gap: 6px; }
+  .card-tit { font-size: 12px; }
+  .card-tag { font-size: 9px; padding: 2px 6px; }
+
+  /* 차트 높이 축소 */
+  .chart-box-line { height: 200px; }
+  .chart-box-right { height: 200px; }
+  .chart-box-bar { height: 320px; }
+
+  /* 표 */
+  table { font-size: 11px; }
+  th { font-size: 9px; padding: 5px 6px; }
+  td { padding: 6px 6px; }
+
+  /* 폼 섹션 */
+  .fsec { padding: 1rem 1.1rem; border-radius: 10px; margin-bottom: 0.85rem; }
+  .fsec-tit { font-size: 12px; margin-bottom: 0.85rem; padding-bottom: 0.6rem; }
 }
 
-/* 작은 폰 (≤500px): 더 압축 */
+/* 모바일 ≤500px — 더 압축 */
 @media (max-width: 500px) {
   .fgrid { grid-template-columns: 1fr; }
-  main { padding: 1rem; }
-  .logo-main { font-size: 11px; max-width: 150px; line-height: 1.25; white-space: normal; }
+  main { padding: 0.75rem; }
+
+  /* 헤더 */
+  .logo-main { font-size: 12px; max-width: 160px; line-height: 1.25; white-space: normal; }
+  .logo-e { width: 28px; height: 28px; font-size: 14px; }
   .sy-badge { display: none; }
   .uchip { font-size: 10px; padding: 3px 8px; }
   .ppt-btn { font-size: 10px; padding: 4px 8px; }
-  .tb { padding: 4px 8px; font-size: 10px; }
+  .tb { padding: 4px 8px; font-size: 11px; }
+
+  /* KPI 더 작게 */
+  .kpi { padding: 0.6rem 0.7rem; border-left-width: 2px; }
+  .kpi-lbl { font-size: 9px; }
+  .kpi-str { font-size: 10px; }
+  .kpi-val { font-size: 16px; }
+  .kpi-rate, .kpi-sub { font-size: 10px; }
+
+  /* 차트 더 짧게 */
+  .chart-box-line { height: 170px; }
+  .chart-box-right { height: 170px; }
+  .chart-box-bar { height: 280px; }
+
+  /* 페이지 제목 */
+  .pg-title { font-size: 15px; }
+
+  /* 최근 모니터링 표 — 비고 컬럼 숨김 (좁은 화면) */
+  .btm-row .recs th:nth-child(6), .btm-row .recs td:nth-child(6) { display: none; }
+  .btm-row .recs table { min-width: 560px; }
 }
