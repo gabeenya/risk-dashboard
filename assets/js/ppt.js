@@ -301,6 +301,7 @@ function buildTypeDetailSlide(pres, ctx, type, typeIdx) {
 
 // ── 메인 진입점 ──────────────────────────────────────
 async function generatePPT() {
+  if (!user) { toast('로그인 후 이용해 주세요.'); showLogin(); return; }
   if (!records.length) { toast('데이터가 없습니다. 새로고침 후 다시 시도해주세요.'); return; }
   const btn  = document.getElementById('pptHeaderBtn');
   const spin = document.getElementById('pptSpinIcon');

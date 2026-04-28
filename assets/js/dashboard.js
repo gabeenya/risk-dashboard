@@ -3,6 +3,8 @@ async function loadData() {
   setSy('불러오는 중...', '#15803d', '#f0fdf4');
   try { records = await sbGet('records'); }
   catch(e) { records = []; }
+  // 레거시 영역명 정규화: 'IP(지식재산)' → 'IP'
+  records.forEach(r => { if (r.type === 'IP(지식재산)') r.type = 'IP'; });
   records.sort((a, b) => b.date.localeCompare(a.date));
   setSy('동기화됨', '#15803d', '#f0fdf4');
   renderDash(curFilter);
@@ -115,11 +117,18 @@ function renderRight(d, k, now) {
 }
 
 function renderBar(d) {
-  const cnt = BRANDS.map(b => d.filter(r => r.brand === b && r.status !== '모니터링').reduce((s,r) => s + r.count, 0));
+  const total    = BRANDS.map(b => d.filter(r => r.brand === b).reduce((s,r) => s + r.count, 0));
+  const detected = BRANDS.map(b => d.filter(r => r.brand === b && r.status !== '모니터링').reduce((s,r) => s + r.count, 0));
   if (bChart) bChart.destroy();
   bChart = new Chart(document.getElementById('barChart'), {
     type: 'bar',
-    data: { labels: BRANDS, datasets: [{ label:'건수', data: cnt, backgroundColor: BC, borderRadius: 4, borderSkipped: false }] },
+    data: {
+      labels: BRANDS,
+      datasets: [
+        { label:'총 모니터링 건수', data: total,    backgroundColor:'#3b82f6', borderRadius: 4, borderSkipped: false, categoryPercentage: 0.92, barPercentage: 0.95 },
+        { label:'적발 건수',        data: detected, backgroundColor:'#ef4444', borderRadius: 4, borderSkipped: false, categoryPercentage: 0.92, barPercentage: 0.95 }
+      ]
+    },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
@@ -135,18 +144,20 @@ function renderRecent(d) {
   const tb = document.getElementById('recentTbody');
   const pg = document.getElementById('recentPager');
   const PAGE_SIZE = 10;
-  const totalPages = Math.max(1, Math.ceil(d.length / PAGE_SIZE));
+  // 상태별 필터 적용
+  const filtered = recentStatus === 'all' ? d : d.filter(r => r.status === recentStatus);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   if (recentPage >= totalPages) recentPage = totalPages - 1;
   if (recentPage < 0) recentPage = 0;
   const start = recentPage * PAGE_SIZE;
-  const slice = d.slice(start, start + PAGE_SIZE);
+  const slice = filtered.slice(start, start + PAGE_SIZE);
 
   if (!slice.length) {
     tb.innerHTML = '<tr><td colspan="6"><div class="empty">데이터를 입력해 주세요</div></td></tr>';
     pg.innerHTML = '';
     return;
   }
-  tb.innerHTML = slice.map(r => `<tr>
+  let html = slice.map(r => `<tr>
     <td>${r.date.slice(5).replace('-','/')}</td>
     <td>${r.type}</td>
     <td class="cell-sub">${r.subtype||'-'}</td>
@@ -154,6 +165,10 @@ function renderRecent(d) {
     <td><span class="st ${sc(r.status)}">${r.status}</span></td>
     <td class="cell-sub">${r.note||'-'}</td>
   </tr>`).join('');
+  for (let i = slice.length; i < PAGE_SIZE; i++) {
+    html += '<tr class="ph-row"><td colspan="6">&nbsp;</td></tr>';
+  }
+  tb.innerHTML = html;
   renderPager(pg, recentPage, totalPages);
 }
 
@@ -180,3 +195,11 @@ function renderPager(c, curr, total) {
 }
 
 function gotoPage(p) { recentPage = p; renderRecent(getFR(curFilter)); }
+
+function setRecentStatus(btn, st) {
+  document.querySelectorAll('.rs-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  recentStatus = st;
+  recentPage = 0;
+  renderRecent(getFR(curFilter));
+}

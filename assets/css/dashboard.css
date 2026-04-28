@@ -1,8 +1,8 @@
 /* ── Filter bar ───────────────────────────────────── */
 .filter-bar { display: flex; gap: 4px; margin-bottom: 1.4rem; align-items: center; background: #fff; padding: 5px; border-radius: 10px; border: 1px solid #eaecf0; flex-wrap: wrap; }
-.fb { font-size: 14px; padding: 5px 14px; border-radius: 6px; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+.fb { font-size: 16px; padding: 6px 18px; border-radius: 6px; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: 500; transition: all 0.15s; }
 .fb.on, .fb:hover { background: #1e3a8a; color: #fff; }
-.rf-btn { margin-left: auto; font-size: 11px; padding: 5px 12px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; }
+.rf-btn { margin-left: auto; font-size: 12px; padding: 6px 14px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; }
 .rf-btn:hover { border-color: #1e3a8a; color: #1e3a8a; }
 
 /* ── KPI grid ─────────────────────────────────────── */
@@ -25,21 +25,45 @@
 .card-tit { font-size: 12px; font-weight: 600; color: #0f172a; }
 .card-tag { font-size: 10px; background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 8px; font-weight: 500; }
 
+/* 최근 모니터링 — 상태별 필터 버튼 */
+.recent-status { display: flex; gap: 3px; background: #f1f5f9; border-radius: 7px; padding: 3px; flex-wrap: wrap; }
+.rs-btn { font-size: 11px; padding: 4px 10px; border: none; background: transparent; color: #64748b; border-radius: 5px; cursor: pointer; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
+.rs-btn:hover:not(.on) { background: #e2e8f0; }
+.rs-btn.on { background: #1e3a8a; color: #fff; }
+
 /* 차트 캔버스 래퍼 */
 .chart-box { position: relative; width: 100%; }
 .chart-box-line { height: 230px; }
 .chart-box-right { height: 200px; }
-.chart-box-bar { height: 300px; }
+.chart-box-bar { height: 370px; }
 
 /* ── Legend ───────────────────────────────────────── */
 .leg { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 11px; color: #64748b; }
 .leg-line { margin-top: 10px; margin-bottom: 0; }
+.leg-bar { margin-bottom: 6px; }
 .ld { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; vertical-align: middle; }
 
 /* ── More button / pagination ─────────────────────── */
 .more-btn { font-size: 11px; padding: 6px 20px; border-radius: 20px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; margin-top: 10px; display: block; margin-left: auto; margin-right: auto; }
 .more-btn:hover { border-color: #1e3a8a; color: #1e3a8a; }
-.pager { display: flex; justify-content: center; gap: 4px; margin-top: 12px; flex-wrap: wrap; }
+.pager { display: flex; justify-content: center; gap: 4px; margin-top: 12px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+.pager::-webkit-scrollbar { height: 6px; }
+.pager::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }
+
+/* 최근 모니터링 — 페이지마다 동일한 높이 유지용 placeholder */
+.ph-row td { color: transparent; user-select: none; pointer-events: none; }
+.ph-row:hover td { background: transparent; }
+
+/* 최근 모니터링 표 — 페이지마다 동일한 행 높이·열 너비 보장. 긴 텍스트는 카드 가로 스크롤로 노출 */
+.btm-row .recs { overflow-x: auto; }
+.btm-row .recs table { width: 100%; min-width: 760px; }
+.btm-row .recs td, .btm-row .recs th { white-space: nowrap; }
+.btm-row .recs th:nth-child(1), .btm-row .recs td:nth-child(1) { min-width: 64px;  width: 64px;  }   /* 날짜 */
+.btm-row .recs th:nth-child(2), .btm-row .recs td:nth-child(2) { min-width: 90px;  width: 90px;  }   /* 유형 */
+.btm-row .recs th:nth-child(3), .btm-row .recs td:nth-child(3) { min-width: 200px;                }   /* 상세 (가변) */
+.btm-row .recs th:nth-child(4), .btm-row .recs td:nth-child(4) { min-width: 90px;  width: 90px;  }   /* 브랜드 */
+.btm-row .recs th:nth-child(5), .btm-row .recs td:nth-child(5) { min-width: 96px;  width: 96px;  }   /* 상태 */
+.btm-row .recs th:nth-child(6), .btm-row .recs td:nth-child(6) { min-width: 200px;                }   /* 비고 (가변) */
 .pg-btn { font-size: 11px; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #475569; cursor: pointer; transition: all 0.15s; }
 .pg-btn:hover:not(:disabled) { border-color: #1e3a8a; color: #1e3a8a; }
 .pg-btn.on { background: #1e3a8a; color: #fff; border-color: #1e3a8a; font-weight: 600; }

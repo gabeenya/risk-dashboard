@@ -16,41 +16,41 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
+  height: 76px;
   position: sticky;
   top: 0;
   z-index: 100;
 }
-.logo { display: flex; align-items: center; gap: 12px; cursor: pointer; text-decoration: none; flex-shrink: 0; }
+.logo { display: flex; align-items: center; gap: 14px; cursor: pointer; text-decoration: none; flex-shrink: 0; }
 .logo:hover { opacity: 0.85; }
 .logo-e {
-  width: 32px; height: 32px;
+  width: 42px; height: 42px;
   background: #1e3a8a;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 16px; font-weight: 700; color: #fff;
+  font-size: 22px; font-weight: 700; color: #fff;
   font-family: Georgia, serif;
   flex-shrink: 0;
 }
-.logo-text { display: flex; flex-direction: column; }
-.logo-main { font-size: 14px; font-weight: 600; color: #0f172a; letter-spacing: -0.5px; white-space: nowrap; }
-.logo-sub { font-size: 9px; color: #94a3b8; letter-spacing: 0.8px; text-transform: uppercase; }
+.logo-text { display: flex; flex-direction: column; gap: 2px; }
+.logo-main { font-size: 17px; font-weight: 600; color: #0f172a; letter-spacing: -0.5px; white-space: nowrap; }
+.logo-sub { font-size: 11px; color: #94a3b8; letter-spacing: 0.8px; text-transform: uppercase; }
 
-.hd-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.yr-badge { font-size: 11px; background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; border-radius: 20px; padding: 3px 10px; font-weight: 500; white-space: nowrap; }
-.sy-badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #f0fdf4; color: #15803d; white-space: nowrap; border: 1px solid #bbf7d0; font-weight: 500; }
+.hd-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.yr-badge { font-size: 13px; background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; border-radius: 20px; padding: 5px 13px; font-weight: 500; white-space: nowrap; }
+.sy-badge { font-size: 13px; padding: 5px 13px; border-radius: 20px; background: #f0fdf4; color: #15803d; white-space: nowrap; border: 1px solid #bbf7d0; font-weight: 500; }
 
-.nav-group { display: flex; gap: 1px; background: #f1f5f9; border-radius: 8px; padding: 3px; }
-.tb { font-size: 12px; padding: 5px 14px; border-radius: 6px; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
+.nav-group { display: flex; gap: 2px; background: #f1f5f9; border-radius: 9px; padding: 4px; }
+.tb { font-size: 14px; padding: 8px 18px; border-radius: 7px; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
 .tb.on { background: #1e3a8a; color: #fff; }
 .tb:hover:not(.on) { background: #e2e8f0; }
 
-.uchip { font-size: 12px; background: #eff6ff; color: #1e40af; border-radius: 20px; padding: 4px 12px; display: none; align-items: center; gap: 6px; font-weight: 500; border: 1px solid #dbeafe; }
+.uchip { font-size: 13px; background: #eff6ff; color: #1e40af; border-radius: 20px; padding: 5px 14px; display: none; align-items: center; gap: 8px; font-weight: 500; border: 1px solid #dbeafe; }
 .uchip.show { display: flex; }
-.lo-btn { font-size: 12px; color: #94a3b8; background: none; border: none; cursor: pointer; }
+.lo-btn { font-size: 13px; color: #94a3b8; background: none; border: none; cursor: pointer; }
 .lo-btn:hover { color: #1e3a8a; }
 
-.ppt-btn { font-size: 12px; padding: 5px 12px; border-radius: 6px; border: 1px solid #dbeafe; background: #eff6ff; color: #1e40af; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 5px; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
+.ppt-btn { font-size: 14px; padding: 8px 16px; border-radius: 7px; border: 1px solid #dbeafe; background: #eff6ff; color: #1e40af; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
 .ppt-btn:hover { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
 .ppt-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .ppt-btn.hidden { display: none; }
@@ -62,7 +62,7 @@ main { max-width: 1300px; margin: 0 auto; padding: 1.75rem 1.5rem; }
 .pg.on { display: block; }
 .pg-title { font-size: 20px; font-weight: 600; color: #0f172a; margin-bottom: 4px; letter-spacing: -0.3px; }
 .pg-sub { font-size: 13px; color: #64748b; margin-bottom: 1.5rem; }
-.sec-label { font-size: 10px; font-weight: 600; color: #94a3b8; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 14px; }
+.sec-label { font-size: 13px; font-weight: 600; color: #94a3b8; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 16px; }
 
 /* ── Login modal ──────────────────────────────────── */
 .mb { position: fixed; inset: 0; background: rgba(15,23,42,0.45); backdrop-filter: blur(2px); z-index: 200; display: flex; align-items: center; justify-content: center; }

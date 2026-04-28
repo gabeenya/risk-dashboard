@@ -15,32 +15,32 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260428a';</script>
+<script>window.__ASSET_V = '20260428g';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260428a">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260428a">
-<link rel="stylesheet" href="assets/css/input.css?v=20260428a">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260428a">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260428a">
+<link rel="stylesheet" href="assets/css/base.css?v=20260428g">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260428g">
+<link rel="stylesheet" href="assets/css/input.css?v=20260428g">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260428g">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260428g">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260428a"     defer></script>
-<script src="assets/js/constants.js?v=20260428a"  defer></script>
-<script src="assets/js/state.js?v=20260428a"      defer></script>
-<script src="assets/js/utils.js?v=20260428a"      defer></script>
-<script src="assets/js/auth.js?v=20260428a"       defer></script>
-<script src="assets/js/nav.js?v=20260428a"        defer></script>
-<script src="assets/js/dashboard.js?v=20260428a"  defer></script>
-<script src="assets/js/input.js?v=20260428a"      defer></script>
-<script src="assets/js/admin.js?v=20260428a"      defer></script>
-<script src="assets/js/ai.js?v=20260428a"         defer></script>
-<script src="assets/js/ppt.js?v=20260428a"        defer></script>
-<script src="assets/js/main.js?v=20260428a"       defer></script>
+<script src="assets/js/config.js?v=20260428g"     defer></script>
+<script src="assets/js/constants.js?v=20260428g"  defer></script>
+<script src="assets/js/state.js?v=20260428g"      defer></script>
+<script src="assets/js/utils.js?v=20260428g"      defer></script>
+<script src="assets/js/auth.js?v=20260428g"       defer></script>
+<script src="assets/js/nav.js?v=20260428g"        defer></script>
+<script src="assets/js/dashboard.js?v=20260428g"  defer></script>
+<script src="assets/js/input.js?v=20260428g"      defer></script>
+<script src="assets/js/admin.js?v=20260428g"      defer></script>
+<script src="assets/js/ai.js?v=20260428g"         defer></script>
+<script src="assets/js/ppt.js?v=20260428g"        defer></script>
+<script src="assets/js/main.js?v=20260428g"       defer></script>
 </head>
 <body>
 
@@ -85,7 +85,7 @@
       <button class="fb"    onclick="setFilter(this,'표시광고')">표시광고</button>
       <button class="fb"    onclick="setFilter(this,'노무')">노무</button>
       <button class="fb"    onclick="setFilter(this,'영업비밀')">영업비밀</button>
-      <button class="fb"    onclick="setFilter(this,'IP(지식재산)')">IP(지식재산)</button>
+      <button class="fb"    onclick="setFilter(this,'IP')">IP</button>
       <button class="rf-btn" onclick="loadData()">↻ 새로고침</button>
     </div>
 
@@ -114,11 +114,23 @@
 
     <div class="btm-row">
       <div class="card">
-        <div class="card-hd"><span class="card-tit">브랜드별 적발 현황</span><span class="card-tag">전체 브랜드</span></div>
+        <div class="card-hd"><span class="card-tit">브랜드별 현황</span><span class="card-tag">전체 브랜드</span></div>
+        <div class="leg leg-bar">
+          <span><span class="ld" style="background:#3b82f6"></span>총 모니터링 건수</span>
+          <span><span class="ld" style="background:#ef4444"></span>적발 건수</span>
+        </div>
         <div class="chart-box chart-box-bar"><canvas id="barChart"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-hd"><span class="card-tit">최근 모니터링 현황</span><span class="card-tag">최신순</span></div>
+        <div class="card-hd">
+          <span class="card-tit">최근 모니터링 현황</span>
+          <div class="recent-status">
+            <button class="rs-btn on" data-st="all"        onclick="setRecentStatus(this,'all')">전체</button>
+            <button class="rs-btn"    data-st="모니터링"   onclick="setRecentStatus(this,'모니터링')">모니터링</button>
+            <button class="rs-btn"    data-st="위반(처리중)" onclick="setRecentStatus(this,'위반(처리중)')">위반(처리중)</button>
+            <button class="rs-btn"    data-st="완료"       onclick="setRecentStatus(this,'완료')">완료</button>
+          </div>
+        </div>
         <div class="recs">
           <table>
             <thead><tr><th>날짜</th><th>유형</th><th>상세</th><th>브랜드</th><th>상태</th><th>비고</th></tr></thead>
@@ -147,7 +159,7 @@
         <button class="tt"    onclick="setInputType(this,'표시광고')">표시광고</button>
         <button class="tt"    onclick="setInputType(this,'노무')">노무</button>
         <button class="tt"    onclick="setInputType(this,'영업비밀')">영업비밀</button>
-        <button class="tt"    onclick="setInputType(this,'IP(지식재산)')">IP(지식재산)</button>
+        <button class="tt"    onclick="setInputType(this,'IP')">IP</button>
       </div>
       <div class="fsec">
         <p class="fsec-tit">신규 입력 <span class="a-badge" id="areaBadge">가맹</span></p>
@@ -187,12 +199,12 @@
   <!-- ── AI 분석 ─────────────────────────────────────── -->
   <div id="page-ai" class="pg">
     <p class="pg-title">AI 리스크 분석</p>
-    <p class="pg-sub">현재 데이터를 바탕으로 AI가 조직의 리스크 현황을 종합 분석합니다.</p>
+    <p class="pg-sub">분석할 항목을 선택하면 해당 부분만 빠르게 리포트로 받아볼 수 있습니다.</p>
     <div class="fsec">
       <div class="ai-hd">
         <div>
-          <p class="ai-hd-tit">종합 리스크 분석 리포트</p>
-          <p class="ai-hd-sub">위험도 식별 · 트렌드 분석 · 완료율 · 권고사항 · 액션 플랜</p>
+          <p class="ai-hd-tit">맞춤 리스크 분석 리포트</p>
+          <p class="ai-hd-sub">필요한 항목만 골라 분석 — 호출이 짧을수록 결과도 빨라집니다</p>
         </div>
         <div class="ai-ctrls">
           <select id="aiStyle" class="ai-style-sel" onchange="changeAIStyle()">
@@ -203,11 +215,37 @@
           <button id="aiBtn" class="ai-run-btn" onclick="runAI()">✦ AI 분석 시작</button>
         </div>
       </div>
+      <div class="ai-opts">
+        <p class="ai-opts-tit">분석 항목 선택</p>
+        <div class="ai-opt-grid">
+          <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="risk"     checked> 위험도 식별</label>
+          <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="trend"    checked> 트렌드 분석</label>
+          <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="rate"            > 완료율</label>
+          <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="advice"          > 권고사항</label>
+          <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="plan"            > 액션 플랜</label>
+          <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="brand" onchange="toggleBrandPicker(this)"> 브랜드별 분석</label>
+        </div>
+        <div id="aiBrandPicker" class="ai-brand-picker" style="display:none">
+          <div class="ai-brand-picker-hd">
+            <span class="ai-brand-picker-tit">분석할 브랜드 선택</span>
+            <span class="ai-brand-picker-hint">선택하지 않으면 전체 브랜드가 분석 대상이 됩니다</span>
+          </div>
+          <div class="ai-brand-grid" id="aiBrandGrid"><!-- JS에서 렌더 --></div>
+          <div class="ai-opt-acts">
+            <button class="ai-opt-link" onclick="aiBrandAll(true)">모두 선택</button>
+            <button class="ai-opt-link" onclick="aiBrandAll(false)">모두 해제</button>
+          </div>
+        </div>
+        <div class="ai-opt-acts">
+          <button class="ai-opt-link" onclick="aiOptAll(true)">모두 선택</button>
+          <button class="ai-opt-link" onclick="aiOptAll(false)">모두 해제</button>
+        </div>
+      </div>
       <div id="aiLoad" class="ai-load">
         <div class="spin"></div>
-        <p>AI가 데이터를 분석하고 있습니다...<br><small>약 20~30초 소요됩니다</small></p>
+        <p>AI가 데이터를 분석하고 있습니다...<br><small>선택한 항목 수에 따라 5~30초 소요됩니다</small></p>
       </div>
-      <div id="aiEmpty" class="ai-empty">AI 분석 시작 버튼을 눌러주세요</div>
+      <div id="aiEmpty" class="ai-empty">분석할 항목을 선택하고 AI 분석 시작 버튼을 눌러주세요</div>
       <div id="aiResult" class="ai-result-wrap"></div>
     </div>
   </div>
