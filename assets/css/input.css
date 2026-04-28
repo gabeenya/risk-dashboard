@@ -48,24 +48,41 @@
 
 /* ── 모바일 대응 ──────────────────────────────────── */
 @media (max-width: 768px) {
-  .type-tabs { padding: 4px; gap: 2px; }
-  .tt { font-size: 10px; padding: 5px 12px; }
+  /* 영역 탭 — 가로 스크롤 한 줄 유지 */
+  .type-tabs { padding: 4px; gap: 2px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+  .type-tabs::-webkit-scrollbar { height: 3px; }
+  .type-tabs::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+  .tt { font-size: 12px; padding: 6px 14px; flex-shrink: 0; white-space: nowrap; }
+
+  /* 폼 입력 */
   .fgrid { gap: 10px; }
   .fgroup label { font-size: 9px; }
   .fgroup input, .fgroup select { padding: 8px 10px; font-size: 12px; }
   .f-acts { flex-wrap: wrap; gap: 8px; }
   .btn-pri { padding: 8px 18px; font-size: 12px; }
   .btn-sec { padding: 8px 14px; font-size: 12px; }
-  .sub-sel, .brand-sel { max-width: 130px; font-size: 10px; }
+
+  /* 데이터 목록 — 인라인 컨트롤 */
+  .sub-sel, .brand-sel { max-width: 120px; font-size: 10px; padding: 2px 5px; }
   .count-wrap { min-width: 60px; max-width: 80px; }
-  .note-inp { font-size: 10px; }
+  .note-inp { font-size: 10px; padding: 4px 26px 4px 6px; }
   .note-save-btn { font-size: 8px; padding: 2px 4px; }
+  .st-sel { font-size: 10px; padding: 2px 5px; }
 }
-@media (max-width: 500px) {
-  .type-tabs { flex-wrap: wrap; }
-  .tt { font-size: 10px; padding: 4px 10px; }
+@media (max-width: 600px) {
+  .tt { font-size: 11px; padding: 5px 12px; }
+  .fgroup input, .fgroup select { padding: 7px 9px; font-size: 11.5px; }
+  /* 데이터 목록 — 모바일에선 작성자 컬럼 숨김 (입력 페이지 한정) */
+  #page-input #inputTbody td:nth-last-child(2),
+  #page-input .recs thead th:nth-last-child(2) { display: none; }
+}
+@media (max-width: 420px) {
+  .tt { font-size: 10.5px; padding: 4px 10px; }
   .lock { padding: 2.5rem 1rem; }
   .lock-icon { font-size: 36px; }
   .lock h2 { font-size: 16px; }
   .lock p { font-size: 12px; }
+  /* 데이터 목록 — 더 좁게 */
+  .sub-sel { max-width: 100px; }
+  .brand-sel { max-width: 80px; }
 }

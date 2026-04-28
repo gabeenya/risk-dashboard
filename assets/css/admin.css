@@ -8,3 +8,11 @@
 
 /* 신규 계정 결과 안내 텍스트 */
 .new-user-hint { font-size: 12px; color: #94a3b8; }
+
+/* ── 모바일 대응 ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .ibox { padding: 0.85rem 1rem; flex-wrap: wrap; gap: 8px; }
+  .iurl { font-size: 11px; flex: 1 1 100%; }
+  .cp-btn { font-size: 11px; padding: 5px 12px; }
+  .adm-badge { font-size: 9px; padding: 1px 6px; }
+}

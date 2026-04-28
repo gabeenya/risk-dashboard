@@ -65,16 +65,25 @@
 .btm-row .recs th:nth-child(5), .btm-row .recs td:nth-child(5) { min-width: 96px;  width: 96px;  }   /* 상태 */
 .btm-row .recs th:nth-child(6), .btm-row .recs td:nth-child(6) { min-width: 200px;                }   /* 비고 (가변) */
 
-/* ── 모바일 — 띠지(필터바) 한 줄 유지 ───────────────── */
+/* ── 모바일 — 띠지(필터바) 가로 스크롤 ─────────────── */
 @media (max-width: 768px) {
-  .filter-bar { padding: 4px; gap: 2px; flex-wrap: nowrap; overflow-x: auto; }
+  .filter-bar { padding: 4px; gap: 2px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+  .filter-bar::-webkit-scrollbar { height: 3px; }
+  .filter-bar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
   .fb { font-size: 12px; padding: 5px 12px; flex-shrink: 0; white-space: nowrap; }
-  .rf-btn { font-size: 11px; padding: 5px 10px; flex-shrink: 0; white-space: nowrap; }
+  .rf-btn { font-size: 11px; padding: 5px 10px; flex-shrink: 0; white-space: nowrap; margin-left: 4px; }
+  /* 카드 헤더 안의 상태 필터도 가로 스크롤 */
+  .recent-status { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; }
+  .rs-btn { flex-shrink: 0; font-size: 10px; padding: 3px 8px; }
 }
-@media (max-width: 500px) {
+@media (max-width: 600px) {
   .filter-bar { padding: 3px; gap: 1px; }
   .fb { font-size: 11px; padding: 4px 9px; }
   .rf-btn { font-size: 10px; padding: 4px 8px; }
+}
+@media (max-width: 420px) {
+  .fb { font-size: 10.5px; padding: 4px 8px; }
+  .rf-btn { display: none; }   /* 새로고침 버튼 숨김 — pull-to-refresh 또는 새로고침 제스처로 충분 */
 }
 .pg-btn { font-size: 11px; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #475569; cursor: pointer; transition: all 0.15s; }
 .pg-btn:hover:not(:disabled) { border-color: #1e3a8a; color: #1e3a8a; }
