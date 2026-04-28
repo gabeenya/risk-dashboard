@@ -15,32 +15,32 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260428m';</script>
+<script>window.__ASSET_V = '20260428o';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260428m">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260428m">
-<link rel="stylesheet" href="assets/css/input.css?v=20260428m">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260428m">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260428m">
+<link rel="stylesheet" href="assets/css/base.css?v=20260428o">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260428o">
+<link rel="stylesheet" href="assets/css/input.css?v=20260428o">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260428o">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260428o">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260428m"     defer></script>
-<script src="assets/js/constants.js?v=20260428m"  defer></script>
-<script src="assets/js/state.js?v=20260428m"      defer></script>
-<script src="assets/js/utils.js?v=20260428m"      defer></script>
-<script src="assets/js/auth.js?v=20260428m"       defer></script>
-<script src="assets/js/nav.js?v=20260428m"        defer></script>
-<script src="assets/js/dashboard.js?v=20260428m"  defer></script>
-<script src="assets/js/input.js?v=20260428m"      defer></script>
-<script src="assets/js/admin.js?v=20260428m"      defer></script>
-<script src="assets/js/ai.js?v=20260428m"         defer></script>
-<script src="assets/js/ppt.js?v=20260428m"        defer></script>
-<script src="assets/js/main.js?v=20260428m"       defer></script>
+<script src="assets/js/config.js?v=20260428o"     defer></script>
+<script src="assets/js/constants.js?v=20260428o"  defer></script>
+<script src="assets/js/state.js?v=20260428o"      defer></script>
+<script src="assets/js/utils.js?v=20260428o"      defer></script>
+<script src="assets/js/auth.js?v=20260428o"       defer></script>
+<script src="assets/js/nav.js?v=20260428o"        defer></script>
+<script src="assets/js/dashboard.js?v=20260428o"  defer></script>
+<script src="assets/js/input.js?v=20260428o"      defer></script>
+<script src="assets/js/admin.js?v=20260428o"      defer></script>
+<script src="assets/js/ai.js?v=20260428o"         defer></script>
+<script src="assets/js/ppt.js?v=20260428o"        defer></script>
+<script src="assets/js/main.js?v=20260428o"       defer></script>
 </head>
 <body>
 
@@ -207,6 +207,8 @@
           <p class="ai-hd-sub">필요한 항목만 골라 분석 — 호출이 짧을수록 결과도 빨라집니다</p>
         </div>
         <div class="ai-ctrls">
+          <input type="text" id="aiContext" class="ai-ctx-inp" maxlength="500"
+                 placeholder="분석 추가 컨텍스트 (예: 브랜드장 입장에서 우리 브랜드 리스크 관리 수준 분석)">
           <select id="aiStyle" class="ai-style-sel" onchange="changeAIStyle()">
             <option value="notion">📝 노션 스타일</option>
             <option value="newspaper">📰 신문 스타일</option>

@@ -102,7 +102,17 @@ async function runAI() {
     ? '\n## 브랜드별 상세' + (selectedBrands ? ` (지정 ${selectedBrands.length}개)` : '') + '\n' + (brandDetail || '데이터 없음') + '\n'
     : '## 브랜드별\n' + byB.sort((a,b) => b.cnt - a.cnt).slice(0, 13).map(b => '- ' + b.brand + ': ' + b.cnt + '건').join('\n') + '\n';
 
-  const prompt = '당신은 기업 법무팀의 공정거래 리스크 분석 전문가입니다. 외식BG RO실의 리스크 현황을 분석해주세요.\n\n'
+  // 사용자 추가 컨텍스트 (선택). 비어있으면 섹션 자체를 생략.
+  const userCtx = (document.getElementById('aiContext')?.value || '').trim();
+  const ctxSection = userCtx
+    ? '## 사용자 요청 컨텍스트 (반드시 반영)\n'
+      + userCtx + '\n'
+      + '※ 위 관점·요구사항을 모든 분석 항목에 일관되게 반영하세요.\n\n'
+    : '';
+  console.log('[AI] 사용자 컨텍스트:', userCtx || '(없음)');
+
+  const prompt = '외식BG RO실의 리스크 현황을 분석해주세요.\n\n'
+    + ctxSection
     + '## 전체 현황\n'
     + '- 총 모니터링: ' + tot + '건 | 위반(처리중): ' + vio + '건 | 완료: ' + done + '건\n'
     + '- 위반율: ' + (tot ? (((vio+done)/tot)*100).toFixed(1) : 0) + '% | 처리완료율: ' + ((vio+done) ? ((done/(vio+done))*100).toFixed(1) : 0) + '%\n\n'
