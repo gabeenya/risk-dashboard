@@ -6,8 +6,9 @@
 .rf-btn:hover { border-color: #1e3a8a; color: #1e3a8a; }
 
 /* ── KPI grid ─────────────────────────────────────── */
-.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.4rem; }
-.kpi { background: #fff; border-radius: 12px; padding: 1.1rem 1.2rem; border: 1px solid #eaecf0; border-left: 3px solid #1e3a8a; }
+/* auto-fit + minmax: 각 카드는 최소 폭 보장, 공간 부족 시 다음 줄로 자동 wrap (4 → 3 → 2 → 1) */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 1.4rem; }
+.kpi { background: #fff; border-radius: 12px; padding: 1.1rem 1.2rem; border: 1px solid #eaecf0; border-left: 3px solid #1e3a8a; min-width: 0; }
 .kpi.dim { border-left-color: #cbd5e1; }
 .kpi-lbl { font-size: 12px; color: #94a3b8; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 4px; }
 .kpi-str { font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; }
@@ -16,10 +17,15 @@
 .kpi-sub { font-size: 12px; color: #94a3b8; }
 
 /* ── Chart layout ─────────────────────────────────── */
-.charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px; }
-.charts-row > .card:first-child { display: flex; flex-direction: column; }
+/* flex-wrap: 각 카드는 flex-basis 만큼의 권장 폭을 갖고, 한 줄에 다 못 들어가면 다음 줄로 wrap.
+   charts-row 는 라인차트(2) : 도넛(1) 비율 유지를 위해 grow 값 차등 부여. */
+.charts-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.charts-row > .card { min-width: 0; }
+.charts-row > .card:first-child { flex: 2 1 420px; display: flex; flex-direction: column; }
+.charts-row > .card:nth-child(2) { flex: 1 1 280px; }
 .charts-row > .card:first-child .chart-box-line { flex: 1; min-height: 230px; height: auto; }
-.btm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btm-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.btm-row > .card { flex: 1 1 420px; min-width: 0; }
 .card { background: #fff; border-radius: 12px; border: 1px solid #eaecf0; padding: 1.1rem 1.2rem; }
 .card-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
 .card-tit { font-size: 12px; font-weight: 600; color: #0f172a; }
@@ -54,16 +60,16 @@
 .ph-row td { color: transparent; user-select: none; pointer-events: none; }
 .ph-row:hover td { background: transparent; }
 
-/* 최근 모니터링 표 — 페이지마다 동일한 행 높이·열 너비 보장. 긴 텍스트는 카드 가로 스크롤로 노출 */
+/* 최근 모니터링 표 — 컨테이너 너비에 자연스럽게 맞춰 축소.
+   고정폭 컬럼(날짜/유형/브랜드/상태)은 nowrap, 가변 컬럼(상세/비고)은 wrap 허용. */
 .btm-row .recs { overflow-x: auto; }
-.btm-row .recs table { width: 100%; min-width: 760px; }
-.btm-row .recs td, .btm-row .recs th { white-space: nowrap; }
-.btm-row .recs th:nth-child(1), .btm-row .recs td:nth-child(1) { min-width: 64px;  width: 64px;  }   /* 날짜 */
-.btm-row .recs th:nth-child(2), .btm-row .recs td:nth-child(2) { min-width: 90px;  width: 90px;  }   /* 유형 */
-.btm-row .recs th:nth-child(3), .btm-row .recs td:nth-child(3) { min-width: 200px;                }   /* 상세 (가변) */
-.btm-row .recs th:nth-child(4), .btm-row .recs td:nth-child(4) { min-width: 90px;  width: 90px;  }   /* 브랜드 */
-.btm-row .recs th:nth-child(5), .btm-row .recs td:nth-child(5) { min-width: 96px;  width: 96px;  }   /* 상태 */
-.btm-row .recs th:nth-child(6), .btm-row .recs td:nth-child(6) { min-width: 200px;                }   /* 비고 (가변) */
+.btm-row .recs table { width: 100%; table-layout: fixed; }
+.btm-row .recs th:nth-child(1), .btm-row .recs td:nth-child(1) { width: 12%; min-width: 60px; white-space: nowrap; }   /* 날짜 */
+.btm-row .recs th:nth-child(2), .btm-row .recs td:nth-child(2) { width: 14%; min-width: 70px; white-space: nowrap; }   /* 유형 */
+.btm-row .recs th:nth-child(3), .btm-row .recs td:nth-child(3) { width: 28%; word-break: break-word; }                  /* 상세 (가변, wrap) */
+.btm-row .recs th:nth-child(4), .btm-row .recs td:nth-child(4) { width: 12%; min-width: 70px; white-space: nowrap; }    /* 브랜드 */
+.btm-row .recs th:nth-child(5), .btm-row .recs td:nth-child(5) { width: 14%; min-width: 80px; white-space: nowrap; }    /* 상태 */
+.btm-row .recs th:nth-child(6), .btm-row .recs td:nth-child(6) { width: 20%; word-break: break-word; }                  /* 비고 (가변, wrap) */
 
 /* ── 모바일 — 띠지(필터바) 가로 스크롤 ─────────────── */
 @media (max-width: 768px) {
