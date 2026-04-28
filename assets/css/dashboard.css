@@ -64,6 +64,18 @@
 .btm-row .recs th:nth-child(4), .btm-row .recs td:nth-child(4) { min-width: 90px;  width: 90px;  }   /* 브랜드 */
 .btm-row .recs th:nth-child(5), .btm-row .recs td:nth-child(5) { min-width: 96px;  width: 96px;  }   /* 상태 */
 .btm-row .recs th:nth-child(6), .btm-row .recs td:nth-child(6) { min-width: 200px;                }   /* 비고 (가변) */
+
+/* ── 모바일 — 띠지(필터바) 한 줄 유지 ───────────────── */
+@media (max-width: 768px) {
+  .filter-bar { padding: 4px; gap: 2px; flex-wrap: nowrap; overflow-x: auto; }
+  .fb { font-size: 12px; padding: 5px 12px; flex-shrink: 0; white-space: nowrap; }
+  .rf-btn { font-size: 11px; padding: 5px 10px; flex-shrink: 0; white-space: nowrap; }
+}
+@media (max-width: 500px) {
+  .filter-bar { padding: 3px; gap: 1px; }
+  .fb { font-size: 11px; padding: 4px 9px; }
+  .rf-btn { font-size: 10px; padding: 4px 8px; }
+}
 .pg-btn { font-size: 11px; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #475569; cursor: pointer; transition: all 0.15s; }
 .pg-btn:hover:not(:disabled) { border-color: #1e3a8a; color: #1e3a8a; }
 .pg-btn.on { background: #1e3a8a; color: #fff; border-color: #1e3a8a; font-weight: 600; }
