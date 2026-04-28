@@ -17,6 +17,8 @@
 
 /* ── Chart layout ─────────────────────────────────── */
 .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px; }
+.charts-row > .card:first-child { display: flex; flex-direction: column; }
+.charts-row > .card:first-child .chart-box-line { flex: 1; min-height: 230px; height: auto; }
 .btm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .card { background: #fff; border-radius: 12px; border: 1px solid #eaecf0; padding: 1.1rem 1.2rem; }
 .card-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
