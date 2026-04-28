@@ -51,6 +51,33 @@ async function updNote(id, note, btnEl) {
   toast('비고가 저장되었습니다.');
 }
 
+async function updBrand(id, brand) {
+  if (!brand) return;
+  await sbUpd('records', id, { brand });
+  await loadData();
+  renderInputTable();
+  toast(`브랜드 → "${brand}"`);
+}
+
+async function updSubtype(id, subtype) {
+  await sbUpd('records', id, { subtype: subtype || '-' });
+  await loadData();
+  renderInputTable();
+  toast(`상세유형 → "${subtype || '-'}"`);
+}
+
+async function updCount(id, count, btnEl) {
+  const n = parseInt(count) || 0;
+  if (n < 1) { toast('건수는 1 이상이어야 합니다.'); return; }
+  const ok = await sbUpd('records', id, { count: n });
+  if (!ok) return;
+  btnEl.textContent = '완료 ✓';
+  btnEl.classList.add('saved');
+  await loadData();
+  setTimeout(() => { btnEl.textContent = '저장'; btnEl.classList.remove('saved'); }, 1500);
+  toast('건수가 저장되었습니다.');
+}
+
 async function delRecord(id) {
   const rec = records.find(r => r.id === id);
   if (!rec) return;
@@ -94,12 +121,32 @@ function renderInputTable() {
     tb.innerHTML = '<tr><td colspan="9"><div class="empty">입력된 데이터가 없습니다</div></td></tr>';
     return;
   }
-  tb.innerHTML = fl.map(r => `<tr>
+  tb.innerHTML = fl.map(r => {
+    const subs = SUB[r.type] || [];
+    const subCell = subs.length === 0
+      ? '<span class="cell-sub">-</span>'
+      : `<select class="st-sel sub-sel" onchange="updSubtype(${r.id},this.value)">
+           <option value="">-</option>
+           ${subs.map(s => `<option${r.subtype===s?' selected':''}>${s}</option>`).join('')}
+         </select>`;
+    return `<tr>
     <td>${r.date}</td>
     <td>${r.type}</td>
-    <td class="cell-sub">${r.subtype||'-'}</td>
-    <td>${r.brand}</td>
-    <td>${r.count.toLocaleString()}</td>
+    <td>${subCell}</td>
+    <td>
+      <select class="st-sel brand-sel" onchange="updBrand(${r.id},this.value)">
+        ${BRANDS.map(b => `<option${r.brand===b?' selected':''}>${b}</option>`).join('')}
+      </select>
+    </td>
+    <td>
+      <div class="note-wrap count-wrap">
+        <input type="number" min="1" class="note-inp count-inp" id="cnt-inp-${r.id}"
+          value="${r.count}"
+          onkeydown="if(event.key==='Enter'){const b=document.getElementById('cnt-btn-${r.id}');updCount(${r.id},this.value,b)}">
+        <button class="note-save-btn" id="cnt-btn-${r.id}"
+          onclick="updCount(${r.id},document.getElementById('cnt-inp-${r.id}').value,this)">저장</button>
+      </div>
+    </td>
     <td>
       <select class="st-sel" onchange="updStatus(${r.id},this.value)">
         ${STATS.map(s => `<option value="${s}"${r.status===s?' selected':''}>${s}</option>`).join('')}
@@ -116,5 +163,6 @@ function renderInputTable() {
     </td>
     <td class="cell-muted">${r.author||'-'}</td>
     <td><button class="del-btn" onclick="delRecord(${r.id})">✕</button></td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
 }

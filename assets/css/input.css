@@ -33,6 +33,15 @@
 .note-save-btn:hover { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
 .note-save-btn.saved { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
 
+/* 인라인 편집용 셀렉트 / 건수 입력 */
+.sub-sel { max-width: 180px; }
+.brand-sel { max-width: 110px; }
+.count-wrap { min-width: 70px; max-width: 90px; }
+.count-inp { padding-right: 30px; }
+.count-inp::-webkit-outer-spin-button,
+.count-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.count-inp { -moz-appearance: textfield; }
+
 /* 작성자 셀 / 상세 셀 */
 .cell-muted { font-size: 11px; color: #64748b; }
 .cell-sub { font-size: 11px; color: #64748b; }
