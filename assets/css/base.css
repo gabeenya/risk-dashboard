@@ -126,61 +126,62 @@ tr:hover td { background: #f8fafc; }
 
 /* ──────────────────────────────────────────────────────
    Responsive — 모바일/태블릿 최적화
-   브레이크포인트:
-   - ≤900px : 그리드 컬럼 축소 (태블릿)
-   - ≤768px : 헤더 접기 + 폰트/패딩 컴팩트화
-   - ≤600px : 모바일 본격 — 띠지 가로 스크롤, 표 컬럼 일부 숨김
-   - ≤420px : 작은 폰 — 부가 정보 숨김, 가장 컴팩트
+   원칙:
+   - 컨텐츠 너비 = 띠지(필터바) 너비 = 뷰포트 폭
+   - KPI 4개는 항상 한 줄에 4개 (모바일도)
+   - 차트는 각 카드를 한 행씩 세로 배치 (스크롤로 확인)
+   브레이크포인트: ≤900px / ≤768px / ≤500px / ≤380px
    ────────────────────────────────────────────────────── */
 
-/* ── ≤900px : 태블릿 — 그리드 1~2열 ─────────────────── */
+/* ── ≤900px : 태블릿 — 차트 1col, KPI는 4col 유지 ────── */
 @media (max-width: 900px) {
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .charts-row, .btm-row { grid-template-columns: 1fr; }
   .fgrid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* ── ≤768px : 큰 폰/세로 태블릿 — 헤더 접기 ─────────── */
+/* ── ≤768px : 큰 폰/세로 태블릿 — 헤더 접기 + KPI 4col 압축 */
 @media (max-width: 768px) {
-  /* 헤더 — 두 줄 (로고+우측 / 네비) */
+  /* 헤더 */
   header { padding: 8px 12px; height: auto; flex-wrap: wrap; gap: 8px; }
   .logo { gap: 8px; }
-  .logo-e { width: 32px; height: 32px; font-size: 15px; border-radius: 7px; }
+  .logo-e { width: 30px; height: 30px; font-size: 14px; border-radius: 7px; }
   .logo-sub { display: none; }
-  .logo-main { font-size: 13px; line-height: 1.2; }
+  .logo-main { font-size: 12.5px; line-height: 1.2; }
   .yr-badge { display: none; }
   .sy-badge { font-size: 10px; padding: 2px 8px; }
   .hd-right { flex-wrap: wrap; gap: 6px; flex: 1 1 auto; justify-content: flex-end; }
   .nav-group { order: 99; flex: 1 1 100%; justify-content: center; padding: 2px; gap: 1px; }
-  .tb { padding: 6px 12px; font-size: 12px; }
+  .tb { padding: 5px 10px; font-size: 11.5px; }
   .ppt-btn { padding: 5px 10px; font-size: 11px; }
   .uchip { font-size: 11px; padding: 3px 10px; gap: 5px; }
   .lo-btn { font-size: 11px; }
 
-  /* 메인 영역 */
-  main { padding: 0.85rem; }
-  .pg-title { font-size: 17px; margin-bottom: 3px; }
-  .pg-sub { font-size: 12px; margin-bottom: 1rem; }
-  .sec-label { font-size: 11px; margin-bottom: 12px; }
+  /* 메인 — 띠지 너비에 맞춤 */
+  main { padding: 0.75rem; }
+  .pg-title { font-size: 16px; margin-bottom: 2px; }
+  .pg-sub { font-size: 11.5px; margin-bottom: 0.85rem; }
+  .sec-label { font-size: 10px; margin-bottom: 10px; letter-spacing: 0.8px; }
 
-  /* KPI */
-  .kpi-grid { gap: 8px; margin-bottom: 1rem; }
-  .kpi { padding: 0.75rem 0.85rem; border-radius: 10px; }
-  .kpi-lbl { font-size: 10px; margin-bottom: 2px; letter-spacing: 0.5px; }
-  .kpi-str { font-size: 11px; margin-bottom: 4px; }
-  .kpi-val { font-size: 17px; line-height: 1.1; }
-  .kpi-rate, .kpi-sub { font-size: 11px; }
+  /* KPI — 4 col 유지하면서 매우 컴팩트하게 */
+  .kpi-grid { gap: 6px; margin-bottom: 0.85rem; }
+  .kpi { padding: 0.55rem 0.6rem; border-radius: 8px; border-left-width: 2px; }
+  .kpi-lbl { font-size: 8.5px; margin-bottom: 1px; letter-spacing: 0.3px; }
+  .kpi-str { font-size: 9.5px; margin-bottom: 3px; line-height: 1.2; }
+  .kpi-val { font-size: 14px; line-height: 1.1; margin-bottom: 1px; letter-spacing: -0.3px; }
+  .kpi-rate { font-size: 9px; margin-bottom: 1px; }
+  .kpi-sub { font-size: 9px; line-height: 1.2; }
 
   /* 카드 */
-  .card { padding: 0.85rem 0.95rem; border-radius: 10px; }
-  .card-hd { margin-bottom: 0.7rem; flex-wrap: wrap; gap: 6px; }
-  .card-tit { font-size: 12px; }
+  .card { padding: 0.75rem 0.85rem; border-radius: 9px; }
+  .card-hd { margin-bottom: 0.6rem; flex-wrap: wrap; gap: 6px; }
+  .card-tit { font-size: 11.5px; }
   .card-tag { font-size: 9px; padding: 2px 6px; }
 
-  /* 차트 높이 — 한 줄에 다 보이도록 */
-  .chart-box-line { height: 190px; }
-  .chart-box-right { height: 190px; }
+  /* 차트 높이 — 한 행씩 세로 */
+  .chart-box-line { height: 200px; }
+  .chart-box-right { height: 200px; }
   .chart-box-bar { height: 300px; }
+  .leg { gap: 8px; font-size: 10.5px; }
 
   /* 표 */
   table { font-size: 11px; }
@@ -188,8 +189,8 @@ tr:hover td { background: #f8fafc; }
   td { padding: 6px 6px; }
 
   /* 폼 섹션 */
-  .fsec { padding: 1rem 1.1rem; border-radius: 10px; margin-bottom: 0.85rem; }
-  .fsec-tit { font-size: 12px; margin-bottom: 0.85rem; padding-bottom: 0.6rem; }
+  .fsec { padding: 0.95rem 1rem; border-radius: 10px; margin-bottom: 0.85rem; }
+  .fsec-tit { font-size: 12px; margin-bottom: 0.85rem; padding-bottom: 0.6rem; flex-wrap: wrap; }
   .fgrid { gap: 10px; }
   .fgroup label { font-size: 9px; }
   .fgroup input, .fgroup select { padding: 8px 10px; font-size: 12px; }
@@ -200,102 +201,100 @@ tr:hover td { background: #f8fafc; }
   .toast { left: 1rem; right: 1rem; bottom: 1rem; text-align: center; font-size: 12px; }
 }
 
-/* ── ≤600px : 모바일 본격 ───────────────────────────── */
-@media (max-width: 600px) {
-  /* 메인 패딩 더 줄임 */
-  main { padding: 0.65rem; }
+/* ── ≤500px : 모바일 일반 — 더 압축 ─────────────────── */
+@media (max-width: 500px) {
+  main { padding: 0.6rem; }
 
-  /* 헤더 — 작은 로고 + 작은 버튼 */
-  .logo-e { width: 28px; height: 28px; font-size: 13px; }
-  .logo-main { font-size: 12px; max-width: 165px; white-space: normal; }
+  /* 헤더 */
+  .logo-e { width: 26px; height: 26px; font-size: 12px; }
+  .logo-main { font-size: 11.5px; max-width: 160px; white-space: normal; line-height: 1.2; }
   .ppt-btn { font-size: 10px; padding: 4px 8px; }
-  .tb { padding: 5px 10px; font-size: 11px; }
+  .tb { padding: 4px 8px; font-size: 11px; }
 
   /* 페이지 제목 */
   .pg-title { font-size: 15px; }
-  .pg-sub { font-size: 11px; margin-bottom: 0.85rem; }
-  .sec-label { font-size: 10px; margin-bottom: 10px; letter-spacing: 0.8px; }
+  .pg-sub { font-size: 11px; margin-bottom: 0.75rem; }
+  .sec-label { font-size: 9.5px; margin-bottom: 8px; }
 
-  /* KPI — 더 압축 */
-  .kpi { padding: 0.65rem 0.75rem; border-left-width: 2px; border-radius: 9px; }
-  .kpi-lbl { font-size: 9px; letter-spacing: 0.4px; }
-  .kpi-str { font-size: 10px; margin-bottom: 3px; }
-  .kpi-val { font-size: 16px; }
-  .kpi-rate, .kpi-sub { font-size: 10px; }
+  /* KPI — 4col 유지, 폰트 더 줄임 */
+  .kpi-grid { gap: 4px; margin-bottom: 0.75rem; }
+  .kpi { padding: 0.45rem 0.45rem; border-radius: 7px; }
+  .kpi-lbl { font-size: 7.5px; letter-spacing: 0.2px; }
+  .kpi-str { font-size: 8.5px; margin-bottom: 2px; }
+  .kpi-val { font-size: 12.5px; }
+  .kpi-rate, .kpi-sub { font-size: 8px; }
 
   /* 카드 */
-  .card { padding: 0.7rem 0.8rem; border-radius: 9px; }
-  .card-hd { margin-bottom: 0.55rem; }
-  .card-tit { font-size: 11.5px; }
-  .card-tag { font-size: 8.5px; padding: 2px 5px; }
+  .card { padding: 0.65rem 0.7rem; border-radius: 8px; }
+  .card-hd { margin-bottom: 0.5rem; }
+  .card-tit { font-size: 11px; }
+  .card-tag { font-size: 8.5px; padding: 1px 5px; }
 
-  /* 차트 — 모바일 한 화면 안에 */
-  .chart-box-line { height: 170px; }
-  .chart-box-right { height: 170px; }
-  .chart-box-bar { height: 270px; }
+  /* 차트 — 한 화면 흐름에 맞게 */
+  .chart-box-line { height: 180px; }
+  .chart-box-right { height: 180px; }
+  .chart-box-bar { height: 260px; }
 
   /* 표 */
   table { font-size: 10px; }
-  th { font-size: 8.5px; padding: 4px 5px; letter-spacing: 0.3px; }
+  th { font-size: 8.5px; padding: 4px 5px; letter-spacing: 0.2px; }
   td { padding: 5px 5px; }
 
-  /* 최근 모니터링 — 비고 컬럼 숨김 (좁아서) */
+  /* 최근 모니터링 — 비고 컬럼 숨김 */
   .btm-row .recs th:nth-child(6), .btm-row .recs td:nth-child(6) { display: none; }
-  .btm-row .recs table { min-width: 520px; }
+  .btm-row .recs table { min-width: 480px; }
 
   /* Pager */
   .pg-btn { font-size: 10px; min-width: 24px; height: 24px; padding: 0 6px; }
 
   /* 입력 폼 */
-  .fsec { padding: 0.85rem 0.95rem; }
-  .fsec-tit { font-size: 11.5px; padding-bottom: 0.5rem; margin-bottom: 0.7rem; flex-wrap: wrap; }
-  .fsec-tit-note { font-size: 10px; }
+  .fsec { padding: 0.75rem 0.85rem; }
+  .fsec-tit { font-size: 11px; padding-bottom: 0.5rem; margin-bottom: 0.7rem; }
+  .fsec-tit-note { font-size: 9.5px; }
 
   /* 모달 */
-  .modal { padding: 1.5rem; max-width: 92%; }
-  .mo-title { font-size: 16px; }
-  .mo-sub { font-size: 12px; margin-bottom: 1rem; }
+  .modal { padding: 1.4rem; max-width: 92%; }
+  .mo-title { font-size: 15px; }
+  .mo-sub { font-size: 11.5px; margin-bottom: 0.85rem; }
 }
 
-/* ── ≤420px : 작은 폰 — 가장 컴팩트 ─────────────────── */
-@media (max-width: 420px) {
+/* ── ≤380px : 작은 폰 — kpi-str 숨김으로 마지막 압축 ── */
+@media (max-width: 380px) {
   .fgrid { grid-template-columns: 1fr; }
   main { padding: 0.5rem; }
 
-  /* 헤더 — 부가 정보 숨김 */
-  header { padding: 6px 10px; gap: 6px; }
-  .logo-e { width: 26px; height: 26px; font-size: 12px; }
-  .logo-main { font-size: 11px; max-width: 140px; line-height: 1.2; }
+  /* 헤더 — 가장 컴팩트 */
+  header { padding: 6px 8px; gap: 5px; }
+  .logo-e { width: 24px; height: 24px; font-size: 11px; border-radius: 6px; }
+  .logo-main { font-size: 11px; max-width: 130px; }
   .sy-badge { display: none; }
-  .uchip { font-size: 10px; padding: 2px 8px; gap: 4px; }
-  .lo-btn { font-size: 10px; }
-  .ppt-btn { font-size: 10px; padding: 4px 7px; }
-  .tb { padding: 4px 8px; font-size: 10.5px; }
-  .nav-group { padding: 2px; }
+  .uchip { font-size: 9.5px; padding: 2px 7px; gap: 4px; }
+  .lo-btn { font-size: 9.5px; }
+  .ppt-btn { font-size: 9.5px; padding: 3px 6px; }
+  .tb { padding: 3px 7px; font-size: 10.5px; }
 
-  /* KPI — 부가 라인 숨겨서 컴팩트하게 */
-  .kpi-grid { gap: 6px; }
-  .kpi { padding: 0.55rem 0.65rem; }
-  .kpi-str { display: none; }       /* "위반/모니터링" 같은 부가 줄 숨김 */
-  .kpi-val { font-size: 17px; }
-  .kpi-lbl { font-size: 8.5px; }
-  .kpi-rate, .kpi-sub { font-size: 9.5px; }
+  /* KPI — kpi-str 숨겨 4col 유지하며 더 작게 */
+  .kpi-grid { gap: 3px; }
+  .kpi { padding: 0.4rem 0.4rem; }
+  .kpi-str { display: none; }            /* "위반/모니터링" 부가 줄 숨김 */
+  .kpi-lbl { font-size: 7px; }
+  .kpi-val { font-size: 13px; margin-top: 2px; }
+  .kpi-rate, .kpi-sub { font-size: 7.5px; }
 
-  /* 차트 더 짧게 */
-  .chart-box-line { height: 150px; }
-  .chart-box-right { height: 150px; }
-  .chart-box-bar { height: 240px; }
+  /* 차트 */
+  .chart-box-line { height: 165px; }
+  .chart-box-right { height: 165px; }
+  .chart-box-bar { height: 230px; }
 
-  /* 표 — 상세까지 숨김 */
+  /* 표 — 상세 컬럼까지 숨김 */
   .btm-row .recs th:nth-child(3), .btm-row .recs td:nth-child(3) { display: none; }
-  .btm-row .recs table { min-width: 360px; }
+  .btm-row .recs table { min-width: 340px; }
 
   /* 페이지 제목 */
-  .pg-title { font-size: 14px; }
-  .pg-sub { font-size: 10.5px; margin-bottom: 0.7rem; }
+  .pg-title { font-size: 13.5px; }
 
   /* 모달 */
-  .modal { padding: 1.2rem; }
+  .modal { padding: 1.1rem; }
   .fg input { padding: 9px 11px; font-size: 12px; }
   .btn-full { padding: 10px; font-size: 13px; }
 }
