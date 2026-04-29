@@ -47,7 +47,14 @@ function renderDash(k) {
 
   renderLine(d, now);
   renderRight(d, k, now);
-  renderBar(d);
+  // 막대그래프(브랜드별 현황)는 admin만 — 브랜드장은 본인 1~몇 개만 보이면 차트 의미가 옅어 카드 자체를 숨김
+  const barCard = document.getElementById('barChartCard');
+  if (isAdmin()) {
+    if (barCard) barCard.style.display = '';
+    renderBar(d);
+  } else {
+    if (barCard) barCard.style.display = 'none';
+  }
   renderRecent(d);
 }
 
@@ -97,7 +104,9 @@ function renderRight(d, k, now) {
     tag.textContent = now.getFullYear() + '년';
     const cnt = TYPES.map(t => d.filter(r => r.type === t && r.status !== '모니터링').reduce((s,r) => s + r.count, 0));
     const tot = cnt.reduce((a,b) => a + b, 0);
-    lg.innerHTML = TYPES.map((t,i) => `<span><span class="ld" style="background:${TC[i]}"></span>${t} ${tot ? Math.round(cnt[i]/tot*100) : 0}%</span>`).join('');
+    let legHtml = TYPES.map((t,i) => `<span><span class="ld" style="background:${TC[i]}"></span>${t} ${tot ? Math.round(cnt[i]/tot*100) : 0}%</span>`).join('');
+    if (!tot) legHtml += '<span class="empty-note">위반 사항이 없습니다.</span>';
+    lg.innerHTML = legHtml;
     rChart = new Chart(document.getElementById('rightChart'), {
       type: 'doughnut',
       data: { labels: TYPES, datasets: [{ data: cnt, backgroundColor: TC, borderWidth: 3, borderColor: '#fff' }] },
@@ -108,12 +117,14 @@ function renderRight(d, k, now) {
     tag.textContent = k;
     const subs = SUB[k];
     if (!subs || !subs.length) {
-      lg.innerHTML = '<span style="color:#94a3b8;font-size:11px">등록된 상세 유형이 없습니다</span>';
+      lg.innerHTML = '<span class="empty-note">등록된 상세 유형이 없습니다</span>';
       return;
     }
     const cnt = subs.map(s => d.filter(r => r.subtype === s && r.status !== '모니터링').reduce((x,r) => x + r.count, 0));
     const tot = cnt.reduce((a,b) => a + b, 0);
-    lg.innerHTML = subs.map((s,i) => `<span><span class="ld" style="background:${SC[i%SC.length]}"></span>${s} ${tot ? Math.round(cnt[i]/tot*100) : 0}%</span>`).join('');
+    let legHtml = subs.map((s,i) => `<span><span class="ld" style="background:${SC[i%SC.length]}"></span>${s} ${tot ? Math.round(cnt[i]/tot*100) : 0}%</span>`).join('');
+    if (!tot) legHtml += '<span class="empty-note">위반 사항이 없습니다.</span>';
+    lg.innerHTML = legHtml;
     rChart = new Chart(document.getElementById('rightChart'), {
       type: 'doughnut',
       data: { labels: subs, datasets: [{ data: cnt, backgroundColor: subs.map((_,i) => SC[i%SC.length]), borderWidth: 3, borderColor: '#fff' }] },
@@ -133,8 +144,8 @@ function renderBar(d) {
     data: {
       labels,
       datasets: [
-        { label:'총 모니터링 건수', data: total,    backgroundColor:'#8fa8c8', borderRadius: 4, borderSkipped: false, categoryPercentage: 0.92, barPercentage: 0.95 },
-        { label:'위반',             data: detected, backgroundColor:'#e8845a', borderRadius: 4, borderSkipped: false, categoryPercentage: 0.92, barPercentage: 0.95 }
+        { label:'총 모니터링 건수', data: total,    backgroundColor:'#8fa8c8', borderRadius: 4, borderSkipped: false, categoryPercentage: 0.92, barPercentage: 0.95, maxBarThickness: 26 },
+        { label:'위반',             data: detected, backgroundColor:'#e8845a', borderRadius: 4, borderSkipped: false, categoryPercentage: 0.92, barPercentage: 0.95, maxBarThickness: 26 }
       ]
     },
     options: {

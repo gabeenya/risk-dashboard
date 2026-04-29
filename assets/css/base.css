@@ -64,7 +64,38 @@ main { max-width: 1300px; margin: 0 auto; padding: 1.75rem 1.5rem; }
 .pg-sub { font-size: 13px; color: #64748b; margin-bottom: 1.5rem; }
 .sec-label { font-size: 13px; font-weight: 600; color: #94a3b8; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 16px; }
 
-/* ── Login modal ──────────────────────────────────── */
+/* ── Login page (비로그인 시 단독 표시) ───────────── */
+#page-login.on {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 76px - 3.5rem);
+  padding: 1.5rem 1rem;
+}
+.login-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2.4rem 2.2rem 2rem;
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid #eaecf0;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+}
+.login-brand { text-align: center; margin-bottom: 1.6rem; }
+.login-logo {
+  width: 56px; height: 56px;
+  background: #1e3a8a;
+  border-radius: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700; color: #fff;
+  font-family: Georgia, serif;
+  margin-bottom: 14px;
+}
+.login-tit { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 4px; letter-spacing: -0.3px; }
+.login-sub { font-size: 10.5px; color: #94a3b8; letter-spacing: 0.6px; text-transform: uppercase; }
+.login-foot { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 1rem; }
+
+/* ── Modal (브랜드 편집 등) ────────────────────────── */
 .mb { position: fixed; inset: 0; background: rgba(15,23,42,0.45); backdrop-filter: blur(2px); z-index: 200; display: flex; align-items: center; justify-content: center; }
 .mb.hide { display: none; }
 .modal { background: #fff; border-radius: 16px; padding: 2rem; width: 100%; max-width: 400px; border: 1px solid #eaecf0; }

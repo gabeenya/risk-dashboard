@@ -187,7 +187,12 @@ function buildTypeDetailSlide(pres, ctx, type, typeIdx) {
   const typeRecs = d.filter(r => r.type === type);
   if (!typeRecs.length) return;
 
-  const useBrands = type === '불법파견' ? ILLEGAL_REPORT_BRANDS : COMMON_BRANDS;
+  // 영역별 브랜드 노출 규칙:
+  //   - 불법파견 → ILLEGAL_REPORT_BRANDS (10개+상권)
+  //   - 영업비밀 → COMMON_BRANDS (9개+상권) — '상권'은 영업비밀에서만 노출
+  //   - 그 외   → COMMON_BRANDS에서 '상권' 제외
+  let useBrands = type === '불법파견' ? ILLEGAL_REPORT_BRANDS : COMMON_BRANDS;
+  if (type !== '영업비밀') useBrands = useBrands.filter(b => b !== '상권');
   const s = pres.addSlide();
   addPptHeader(pres, s, type + ' 모니터링 상세 현황', yr + '년 ' + String(now.getMonth()+1).padStart(2,'0') + '월 기준');
   const typeColor = TYPE_COLORS[typeIdx];
@@ -198,10 +203,11 @@ function buildTypeDetailSlide(pres, ctx, type, typeIdx) {
   const typeAct  = typeRecs.filter(r => r.status === '위반(처리중)').reduce((sum, r) => sum + r.count, 0);
   const typeRate = typeVio ? Math.round(typeDone / typeVio * 100) : 0;
 
-  // 표 (10브랜드(불법파견) vs 9브랜드(일반)에 맞춰 셀 폭 분기)
-  const bW       = type === '불법파견' ? 0.38 : 0.42;
+  // 표 — 세부 항목 컬럼을 우선 확보(일반 1.30"/불법파견 1.34")한 뒤 남은 너비를 브랜드+소계 셀에 균등 분배.
+  // 9/10 브랜드일 땐 기존 0.42/0.38 너비를 그대로 보존하고, 브랜드 추가 시 자동으로 셀이 줄어들어 항목명이 짤리지 않도록 한다.
+  const itemColW = type === '불법파견' ? 1.34 : 1.30;
+  const bW       = (SLIDE_W - itemColW) / ((useBrands.length + 1) * 2);
   const bCW2     = useBrands.flatMap(() => [bW, bW]);
-  const itemColW = SLIDE_W - useBrands.length * bW * 2 - bW * 2;
   const colWs2   = [itemColW, ...bCW2, bW, bW];
   const dataFs   = type === '불법파견' ? 8 : 9;
 

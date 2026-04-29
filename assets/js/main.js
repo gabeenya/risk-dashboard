@@ -8,7 +8,7 @@ async function init() {
     await loadUsers();
   }
 
-  // 로그인 모달이 게이트 — 로그인 전에는 데이터 로드 / 폼 초기화 / 차트 렌더 모두 보류
+  // 로그인 페이지가 게이트 — 로그인 전에는 데이터 로드 / 폼 초기화 / 차트 렌더 모두 보류
   applyUser();
   showLogin();
 

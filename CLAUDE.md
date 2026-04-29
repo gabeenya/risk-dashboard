@@ -2,6 +2,9 @@
 
 이 파일은 이 저장소에서 작업할 때 Claude Code가 참고할 가이드입니다.
 
+## 규칙
+git commit 및 push 는 마음대로 하지 말고 사용자에게 맡기기.
+
 ## 프로젝트 개요
 
 **외식BG RO실 리스크 관리 시스템 (Risk Monitoring & Analytics Platform)**
