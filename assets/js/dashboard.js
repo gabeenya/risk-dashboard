@@ -125,8 +125,8 @@ function renderBar(d) {
     data: {
       labels: BRANDS,
       datasets: [
-        { label:'총 모니터링 건수', data: total,    backgroundColor:'#3b82f6', borderRadius: 4, borderSkipped: false, categoryPercentage: 0.92, barPercentage: 0.95 },
-        { label:'적발 건수',        data: detected, backgroundColor:'#ef4444', borderRadius: 4, borderSkipped: false, categoryPercentage: 0.92, barPercentage: 0.95 }
+        { label:'총 모니터링 건수', data: total,    backgroundColor:'#8fa8c8', borderRadius: 4, borderSkipped: false, categoryPercentage: 0.92, barPercentage: 0.95 },
+        { label:'위반',             data: detected, backgroundColor:'#e8845a', borderRadius: 4, borderSkipped: false, categoryPercentage: 0.92, barPercentage: 0.95 }
       ]
     },
     options: {

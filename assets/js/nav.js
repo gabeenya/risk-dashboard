@@ -1,5 +1,12 @@
 // ── 탭 / 필터 / 영역 전환 ────────────────────────────
 function switchTab(pg, btn) {
+  // 데이터 입력은 로그인 필수 — 보고서 생성과 동일하게 toast + 로그인 모달만 띄우고 탭 전환은 막음
+  if (pg === 'input' && !user) {
+    toast('로그인 후 이용해 주세요.');
+    showLogin();
+    return;
+  }
+
   document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
   document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
   document.getElementById('page-' + pg).classList.add('on');
@@ -9,6 +16,7 @@ function switchTab(pg, btn) {
   if (pg === 'input')     renderInputPg();
   if (pg === 'admin')     renderAdmin();
   if (pg === 'ai') {
+    renderBrandPicker();
     document.getElementById('aiEmpty').style.display = '';
     document.getElementById('aiResult').style.display = 'none';
   }

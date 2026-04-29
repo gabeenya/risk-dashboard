@@ -1,7 +1,7 @@
 // ── 데이터 입력 ──────────────────────────────────────
 function renderInputPg() {
-  document.getElementById('inputLock').style.display  = user ? 'none' : '';
-  document.getElementById('inputForm').style.display  = user ? '' : 'none';
+  // 비로그인 시에는 switchTab에서 진입을 막으므로 폼만 렌더한다
+  document.getElementById('inputForm').style.display = user ? '' : 'none';
   if (user) renderInputTable();
 }
 
