@@ -1,14 +1,20 @@
 // ── 대시보드 ─────────────────────────────────────────
 async function loadData() {
+  if (!user) { records = []; return; }   // 비로그인 시 데이터 자체를 비움
   setSy('불러오는 중...', '#15803d', '#f0fdf4');
   try { records = await sbGet('records'); }
   catch(e) { records = []; }
   // 레거시 영역명 정규화: 'IP(지식재산)' → 'IP'
   records.forEach(r => { if (r.type === 'IP(지식재산)') r.type = 'IP'; });
+  // 브랜드 권한 필터링: admin이 아니면 본인 브랜드만 노출
+  if (!isAdmin()) {
+    const allow = userBrands();
+    records = records.filter(r => allow.includes(r.brand));
+  }
   records.sort((a, b) => b.date.localeCompare(a.date));
   setSy('동기화됨', '#15803d', '#f0fdf4');
   renderDash(curFilter);
-  if (user) renderInputTable();
+  if (isAdmin()) renderInputTable();
 }
 
 // 필터 적용된 records
@@ -117,13 +123,15 @@ function renderRight(d, k, now) {
 }
 
 function renderBar(d) {
-  const total    = BRANDS.map(b => d.filter(r => r.brand === b).reduce((s,r) => s + r.count, 0));
-  const detected = BRANDS.map(b => d.filter(r => r.brand === b && r.status !== '모니터링').reduce((s,r) => s + r.count, 0));
+  // 비-admin은 본인 권한 브랜드만 막대로 노출
+  const labels   = isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b));
+  const total    = labels.map(b => d.filter(r => r.brand === b).reduce((s,r) => s + r.count, 0));
+  const detected = labels.map(b => d.filter(r => r.brand === b && r.status !== '모니터링').reduce((s,r) => s + r.count, 0));
   if (bChart) bChart.destroy();
   bChart = new Chart(document.getElementById('barChart'), {
     type: 'bar',
     data: {
-      labels: BRANDS,
+      labels,
       datasets: [
         { label:'총 모니터링 건수', data: total,    backgroundColor:'#8fa8c8', borderRadius: 4, borderSkipped: false, categoryPercentage: 0.92, barPercentage: 0.95 },
         { label:'위반',             data: detected, backgroundColor:'#e8845a', borderRadius: 4, borderSkipped: false, categoryPercentage: 0.92, barPercentage: 0.95 }

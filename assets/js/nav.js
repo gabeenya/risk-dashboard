@@ -1,9 +1,9 @@
 // ── 탭 / 필터 / 영역 전환 ────────────────────────────
 function switchTab(pg, btn) {
-  // 데이터 입력은 로그인 필수 — 보고서 생성과 동일하게 toast + 로그인 모달만 띄우고 탭 전환은 막음
-  if (pg === 'input' && !user) {
-    toast('로그인 후 이용해 주세요.');
-    showLogin();
+  if (!user) { showLogin(); return; }
+  // 데이터 입력 / 관리자 탭은 admin 전용
+  if ((pg === 'input' || pg === 'admin') && !isAdmin()) {
+    toast('권한이 없습니다.');
     return;
   }
 

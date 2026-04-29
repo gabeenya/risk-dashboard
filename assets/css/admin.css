@@ -9,10 +9,31 @@
 /* 신규 계정 결과 안내 텍스트 */
 .new-user-hint { font-size: 12px; color: #94a3b8; }
 
+/* ── 브랜드 권한 picker ───────────────────────────── */
+.brand-pick-tit  { font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 8px; }
+.brand-pick-hint { font-size: 11px; color: #94a3b8; font-weight: 400; margin-left: 6px; }
+.brand-pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px 10px; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+.brand-pick-opt  { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #334155; cursor: pointer; padding: 4px 6px; border-radius: 5px; }
+.brand-pick-opt:hover { background: #eff6ff; }
+.brand-pick-opt input { cursor: pointer; }
+.brand-pick-acts { display: flex; gap: 12px; margin-top: 8px; }
+
+/* 권한 셀렉터 (관리자 표 안) */
+.role-sel { font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; }
+
+/* 브랜드 편집 버튼 (관리자 표 안) */
+.brand-edit-btn { font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px dashed #cbd5e1; background: #fff; color: #475569; cursor: pointer; max-width: 280px; text-align: left; }
+.brand-edit-btn:hover { border-color: #1e3a8a; color: #1e3a8a; border-style: solid; }
+
+/* 와이드 모달 (브랜드 편집용) */
+.modal-wide { max-width: 560px; }
+
 /* ── 모바일 대응 ──────────────────────────────────── */
 @media (max-width: 768px) {
   .ibox { padding: 0.85rem 1rem; flex-wrap: wrap; gap: 8px; }
   .iurl { font-size: 11px; flex: 1 1 100%; }
   .cp-btn { font-size: 11px; padding: 5px 12px; }
   .adm-badge { font-size: 9px; padding: 1px 6px; }
+  .brand-pick-grid { grid-template-columns: repeat(2, 1fr); }
+  .modal-wide { max-width: 92%; }
 }

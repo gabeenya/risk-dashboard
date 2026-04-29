@@ -14,11 +14,12 @@ function aiOptAll(checked) {
 
 function renderBrandPicker() {
   const grid = document.getElementById('aiBrandGrid');
-  if (!grid || grid.dataset.rendered === '1') return;
-  grid.innerHTML = BRANDS.map(b =>
+  if (!grid) return;
+  // 사용자 권한이 바뀔 때(로그아웃 → 다른 계정 로그인)에도 다시 그려야 하므로 매번 렌더
+  const list = isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b));
+  grid.innerHTML = list.map(b =>
     `<label class="ai-brand-opt"><input type="checkbox" class="ai-brand-cb" value="${b}" checked> ${b}</label>`
   ).join('');
-  grid.dataset.rendered = '1';
 }
 
 function aiBrandAll(checked) {
@@ -35,10 +36,11 @@ async function runAI() {
   console.log('[AI] 선택된 항목:', selected);
   if (!selected.length) { alert('분석할 항목을 1개 이상 선택해 주세요.'); return; }
 
-  // 1단계: 분석 대상 브랜드. 전체이거나 미선택이면 전체 브랜드.
-  const brandChecked = Array.from(document.querySelectorAll('.ai-brand-cb:checked')).map(cb => cb.value);
-  const isAllBrands  = !brandChecked.length || brandChecked.length === BRANDS.length;
-  const targetBrands = isAllBrands ? BRANDS : brandChecked;
+  // 1단계: 분석 대상 브랜드. 전체이거나 미선택이면 권한 내 전체 브랜드.
+  const allowedBrands = isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b));
+  const brandChecked  = Array.from(document.querySelectorAll('.ai-brand-cb:checked')).map(cb => cb.value);
+  const isAllBrands   = !brandChecked.length || brandChecked.length === allowedBrands.length;
+  const targetBrands  = isAllBrands ? allowedBrands : brandChecked;
   console.log('[AI] 분석 대상 브랜드:', isAllBrands ? '(전체)' : targetBrands.join(', '));
 
   document.getElementById('aiBtn').disabled = true;

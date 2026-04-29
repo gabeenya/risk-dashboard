@@ -15,32 +15,32 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260429c';</script>
+<script>window.__ASSET_V = '20260429d';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260429c">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260429c">
-<link rel="stylesheet" href="assets/css/input.css?v=20260429c">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260429c">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260429c">
+<link rel="stylesheet" href="assets/css/base.css?v=20260429d">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260429d">
+<link rel="stylesheet" href="assets/css/input.css?v=20260429d">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260429d">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260429d">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260429c"     defer></script>
-<script src="assets/js/constants.js?v=20260429c"  defer></script>
-<script src="assets/js/state.js?v=20260429c"      defer></script>
-<script src="assets/js/utils.js?v=20260429c"      defer></script>
-<script src="assets/js/auth.js?v=20260429c"       defer></script>
-<script src="assets/js/nav.js?v=20260429c"        defer></script>
-<script src="assets/js/dashboard.js?v=20260429c"  defer></script>
-<script src="assets/js/input.js?v=20260429c"      defer></script>
-<script src="assets/js/admin.js?v=20260429c"      defer></script>
-<script src="assets/js/ai.js?v=20260429c"         defer></script>
-<script src="assets/js/ppt.js?v=20260429c"        defer></script>
-<script src="assets/js/main.js?v=20260429c"       defer></script>
+<script src="assets/js/config.js?v=20260429d"     defer></script>
+<script src="assets/js/constants.js?v=20260429d"  defer></script>
+<script src="assets/js/state.js?v=20260429d"      defer></script>
+<script src="assets/js/utils.js?v=20260429d"      defer></script>
+<script src="assets/js/auth.js?v=20260429d"       defer></script>
+<script src="assets/js/nav.js?v=20260429d"        defer></script>
+<script src="assets/js/dashboard.js?v=20260429d"  defer></script>
+<script src="assets/js/input.js?v=20260429d"      defer></script>
+<script src="assets/js/admin.js?v=20260429d"      defer></script>
+<script src="assets/js/ai.js?v=20260429d"         defer></script>
+<script src="assets/js/ppt.js?v=20260429d"        defer></script>
+<script src="assets/js/main.js?v=20260429d"       defer></script>
 </head>
 <body>
 
@@ -255,6 +255,20 @@
         <div class="fgroup"><label>이름</label><input type="text" id="new-name" placeholder="홍길동"></div>
         <div class="fgroup"><label>아이디</label><input type="text" id="new-id" placeholder="영문/숫자 조합"></div>
         <div class="fgroup"><label>임시 비밀번호</label><input type="text" id="new-pw" placeholder="4자 이상"></div>
+        <div class="fgroup"><label>권한</label>
+          <select id="new-role" onchange="toggleNewBrandPicker()">
+            <option value="user" selected>브랜드장 (조회 전용)</option>
+            <option value="admin">관리자 (입력/보고서 포함, 전체 브랜드)</option>
+          </select>
+        </div>
+      </div>
+      <div id="newBrandWrap" style="margin-top:1rem">
+        <p class="brand-pick-tit">접근 가능 브랜드 <span class="brand-pick-hint">— 브랜드장이 대시보드/AI에서 볼 수 있는 브랜드</span></p>
+        <div class="brand-pick-grid" id="newBrandGrid"><!-- JS에서 렌더 --></div>
+        <div class="brand-pick-acts">
+          <button type="button" class="ai-opt-link" onclick="newBrandAll(true)">모두 선택</button>
+          <button type="button" class="ai-opt-link" onclick="newBrandAll(false)">모두 해제</button>
+        </div>
       </div>
       <div class="f-acts" style="margin-top:1rem"><button class="btn-pri" onclick="createUser()">계정 추가</button></div>
       <div id="newUserResult" style="display:none;margin-top:1rem">
@@ -263,10 +277,10 @@
       </div>
     </div>
     <div class="fsec">
-      <p class="fsec-tit">가입된 사용자</p>
+      <p class="fsec-tit">가입된 사용자 <span class="fsec-tit-note">— 권한·브랜드는 행에서 직접 수정</span></p>
       <div class="recs">
         <table>
-          <thead><tr><th>아이디</th><th>이름</th><th>권한</th><th>가입일</th><th></th></tr></thead>
+          <thead><tr><th>아이디</th><th>이름</th><th>권한</th><th>접근 브랜드</th><th>가입일</th><th></th></tr></thead>
           <tbody id="userTbody"></tbody>
         </table>
       </div>
@@ -275,17 +289,33 @@
 
 </main>
 
-<!-- ── Login modal ──────────────────────────────────── -->
-<div class="mb hide" id="loginModal">
+<!-- ── Login modal (비로그인 시 전체 화면 게이트) ──────── -->
+<div class="mb" id="loginModal">
   <div class="modal">
     <p class="mo-title">로그인</p>
     <p class="mo-sub">승인된 계정으로 로그인하세요.</p>
     <div class="mo-err" id="loginErr"></div>
-    <div class="fg"><label>아이디</label><input type="text" id="li-id" placeholder="아이디 입력"></div>
+    <div class="fg"><label>아이디</label><input type="text" id="li-id" placeholder="아이디 입력" onkeydown="if(event.key==='Enter')document.getElementById('li-pw').focus()"></div>
     <div class="fg"><label>비밀번호</label><input type="password" id="li-pw" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <div class="mo-acts">
       <button class="btn-full" onclick="doLogin()">로그인</button>
-      <button class="btn-lnk"  onclick="hideLogin()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit brands modal ───────────────────────────── -->
+<div class="mb hide" id="editBrandsModal">
+  <div class="modal modal-wide">
+    <p class="mo-title" id="editBrandsTitle">브랜드 권한</p>
+    <p class="mo-sub">이 사용자가 대시보드/AI에서 볼 수 있는 브랜드를 선택하세요.</p>
+    <div class="brand-pick-grid" id="editBrandsGrid"></div>
+    <div class="brand-pick-acts" style="margin-top:0.6rem">
+      <button type="button" class="ai-opt-link" onclick="editBrandsAll(true)">모두 선택</button>
+      <button type="button" class="ai-opt-link" onclick="editBrandsAll(false)">모두 해제</button>
+    </div>
+    <div class="mo-acts">
+      <button class="btn-full" onclick="saveEditBrands()">저장</button>
+      <button class="btn-lnk"  onclick="closeEditBrands()">취소</button>
     </div>
   </div>
 </div>
