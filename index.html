@@ -15,32 +15,32 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260508a';</script>
+<script>window.__ASSET_V = '20260508d';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260508a">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260508a">
-<link rel="stylesheet" href="assets/css/input.css?v=20260508a">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260508a">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260508a">
+<link rel="stylesheet" href="assets/css/base.css?v=20260508d">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260508d">
+<link rel="stylesheet" href="assets/css/input.css?v=20260508d">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260508d">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260508d">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260508a"     defer></script>
-<script src="assets/js/constants.js?v=20260508a"  defer></script>
-<script src="assets/js/state.js?v=20260508a"      defer></script>
-<script src="assets/js/utils.js?v=20260508a"      defer></script>
-<script src="assets/js/auth.js?v=20260508a"       defer></script>
-<script src="assets/js/nav.js?v=20260508a"        defer></script>
-<script src="assets/js/dashboard.js?v=20260508a"  defer></script>
-<script src="assets/js/input.js?v=20260508a"      defer></script>
-<script src="assets/js/admin.js?v=20260508a"      defer></script>
-<script src="assets/js/ai.js?v=20260508a"         defer></script>
-<script src="assets/js/ppt.js?v=20260508a"        defer></script>
-<script src="assets/js/main.js?v=20260508a"       defer></script>
+<script src="assets/js/config.js?v=20260508d"     defer></script>
+<script src="assets/js/constants.js?v=20260508d"  defer></script>
+<script src="assets/js/state.js?v=20260508d"      defer></script>
+<script src="assets/js/utils.js?v=20260508d"      defer></script>
+<script src="assets/js/auth.js?v=20260508d"       defer></script>
+<script src="assets/js/nav.js?v=20260508d"        defer></script>
+<script src="assets/js/dashboard.js?v=20260508d"  defer></script>
+<script src="assets/js/input.js?v=20260508d"      defer></script>
+<script src="assets/js/admin.js?v=20260508d"      defer></script>
+<script src="assets/js/ai.js?v=20260508d"         defer></script>
+<script src="assets/js/ppt.js?v=20260508d"        defer></script>
+<script src="assets/js/main.js?v=20260508d"       defer></script>
 </head>
 <body>
 
@@ -189,11 +189,16 @@
             <select id="f-brand">
               <option value="">선택하세요</option>
               <option>애슐리</option><option>피자몰</option><option>로운</option><option>자연별곡</option>
-              <option>델리바이애슐리</option><option>리미니</option><option>프랑제리</option><option>카페</option><option>프랜차이즈</option><option>상권</option>
+              <option>델리바이애슐리</option><option>리미니</option><option>프랑제리</option><option>카페</option><option>프랜차이즈</option><option>상권</option><option>본부</option>
               <option>광주ck</option><option>주안ck</option><option>기흥ck</option><option>CX팀</option>
             </select>
           </div>
           <div class="fgroup"><label>건수</label><input type="number" id="f-count" min="1" value="1"></div>
+          <div class="fgroup"><label>상태</label>
+            <select id="f-status">
+              <option>모니터링</option><option>위반(처리중)</option><option>완료</option>
+            </select>
+          </div>
           <div class="fgroup"><label>비고 (선택)</label><input type="text" id="f-note" placeholder="메모 입력"></div>
         </div>
         <div class="f-acts">

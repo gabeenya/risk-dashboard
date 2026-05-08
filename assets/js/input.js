@@ -6,12 +6,13 @@ function renderInputPg() {
 }
 
 async function addRecord() {
-  const date  = document.getElementById('f-date').value;
-  const type  = curType;
-  const sub   = document.getElementById('f-subtype').value;
-  const brand = document.getElementById('f-brand').value;
-  const count = parseInt(document.getElementById('f-count').value) || 0;
-  const note  = document.getElementById('f-note').value;
+  const date   = document.getElementById('f-date').value;
+  const type   = curType;
+  const sub    = document.getElementById('f-subtype').value;
+  const brand  = document.getElementById('f-brand').value;
+  const count  = parseInt(document.getElementById('f-count').value) || 0;
+  const status = document.getElementById('f-status').value || '모니터링';
+  const note   = document.getElementById('f-note').value;
   if (!date || !brand || count < 1) { toast('필수 항목을 모두 입력해 주세요.'); return; }
 
   const btn = document.getElementById('submitBtn');
@@ -22,7 +23,7 @@ async function addRecord() {
   await sbIns('records', {
     id: Date.now(), date, type,
     subtype: sub || '-', brand,
-    status: '모니터링', count, note,
+    status, count, note,
     author: user.name
   });
   await loadData();
@@ -49,6 +50,14 @@ async function updNote(id, note, btnEl) {
   await loadData();
   setTimeout(() => { btnEl.textContent = '저장'; btnEl.classList.remove('saved'); }, 1500);
   toast('비고가 저장되었습니다.');
+}
+
+async function updDate(id, date) {
+  if (!date) return;
+  await sbUpd('records', id, { date });
+  await loadData();
+  renderInputTable();
+  toast(`날짜 → "${date}"`);
 }
 
 async function updBrand(id, brand) {
@@ -111,6 +120,7 @@ function resetForm() {
   document.getElementById('f-brand').value   = '';
   document.getElementById('f-subtype').value = '';
   document.getElementById('f-count').value   = 1;
+  document.getElementById('f-status').value  = '모니터링';
   document.getElementById('f-note').value    = '';
 }
 
@@ -130,7 +140,7 @@ function renderInputTable() {
            ${subs.map(s => `<option${r.subtype===s?' selected':''}>${s}</option>`).join('')}
          </select>`;
     return `<tr>
-    <td>${r.date}</td>
+    <td><input type="date" class="st-sel date-sel" value="${r.date}" onchange="updDate(${r.id},this.value)"></td>
     <td>${r.type}</td>
     <td>${subCell}</td>
     <td>

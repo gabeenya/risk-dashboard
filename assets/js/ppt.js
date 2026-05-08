@@ -48,13 +48,13 @@ function buildCoverSlide(pres, ctx) {
 
 // ── 슬라이드 2: 법인 전체 KPI + 월별 라인차트 ────────
 function buildOverviewSlide(pres, ctx) {
-  const { yr, monthName, tot, vio, mTot, mVio, done, act, rate, vr, mArr } = ctx;
+  const { prevYr, prevMonthName, tot, vio, prevMTot, prevMVio, done, act, rate, vr, mArr } = ctx;
   const s = pres.addSlide();
-  addPptHeader(pres, s, '법인 전체 리스크 현황', yr + '년 ' + monthName + '월 기준');
+  addPptHeader(pres, s, '법인 전체 리스크 현황', prevYr + '년 ' + String(prevMonthName).padStart(2,'0') + '월 기준');
 
   [
     { label:'누적 모니터링', value:tot+'건',  sub:'위반 '+vio+'건 ('+vr+'%)',                                      color:PPT_NAVY },
-    { label:'당월 모니터링', value:mTot+'건', sub:'위반 '+mVio+'건 ('+(mTot?Math.round(mVio/mTot*100):0)+'%)',     color:'2563eb' },
+    { label:'전월 모니터링', value:prevMTot+'건', sub:'위반 '+prevMVio+'건 ('+(prevMTot?Math.round(prevMVio/prevMTot*100):0)+'%)', color:'2563eb' },
     { label:'처리 완료율',   value:rate+'%',  sub:'완료 '+done+' / 위반 '+vio+'건',                               color:'15803d' },
     { label:'조치중',       value:act+'건',  sub:'위반(처리중) 상태',                                            color:'94a3b8' }
   ].forEach((k, i) => {
@@ -82,9 +82,9 @@ function buildOverviewSlide(pres, ctx) {
 
 // ── 슬라이드 3: 브랜드별 종합 표 ─────────────────────
 function buildBrandSummarySlide(pres, ctx) {
-  const { yr, monthName, ym, d } = ctx;
+  const { prevYr: yr, prevMonthName: monthName, prevYm: ym, d } = ctx;
   const s = pres.addSlide();
-  addPptHeader(pres, s, '브랜드별 현황', yr + '년 ' + monthName + '월 기준');
+  addPptHeader(pres, s, '브랜드별 현황', yr + '년 ' + String(monthName).padStart(2,'0') + '월 기준');
 
   const data = [];
 
@@ -92,7 +92,7 @@ function buildBrandSummarySlide(pres, ctx) {
   data.push([
     { text:'브랜드',           options:{ bold:true, fill:{color:PPT_NAVY},   color:PPT_WHITE, fontSize:10, align:'center', valign:'middle', rowspan:3 } },
     { text:'연 누 적',         options:{ bold:true, fill:{color:'1e3a8a'},   color:PPT_WHITE, fontSize:10, align:'center', colspan:TYPES.length*2 } },
-    { text:'당 월 ('+monthName+'월)', options:{ bold:true, fill:{color:'2563eb'}, color:PPT_WHITE, fontSize:10, align:'center', colspan:TYPES.length*2 } },
+    { text:'전 월 ('+monthName+'월)', options:{ bold:true, fill:{color:'2563eb'}, color:PPT_WHITE, fontSize:10, align:'center', colspan:TYPES.length*2 } },
     { text:'합계',             options:{ bold:true, fill:{color:'334155'},   color:PPT_WHITE, fontSize:10, align:'center', valign:'middle', colspan:2, rowspan:3 } }
   ]);
 
@@ -338,6 +338,8 @@ async function generatePPT() {
     const vr   = tot ? Math.round(vio / tot * 100) : 0;
     const mTot = d.filter(r => r.date && r.date.startsWith(ym)).reduce((s, r) => s + r.count, 0);
     const mVio = d.filter(r => r.date && r.date.startsWith(ym) && r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
+    const prevMTot = d.filter(r => r.date && r.date.startsWith(prevYm)).reduce((s, r) => s + r.count, 0);
+    const prevMVio = d.filter(r => r.date && r.date.startsWith(prevYm) && r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
     const mArr = MONTHS.map((_, i) => {
       const pfx = yr + '-' + String(i+1).padStart(2,'0');
       return {
@@ -346,7 +348,7 @@ async function generatePPT() {
       };
     });
 
-    const ctx = { now, monthName, yr, ym, prevYr, prevMonthName, prevYm, d, tot, vio, mTot, mVio, done, act, rate, vr, mArr };
+    const ctx = { now, monthName, yr, ym, prevYr, prevMonthName, prevYm, d, tot, vio, mTot, mVio, prevMTot, prevMVio, done, act, rate, vr, mArr };
 
     buildCoverSlide(pres, ctx);
     buildOverviewSlide(pres, ctx);

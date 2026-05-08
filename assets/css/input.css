@@ -36,6 +36,7 @@
 /* 인라인 편집용 셀렉트 / 건수 입력 */
 .sub-sel { max-width: 180px; }
 .brand-sel { max-width: 110px; }
+.date-sel { max-width: 130px; }
 .count-wrap { min-width: 70px; max-width: 90px; }
 .count-inp { padding-right: 30px; }
 .count-inp::-webkit-outer-spin-button,
@@ -64,6 +65,7 @@
 
   /* 데이터 목록 — 인라인 컨트롤 */
   .sub-sel, .brand-sel { max-width: 120px; font-size: 10px; padding: 2px 5px; }
+  .date-sel { max-width: 110px; font-size: 10px; padding: 2px 4px; }
   .count-wrap { min-width: 60px; max-width: 80px; }
   .note-inp { font-size: 10px; padding: 4px 26px 4px 6px; }
   .note-save-btn { font-size: 8px; padding: 2px 4px; }
