@@ -183,8 +183,8 @@ function buildBrandSummarySlide(pres, ctx) {
 
 // ── 슬라이드 4~: 영역별 상세 ─────────────────────────
 function buildTypeDetailSlide(pres, ctx, type, typeIdx) {
-  const { yr, now, d } = ctx;
-  const typeRecs = d.filter(r => r.type === type);
+  const { d, prevYr, prevMonthName, prevYm } = ctx;
+  const typeRecs = d.filter(r => r.type === type && r.date && r.date.startsWith(prevYm));
   if (!typeRecs.length) return;
 
   // 영역별 브랜드 노출 규칙:
@@ -194,7 +194,7 @@ function buildTypeDetailSlide(pres, ctx, type, typeIdx) {
   let useBrands = type === '불법파견' ? ILLEGAL_REPORT_BRANDS : COMMON_BRANDS;
   if (type !== '영업비밀') useBrands = useBrands.filter(b => b !== '상권');
   const s = pres.addSlide();
-  addPptHeader(pres, s, type + ' 모니터링 상세 현황', yr + '년 ' + String(now.getMonth()+1).padStart(2,'0') + '월 기준');
+  addPptHeader(pres, s, type + ' 모니터링 상세 현황', prevYr + '년 ' + String(prevMonthName).padStart(2,'0') + '월 기준 (전월)');
   const typeColor = TYPE_COLORS[typeIdx];
 
   const typeTot  = typeRecs.reduce((sum, r) => sum + r.count, 0);
@@ -324,6 +324,10 @@ async function generatePPT() {
     const monthName = now.getMonth() + 1;
     const yr        = now.getFullYear();
     const ym        = yr + '-' + String(now.getMonth()+1).padStart(2,'0');
+    const prevDate     = new Date(yr, now.getMonth() - 1, 1);
+    const prevYr       = prevDate.getFullYear();
+    const prevMonthName = prevDate.getMonth() + 1;
+    const prevYm       = prevYr + '-' + String(prevMonthName).padStart(2,'0');
 
     const d    = records;
     const tot  = d.reduce((s, r) => s + r.count, 0);
@@ -342,7 +346,7 @@ async function generatePPT() {
       };
     });
 
-    const ctx = { now, monthName, yr, ym, d, tot, vio, mTot, mVio, done, act, rate, vr, mArr };
+    const ctx = { now, monthName, yr, ym, prevYr, prevMonthName, prevYm, d, tot, vio, mTot, mVio, done, act, rate, vr, mArr };
 
     buildCoverSlide(pres, ctx);
     buildOverviewSlide(pres, ctx);
