@@ -98,16 +98,14 @@ function buildBrandSummarySlide(pres, ctx) {
     { text:'합계',             options:{ bold:true, fill:{color:'334155'},   color:PPT_WHITE, fontSize:10, align:'center', valign:'middle', colspan:2, rowspan:3 } }
   ]);
 
-  // 헤더행2: 영역명 (연누적 6개, 당월 6개)
+  // 헤더행2: 영역명 (연누적 N개, 당월 N개)
   const hRow2 = [];
-  TYPES.slice(0, TYPES.length - 1).forEach(t => {
-    hRow2.push({ text:t, options:{ bold:true, fill:{color:'1a3270'}, color:PPT_WHITE, fontSize:8, align:'center', colspan:2 } });
+  TYPES.forEach(t => {
+    hRow2.push({ text:t, options:{ bold:true, fill:{color:'1a3270'}, color:PPT_WHITE, fontSize:7, align:'center', colspan:2 } });
   });
-  hRow2.push({ text:TYPES[5], options:{ bold:true, fill:{color:'1a3270'}, color:PPT_WHITE, fontSize:6, align:'center', colspan:2 } });
-  TYPES.slice(0, TYPES.length - 1).forEach(t => {
-    hRow2.push({ text:t, options:{ bold:true, fill:{color:'1d4ed8'}, color:PPT_WHITE, fontSize:8, align:'center', colspan:2 } });
+  TYPES.forEach(t => {
+    hRow2.push({ text:t, options:{ bold:true, fill:{color:'1d4ed8'}, color:PPT_WHITE, fontSize:7, align:'center', colspan:2 } });
   });
-  hRow2.push({ text:TYPES[5], options:{ bold:true, fill:{color:'1d4ed8'}, color:PPT_WHITE, fontSize:6, align:'center', colspan:2 } });
   data.push(hRow2);
 
   // 헤더행3: "전체/위반" 반복
@@ -173,8 +171,10 @@ function buildBrandSummarySlide(pres, ctx) {
   sumRow.push({ text:gYearVio || '-', options:{ bold:true, fontSize:8, align:'center', fill:{color:'334155'}, color:gYearVio>0?'fca5a5':PPT_WHITE } });
   data.push(sumRow);
 
-  // 열 너비: 브랜드(0.7) + 연누적(영역×2×0.34) + 당월(영역×2×0.34) + 합계(0.42×2) = 9.70"
-  const typeColW = TYPES.flatMap(() => [0.34, 0.34]);
+  // 열 너비: 브랜드(0.7) + 연누적(영역×2×CW) + 당월(영역×2×CW) + 합계(0.42×2) = 9.70"
+  //   CW = (9.7 - 0.7 - 0.84) / (TYPES.length * 4)
+  const CW = (9.7 - 0.7 - 0.84) / (TYPES.length * 4);
+  const typeColW = TYPES.flatMap(() => [CW, CW]);
   s.addTable(data, {
     x:0.15, y:0.85, w:9.7,
     border:{ pt:0.3, color:'e2e8f0' },
