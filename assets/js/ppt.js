@@ -66,6 +66,7 @@ function buildOverviewSlide(pres, ctx) {
     s.addText(k.sub,   { x:x+0.12, y:1.72, w:2.1, h:0.3,  fontSize:11, color:k.color === '15803d' ? '15803d' : 'c0603a', fontFace:'Calibri' });
   });
 
+  // 축은 PowerPoint가 데이터 범위에 맞춰 자동 조정. 단, 건수는 음수가 될 수 없으므로 min=0으로 고정.
   s.addChart(pres.charts.LINE, [
     { name:'모니터링', labels:MONTHS, values:mArr.map(m => m.mon) },
     { name:'위반',     labels:MONTHS, values:mArr.map(m => m.vio) }
@@ -75,6 +76,7 @@ function buildOverviewSlide(pres, ctx) {
     chartColors:['8fa8c8','e8845a'],
     showLegend:true, legendPos:'b',
     catAxisLabelColor:'94a3b8', valAxisLabelColor:'94a3b8',
+    valAxisMinVal:0,
     valGridLine:{ color:'e2e8f0', size:0.5 },
     chartArea:{ fill:{ color: PPT_WHITE } }
   });
@@ -305,6 +307,104 @@ function buildTypeDetailSlide(pres, ctx, type, typeIdx) {
   });
 }
 
+// ── 슬라이드 N: 브랜드별 영역 현황 ───────────────────
+// 전월 기준 6개 영역 × (전체/위반) 표 + 영역별 막대 그래프.
+// '위반'은 status !== '모니터링' (위반(처리중) + 완료) 합산.
+function buildBrandDetailSlide(pres, ctx, brand) {
+  const { d, prevYr, prevMonthName, prevYm } = ctx;
+  const brandRecs = d.filter(r => r.brand === brand && r.date && r.date.startsWith(prevYm));
+
+  const s = pres.addSlide();
+  addPptHeader(pres, s, brand + ' 영역별 모니터링 현황', prevYr + '년 ' + String(prevMonthName).padStart(2,'0') + '월 기준 (전월)');
+
+  const bTot  = brandRecs.reduce((sum, r) => sum + r.count, 0);
+  const bVio  = brandRecs.filter(r => r.status !== '모니터링').reduce((sum, r) => sum + r.count, 0);
+  const bDone = brandRecs.filter(r => r.status === '완료').reduce((sum, r) => sum + r.count, 0);
+  const bAct  = brandRecs.filter(r => r.status === '위반(처리중)').reduce((sum, r) => sum + r.count, 0);
+  const bRate = bVio ? Math.round(bDone / bVio * 100) : 0;
+  const bVr   = bTot ? Math.round(bVio / bTot * 100) : 0;
+
+  // KPI 4-box strip
+  [
+    { label:'전월 모니터링', value:bTot+'건', sub:'위반 '+bVio+'건 ('+bVr+'%)',                                color:PPT_NAVY },
+    { label:'위반 건수',     value:bVio+'건', sub:'전체 대비 '+bVr+'%',                                       color:'2563eb' },
+    { label:'처리 완료율',   value:bRate+'%', sub:'완료 '+bDone+' / 위반 '+bVio+'건',                          color:'15803d' },
+    { label:'조치중',       value:bAct+'건', sub:'위반(처리중) 상태',                                         color:'94a3b8' }
+  ].forEach((k, i) => {
+    const x = 0.25 + i * 2.42;
+    s.addShape(pres.shapes.RECTANGLE, { x, y:0.85, w:2.25, h:1.15, fill:{color:PPT_WHITE}, shadow:{type:'outer',blur:5,offset:2,angle:135,color:'000000',opacity:0.07} });
+    s.addShape(pres.shapes.RECTANGLE, { x, y:0.85, w:0.05, h:1.15, fill:{color:k.color} });
+    s.addText(k.label, { x:x+0.12, y:0.90, w:2.1, h:0.22, fontSize:10, color:'94a3b8', fontFace:'Calibri', bold:true });
+    s.addText(k.value, { x:x+0.12, y:1.14, w:2.1, h:0.42, fontSize:22, bold:true, color:'0f172a', fontFace:'Calibri' });
+    s.addText(k.sub,   { x:x+0.12, y:1.62, w:2.1, h:0.3,  fontSize:10, color:k.color === '15803d' ? '15803d' : 'c0603a', fontFace:'Calibri' });
+  });
+
+  // 영역별 집계
+  const typeMons = TYPES.map(type => brandRecs.filter(r => r.type === type).reduce((sum, r) => sum + r.count, 0));
+  const typeVios = TYPES.map(type => brandRecs.filter(r => r.type === type && r.status !== '모니터링').reduce((sum, r) => sum + r.count, 0));
+
+  // 좌측: 영역별 막대 그래프
+  // 기본: 자동 스케일(min=0만 고정).
+  // 1000 초과 영역이 있는 브랜드만 0-100/5단위로 고정 + 100 초과 값은 막대 상단에 실제 수치 표기
+  // → 영업비밀처럼 한 영역만 압도적으로 큰 브랜드에서 나머지 영역도 보이게 함.
+  const chartMax = Math.max(...typeMons, ...typeVios);
+  const barOpts = {
+    x:0.15, y:2.20, w:5.4, h:3.2,
+    barDir:'col', barGrouping:'clustered',
+    chartColors:['8fa8c8','e8845a'],
+    showLegend:true, legendPos:'b', legendFontSize:9,
+    catAxisLabelColor:'94a3b8', catAxisLabelFontSize:9,
+    valAxisLabelColor:'94a3b8', valAxisLabelFontSize:9,
+    valAxisMinVal:0,
+    valGridLine:{ color:'e2e8f0', size:0.5 },
+    chartArea:{ fill:{ color:PPT_WHITE } }
+  };
+  if (chartMax > 1000) {
+    Object.assign(barOpts, {
+      valAxisMaxVal:100, valAxisMajorUnit:5,
+      showValue:true,
+      dataLabelFontSize:8,
+      dataLabelColor:'0f172a',
+      dataLabelPosition:'outEnd',
+      dataLabelFormatCode:'[>100]0;""'
+    });
+  }
+  s.addChart(pres.charts.BAR, [
+    { name:'모니터링', labels:TYPES, values:typeMons },
+    { name:'위반',     labels:TYPES, values:typeVios }
+  ], barOpts);
+
+  // 우측: 영역별 표 (영역 / 전체 / 위반)
+  const tblData = [[
+    { text:'영역', options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:10, align:'center', valign:'middle' } },
+    { text:'전체', options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:10, align:'center', valign:'middle' } },
+    { text:'위반', options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:10, align:'center', valign:'middle' } }
+  ]];
+
+  TYPES.forEach((type, ti) => {
+    const bg = ti % 2 === 0 ? 'f8fafc' : PPT_WHITE;
+    const t = typeMons[ti], v = typeVios[ti];
+    tblData.push([
+      { text:type,     options:{ fontSize:10, bold:true, align:'center', valign:'middle', fill:{color:bg}, color:'334155' } },
+      { text:t || '-', options:{ fontSize:10, align:'center', valign:'middle', fill:{color:bg} } },
+      { text:v || '-', options:{ fontSize:10, align:'center', valign:'middle', bold:v>0, color:v>0?'dc2626':'94a3b8', fill:{color:bg} } }
+    ]);
+  });
+
+  tblData.push([
+    { text:'합계',        options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:10, align:'center', valign:'middle' } },
+    { text:bTot || '-',   options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:10, align:'center', valign:'middle' } },
+    { text:bVio || '-',   options:{ bold:true, fill:{color:PPT_NAVY}, color:bVio>0?'fca5a5':PPT_WHITE, fontSize:10, align:'center', valign:'middle' } }
+  ]);
+
+  s.addTable(tblData, {
+    x:5.70, y:2.20, w:4.15,
+    colW:[1.90, 1.10, 1.15],
+    border:{ pt:0.3, color:'e2e8f0' },
+    rowH:0.39
+  });
+}
+
 // ── 메인 진입점 ──────────────────────────────────────
 async function generatePPT() {
   if (!user) { showLogin(); return; }
@@ -354,6 +454,7 @@ async function generatePPT() {
     buildOverviewSlide(pres, ctx);
     buildBrandSummarySlide(pres, ctx);
     TYPES.forEach((type, idx) => buildTypeDetailSlide(pres, ctx, type, idx));
+    BRANDS.forEach(brand => buildBrandDetailSlide(pres, ctx, brand));
 
     const fn = '외식BG_리스크_' + yr + '년_' + monthName + '월_리스크관리현황.pptx';
     await pres.writeFile({ fileName: fn });
