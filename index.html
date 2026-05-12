@@ -10,37 +10,38 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <!--
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260512a';</script>
+<script>window.__ASSET_V = '20260512b';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260512a">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260512a">
-<link rel="stylesheet" href="assets/css/input.css?v=20260512a">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260512a">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260512a">
+<link rel="stylesheet" href="assets/css/base.css?v=20260512b">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260512b">
+<link rel="stylesheet" href="assets/css/input.css?v=20260512b">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260512b">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260512b">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260512a"     defer></script>
-<script src="assets/js/constants.js?v=20260512a"  defer></script>
-<script src="assets/js/state.js?v=20260512a"      defer></script>
-<script src="assets/js/utils.js?v=20260512a"      defer></script>
-<script src="assets/js/auth.js?v=20260512a"       defer></script>
-<script src="assets/js/nav.js?v=20260512a"        defer></script>
-<script src="assets/js/dashboard.js?v=20260512a"  defer></script>
-<script src="assets/js/input.js?v=20260512a"      defer></script>
-<script src="assets/js/admin.js?v=20260512a"      defer></script>
-<script src="assets/js/ai.js?v=20260512a"         defer></script>
-<script src="assets/js/ppt.js?v=20260512a"        defer></script>
-<script src="assets/js/main.js?v=20260512a"       defer></script>
+<script src="assets/js/config.js?v=20260512b"     defer></script>
+<script src="assets/js/constants.js?v=20260512b"  defer></script>
+<script src="assets/js/state.js?v=20260512b"      defer></script>
+<script src="assets/js/utils.js?v=20260512b"      defer></script>
+<script src="assets/js/auth.js?v=20260512b"       defer></script>
+<script src="assets/js/nav.js?v=20260512b"        defer></script>
+<script src="assets/js/dashboard.js?v=20260512b"  defer></script>
+<script src="assets/js/input.js?v=20260512b"      defer></script>
+<script src="assets/js/admin.js?v=20260512b"      defer></script>
+<script src="assets/js/ai.js?v=20260512b"         defer></script>
+<script src="assets/js/ppt.js?v=20260512b"        defer></script>
+<script src="assets/js/main.js?v=20260512b"       defer></script>
 </head>
 <body>
 
@@ -182,6 +183,38 @@
         <button class="tt"    onclick="setInputType(this,'IP')">IP</button>
         <button class="tt"    onclick="setInputType(this,'부실채권')">부실채권</button>
         <button class="tt"    onclick="setInputType(this,'징계')">징계</button>
+      </div>
+      <div class="fsec">
+        <p class="fsec-tit">엑셀 일괄 업로드 <span class="fsec-tit-note">— 정해진 양식의 엑셀 파일로 여러 건을 한 번에 등록합니다</span></p>
+        <div class="xl-up">
+          <div class="xl-up-row">
+            <button class="btn-sec xl-tpl-btn" onclick="downloadExcelTemplate()">📥 양식 다운로드</button>
+            <label class="xl-file-lbl" for="xl-file">📂 엑셀 파일 선택 (.xlsx)
+              <input type="file" id="xl-file" accept=".xlsx,.xls" onchange="handleExcelFile(event)" hidden>
+            </label>
+            <span class="xl-file-name" id="xlFileName">선택된 파일 없음</span>
+          </div>
+          <p class="xl-hint">양식의 <b>데이터</b> 시트만 채워서 업로드하세요. 첫 행(헤더)은 그대로 두고 두 번째 행부터 입력합니다. 같은 양식으로 모든 영역(가맹/불법파견/...) 데이터를 한 번에 올릴 수 있습니다.</p>
+        </div>
+        <div class="xl-preview hide" id="xlPreview">
+          <div class="xl-pv-hd">
+            <div class="xl-pv-stats">
+              <span class="xl-pv-stat xl-pv-ok">✓ 유효: <b id="xlOkCnt">0</b>건</span>
+              <span class="xl-pv-stat xl-pv-err">✕ 오류: <b id="xlErrCnt">0</b>건</span>
+              <span class="xl-pv-stat">전체: <b id="xlTotCnt">0</b>행</span>
+            </div>
+            <div class="xl-pv-acts">
+              <button class="btn-pri" id="xlConfirmBtn" onclick="confirmBulkUpload()">✓ 유효 건 업로드</button>
+              <button class="btn-sec" onclick="cancelBulkUpload()">취소</button>
+            </div>
+          </div>
+          <div class="xl-pv-tbl-wrap">
+            <table class="xl-pv-tbl">
+              <thead><tr><th>#</th><th>날짜</th><th>영역</th><th>상세유형</th><th>브랜드</th><th>건수</th><th>상태</th><th>비고</th><th>검증</th></tr></thead>
+              <tbody id="xlPvTbody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
       <div class="fsec">
         <p class="fsec-tit">신규 입력 <span class="a-badge" id="areaBadge">가맹</span></p>

@@ -47,6 +47,40 @@
 .cell-muted { font-size: 11px; color: #64748b; }
 .cell-sub { font-size: 11px; color: #64748b; }
 
+/* ── 엑셀 일괄 업로드 ───────────────────────────────── */
+.xl-up { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 14px 16px; }
+.xl-up-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.xl-tpl-btn { white-space: nowrap; }
+.xl-file-lbl { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; font-size: 12px; color: #334155; cursor: pointer; transition: all 0.15s; font-weight: 500; }
+.xl-file-lbl:hover { border-color: #1e3a8a; color: #1e3a8a; }
+.xl-file-name { font-size: 12px; color: #64748b; flex: 1; min-width: 120px; }
+.xl-hint { margin-top: 10px; font-size: 11.5px; color: #64748b; line-height: 1.55; }
+.xl-hint b { color: #1e3a8a; font-weight: 600; }
+
+.xl-preview { margin-top: 1rem; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
+.xl-preview.hide { display: none; }
+.xl-pv-hd { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #e2e8f0; gap: 12px; flex-wrap: wrap; }
+.xl-pv-stats { display: flex; gap: 14px; font-size: 12px; flex-wrap: wrap; }
+.xl-pv-stat { color: #64748b; }
+.xl-pv-stat b { color: #0f172a; font-weight: 600; margin-left: 3px; }
+.xl-pv-ok b { color: #15803d; }
+.xl-pv-err b { color: #dc2626; }
+.xl-pv-acts { display: flex; gap: 8px; }
+.xl-pv-acts .btn-pri:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+.xl-pv-tbl-wrap { max-height: 360px; overflow: auto; }
+.xl-pv-tbl { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.xl-pv-tbl thead { position: sticky; top: 0; background: #f8fafc; z-index: 1; }
+.xl-pv-tbl th { padding: 8px 10px; font-size: 10px; color: #94a3b8; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; text-align: left; border-bottom: 1px solid #e2e8f0; }
+.xl-pv-tbl td { padding: 7px 10px; color: #334155; border-bottom: 1px solid #f1f5f9; }
+.xl-row-err td { background: #fef2f2; }
+.xl-row-ok td:first-child { color: #15803d; font-weight: 600; }
+.xl-row-err td:first-child { color: #dc2626; font-weight: 600; }
+
+.xl-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+.xl-badge-ok { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.xl-badge-err { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; max-width: 260px; white-space: normal; line-height: 1.4; }
+
 /* ── 모바일 대응 ──────────────────────────────────── */
 @media (max-width: 768px) {
   /* 영역 탭 — 가로 스크롤 한 줄 유지 */
@@ -62,6 +96,15 @@
   .f-acts { flex-wrap: wrap; gap: 8px; }
   .btn-pri { padding: 8px 18px; font-size: 12px; }
   .btn-sec { padding: 8px 14px; font-size: 12px; }
+
+  /* 엑셀 업로드 — 모바일 */
+  .xl-up { padding: 12px; }
+  .xl-up-row { gap: 8px; }
+  .xl-file-lbl, .xl-tpl-btn { font-size: 11.5px; padding: 7px 12px; }
+  .xl-pv-hd { padding: 10px 12px; }
+  .xl-pv-stats { gap: 10px; font-size: 11px; }
+  .xl-pv-tbl { font-size: 10.5px; }
+  .xl-pv-tbl th, .xl-pv-tbl td { padding: 6px 8px; }
 
   /* 데이터 목록 — 인라인 컨트롤 */
   .sub-sel, .brand-sel { max-width: 120px; font-size: 10px; padding: 2px 5px; }
