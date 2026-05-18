@@ -55,14 +55,11 @@ function renderDash(k) {
 
   renderLine(d, now);
   renderRight(d, k, now);
-  // 막대그래프(브랜드별 현황)는 admin만 — 브랜드장은 본인 1~몇 개만 보이면 차트 의미가 옅어 카드 자체를 숨김
+  // 막대그래프(브랜드별 현황) — admin은 전체 브랜드, 브랜드장은 본인 브랜드만 표시(렌더 함수가 권한별 라벨 분기).
+  // 영업비밀 환산 안내 푸터가 이 카드 내부에 있어, 브랜드장에게도 카드를 노출해야 노트가 보임.
   const barCard = document.getElementById('barChartCard');
-  if (isAdmin()) {
-    if (barCard) barCard.style.display = '';
-    renderBar(d);
-  } else {
-    if (barCard) barCard.style.display = 'none';
-  }
+  if (barCard) barCard.style.display = '';
+  renderBar(d);
   renderRecent(d);
 
   // 영업비밀 10:1 환산 안내: 도넛·브랜드별 현황은 전체·영업비밀에서, 추이 그래프는 영업비밀 탭에서만 노출
