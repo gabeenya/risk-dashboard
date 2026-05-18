@@ -47,5 +47,7 @@ function setInputType(btn, type) {
   } else {
     sel.innerHTML = '<option value="">선택하세요</option>' + s.map(x => `<option>${x}</option>`).join('');
   }
+  // 영역 전환 시 데이터 목록 필터는 '전체'로 초기화
+  inpSub = 'all'; inpBrand = 'all';
   renderInputTable();
 }

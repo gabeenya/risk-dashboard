@@ -124,11 +124,59 @@ function resetForm() {
   document.getElementById('f-note').value    = '';
 }
 
+// 데이터 목록 — 상세유형/브랜드 필터 옵션을 현재 영역(curType)에 맞춰 갱신
+// 영역을 바꿀 때, 페이지 진입 시 호출. 보존 가능한 값(전체)이면 유지, 아니면 'all'로 초기화.
+function refreshInpFilterOpts() {
+  const sub = document.getElementById('inpSubFilter');
+  const brn = document.getElementById('inpBrandFilter');
+  if (!sub || !brn) return;
+  // 상세유형: 현재 영역의 상세유형 목록 + '-' (상세 없음 데이터용)
+  const subs = SUB[curType] || [];
+  // 데이터에 존재하는 '-' (subtype 미입력) 케이스 노출
+  const hasDash = records.some(r => r.type === curType && (!r.subtype || r.subtype === '-'));
+  const subOpts = ['<option value="all">전체</option>']
+    .concat(subs.map(s => `<option value="${s}">${s}</option>`));
+  if (hasDash) subOpts.push('<option value="-">(상세 없음)</option>');
+  sub.innerHTML = subOpts.join('');
+  if (inpSub !== 'all' && !subs.includes(inpSub) && !(inpSub === '-' && hasDash)) inpSub = 'all';
+  sub.value = inpSub;
+  // 브랜드: 현재 영역에 데이터가 있는 브랜드만 노출 (없는 브랜드 숨겨 깔끔하게)
+  const brandsInData = Array.from(new Set(records.filter(r => r.type === curType).map(r => r.brand))).filter(Boolean);
+  const orderedBrands = BRANDS.filter(b => brandsInData.includes(b));
+  brn.innerHTML = ['<option value="all">전체</option>']
+    .concat(orderedBrands.map(b => `<option value="${b}">${b}</option>`))
+    .join('');
+  if (inpBrand !== 'all' && !orderedBrands.includes(inpBrand)) inpBrand = 'all';
+  brn.value = inpBrand;
+}
+
+function setInpSubFilter(v)   { inpSub = v;   renderInputTable(); }
+function setInpBrandFilter(v) { inpBrand = v; renderInputTable(); }
+function resetInpFilters() {
+  inpSub = 'all'; inpBrand = 'all';
+  const sub = document.getElementById('inpSubFilter');
+  const brn = document.getElementById('inpBrandFilter');
+  if (sub) sub.value = 'all';
+  if (brn) brn.value = 'all';
+  renderInputTable();
+}
+
 function renderInputTable() {
-  const tb = document.getElementById('inputTbody');
-  const fl = records.filter(r => r.type === curType);
+  refreshInpFilterOpts();
+  const tb  = document.getElementById('inputTbody');
+  const cnt = document.getElementById('inpFilterCnt');
+  let fl = records.filter(r => r.type === curType);
+  const total = fl.length;
+  if (inpSub !== 'all') {
+    if (inpSub === '-') fl = fl.filter(r => !r.subtype || r.subtype === '-');
+    else                fl = fl.filter(r => r.subtype === inpSub);
+  }
+  if (inpBrand !== 'all') fl = fl.filter(r => r.brand === inpBrand);
+  if (cnt) cnt.textContent = (inpSub === 'all' && inpBrand === 'all')
+    ? `총 ${total}건`
+    : `${fl.length}건 / 총 ${total}건`;
   if (!fl.length) {
-    tb.innerHTML = '<tr><td colspan="9"><div class="empty">입력된 데이터가 없습니다</div></td></tr>';
+    tb.innerHTML = '<tr><td colspan="9"><div class="empty">조건에 해당하는 데이터가 없습니다</div></td></tr>';
     return;
   }
   tb.innerHTML = fl.map(r => {
