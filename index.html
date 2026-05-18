@@ -16,32 +16,32 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260512b';</script>
+<script>window.__ASSET_V = '20260518f';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260512b">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260512b">
-<link rel="stylesheet" href="assets/css/input.css?v=20260512b">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260512b">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260512b">
+<link rel="stylesheet" href="assets/css/base.css?v=20260518f">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260518f">
+<link rel="stylesheet" href="assets/css/input.css?v=20260518f">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260518f">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260518f">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260512b"     defer></script>
-<script src="assets/js/constants.js?v=20260512b"  defer></script>
-<script src="assets/js/state.js?v=20260512b"      defer></script>
-<script src="assets/js/utils.js?v=20260512b"      defer></script>
-<script src="assets/js/auth.js?v=20260512b"       defer></script>
-<script src="assets/js/nav.js?v=20260512b"        defer></script>
-<script src="assets/js/dashboard.js?v=20260512b"  defer></script>
-<script src="assets/js/input.js?v=20260512b"      defer></script>
-<script src="assets/js/admin.js?v=20260512b"      defer></script>
-<script src="assets/js/ai.js?v=20260512b"         defer></script>
-<script src="assets/js/ppt.js?v=20260512b"        defer></script>
-<script src="assets/js/main.js?v=20260512b"       defer></script>
+<script src="assets/js/config.js?v=20260518f"     defer></script>
+<script src="assets/js/constants.js?v=20260518f"  defer></script>
+<script src="assets/js/state.js?v=20260518f"      defer></script>
+<script src="assets/js/utils.js?v=20260518f"      defer></script>
+<script src="assets/js/auth.js?v=20260518f"       defer></script>
+<script src="assets/js/nav.js?v=20260518f"        defer></script>
+<script src="assets/js/dashboard.js?v=20260518f"  defer></script>
+<script src="assets/js/input.js?v=20260518f"      defer></script>
+<script src="assets/js/admin.js?v=20260518f"      defer></script>
+<script src="assets/js/ai.js?v=20260518f"         defer></script>
+<script src="assets/js/ppt.js?v=20260518f"        defer></script>
+<script src="assets/js/main.js?v=20260518f"       defer></script>
 </head>
 <body>
 
@@ -131,11 +131,13 @@
           <span><span class="ld" style="background:#8fa8c8"></span>모니터링</span>
           <span><span class="ld" style="background:#e8845a"></span>위반</span>
         </div>
+        <p class="chart-note" id="lineChartNote" style="display:none">※ 영업비밀 '모니터링 건수'의 경우 10:1 환산값임.<br><span class="chart-note-ex">(ex. 그래프 내 모니터링 건수가 154건인 경우 실제 모니터링 건수는 1,540건)</span></p>
       </div>
       <div class="card">
         <div class="card-hd"><span class="card-tit" id="rChartTit">위반 유형별 분포</span><span class="card-tag" id="rChartTag">-</span></div>
         <div id="rChartLeg" class="leg"></div>
         <div class="chart-box chart-box-right"><canvas id="rightChart"></canvas></div>
+        <p class="chart-note" id="rChartNote" style="display:none">※ 영업비밀 '모니터링 건수'의 경우 10:1 환산값임.<br><span class="chart-note-ex">(ex. 그래프 내 모니터링 건수가 154건인 경우 실제 모니터링 건수는 1,540건)</span></p>
       </div>
     </div>
 
@@ -147,6 +149,7 @@
           <span><span class="ld" style="background:#e8845a"></span>위반</span>
         </div>
         <div class="chart-box chart-box-bar"><canvas id="barChart"></canvas></div>
+        <p class="chart-note" id="barChartNote" style="display:none">※ 영업비밀 '모니터링 건수'의 경우 10:1 환산값임.<br><span class="chart-note-ex">(ex. 그래프 내 모니터링 건수가 154건인 경우 실제 모니터링 건수는 1,540건)</span></p>
       </div>
       <div class="card">
         <div class="card-hd">

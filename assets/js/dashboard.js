@@ -20,13 +20,21 @@ async function loadData() {
 // 필터 적용된 records
 function getFR(k) { return k === 'all' ? records : records.filter(r => r.type === k); }
 
+// 영업비밀은 모니터링 건수 집계 시 10:1 환산(위반 건수는 원값 유지)
+function monCnt(r) {
+  if (r.type === '영업비밀') return r.count / 10;
+  return r.count;
+}
+// 환산값 합계를 보기 좋게 — 정수면 정수로, 소수면 소수 1자리로
+function fmtMon(n) { return Number.isInteger(n) ? n.toLocaleString() : (Math.round(n * 10) / 10).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+
 function renderDash(k) {
   const d = getFR(k);
-  const tot = d.reduce((s, r) => s + r.count, 0);
+  const tot = d.reduce((s, r) => s + monCnt(r), 0);
   const vio = d.filter(r => r.status === '위반(처리중)' || r.status === '완료').reduce((s, r) => s + r.count, 0);
   const now = new Date();
   const ym  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const mTot = d.filter(r => r.date.startsWith(ym)).reduce((s, r) => s + r.count, 0);
+  const mTot = d.filter(r => r.date.startsWith(ym)).reduce((s, r) => s + monCnt(r), 0);
   const mVio = d.filter(r => r.date.startsWith(ym) && (r.status === '위반(처리중)' || r.status === '완료')).reduce((s, r) => s + r.count, 0);
   const done = d.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
   const act  = d.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);
@@ -34,10 +42,10 @@ function renderDash(k) {
   const vr  = tot  ? (vio  / tot  * 100).toFixed(1) : 0;
   const mvr = mTot ? (mVio / mTot * 100).toFixed(1) : 0;
 
-  document.getElementById('kpi1').textContent  = `${vio.toLocaleString()} / ${tot.toLocaleString()}`;
+  document.getElementById('kpi1').textContent  = `${vio.toLocaleString()} / ${fmtMon(tot)}`;
   document.getElementById('kpi1r').textContent = tot ? `위반율 ${vr}%` : '-';
   document.getElementById('kpi1s').textContent = '위반 / 전체 모니터링';
-  document.getElementById('kpi2').textContent  = `${mVio.toLocaleString()} / ${mTot.toLocaleString()}`;
+  document.getElementById('kpi2').textContent  = `${mVio.toLocaleString()} / ${fmtMon(mTot)}`;
   document.getElementById('kpi2r').textContent = mTot ? `위반율 ${mvr}%` : '-';
   document.getElementById('kpi2s').textContent = `${now.getMonth()+1}월 기준`;
   document.getElementById('kpi3').textContent  = dr + '%';
@@ -56,6 +64,15 @@ function renderDash(k) {
     if (barCard) barCard.style.display = 'none';
   }
   renderRecent(d);
+
+  // 영업비밀 10:1 환산 안내: 도넛·브랜드별 현황은 전체·영업비밀에서, 추이 그래프는 영업비밀 탭에서만 노출
+  const showNote = (k === 'all' || k === '영업비밀') ? '' : 'none';
+  const rNote = document.getElementById('rChartNote');
+  const bNote = document.getElementById('barChartNote');
+  const lNote = document.getElementById('lineChartNote');
+  if (rNote) rNote.style.display = showNote;
+  if (bNote) bNote.style.display = showNote;
+  if (lNote) lNote.style.display = (k === '영업비밀') ? '' : 'none';
 }
 
 function renderLine(d, now) {
@@ -67,7 +84,7 @@ function renderLine(d, now) {
   d.forEach(r => {
     const x = new Date(r.date);
     if (x.getFullYear() === yr) {
-      m[x.getMonth()] += r.count;
+      m[x.getMonth()] += monCnt(r);
       if (r.status === '위반(처리중)' || r.status === '완료') v[x.getMonth()] += r.count;
     }
   });
@@ -136,7 +153,7 @@ function renderRight(d, k, now) {
 function renderBar(d) {
   // 비-admin은 본인 권한 브랜드만 막대로 노출
   const labels   = isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b));
-  const total    = labels.map(b => d.filter(r => r.brand === b).reduce((s,r) => s + r.count, 0));
+  const total    = labels.map(b => d.filter(r => r.brand === b).reduce((s,r) => s + monCnt(r), 0));
   const detected = labels.map(b => d.filter(r => r.brand === b && r.status !== '모니터링').reduce((s,r) => s + r.count, 0));
   if (bChart) bChart.destroy();
   bChart = new Chart(document.getElementById('barChart'), {

@@ -49,6 +49,8 @@
 .leg-bar { margin-bottom: 6px; }
 .ld { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; vertical-align: middle; }
 .empty-note { flex-basis: 100%; font-size: 11px; color: #94a3b8; padding: 4px 0 2px; }
+.chart-note { font-size: 11px; color: #94a3b8; margin: 8px 0 0; line-height: 1.45; }
+.chart-note-ex { font-size: 10px; color: #a8b3c2; }
 
 /* ── More button / pagination ─────────────────────── */
 .more-btn { font-size: 11px; padding: 6px 20px; border-radius: 20px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; margin-top: 10px; display: block; margin-left: auto; margin-right: auto; }
