@@ -16,32 +16,32 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260518k';</script>
+<script>window.__ASSET_V = '20260519c';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260518k">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260518k">
-<link rel="stylesheet" href="assets/css/input.css?v=20260518k">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260518k">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260518k">
+<link rel="stylesheet" href="assets/css/base.css?v=20260519c">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260519c">
+<link rel="stylesheet" href="assets/css/input.css?v=20260519c">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260519c">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260519c">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260518k"     defer></script>
-<script src="assets/js/constants.js?v=20260518k"  defer></script>
-<script src="assets/js/state.js?v=20260518k"      defer></script>
-<script src="assets/js/utils.js?v=20260518k"      defer></script>
-<script src="assets/js/auth.js?v=20260518k"       defer></script>
-<script src="assets/js/nav.js?v=20260518k"        defer></script>
-<script src="assets/js/dashboard.js?v=20260518k"  defer></script>
-<script src="assets/js/input.js?v=20260518k"      defer></script>
-<script src="assets/js/admin.js?v=20260518k"      defer></script>
-<script src="assets/js/ai.js?v=20260518k"         defer></script>
-<script src="assets/js/ppt.js?v=20260518k"        defer></script>
-<script src="assets/js/main.js?v=20260518k"       defer></script>
+<script src="assets/js/config.js?v=20260519c"     defer></script>
+<script src="assets/js/constants.js?v=20260519c"  defer></script>
+<script src="assets/js/state.js?v=20260519c"      defer></script>
+<script src="assets/js/utils.js?v=20260519c"      defer></script>
+<script src="assets/js/auth.js?v=20260519c"       defer></script>
+<script src="assets/js/nav.js?v=20260519c"        defer></script>
+<script src="assets/js/dashboard.js?v=20260519c"  defer></script>
+<script src="assets/js/input.js?v=20260519c"      defer></script>
+<script src="assets/js/admin.js?v=20260519c"      defer></script>
+<script src="assets/js/ai.js?v=20260519c"         defer></script>
+<script src="assets/js/ppt.js?v=20260519c"        defer></script>
+<script src="assets/js/main.js?v=20260519c"       defer></script>
 </head>
 <body>
 
@@ -103,6 +103,7 @@
   <!-- ── 대시보드 ────────────────────────────────────── -->
   <div id="page-dashboard" class="pg">
     <p class="sec-label">Overview · 외식 BG 리스크 적발 및 처리 분석</p>
+    <div class="alert-bar" id="alertBar" style="display:none"></div>
     <div class="filter-bar">
       <button class="fb on" onclick="setFilter(this,'all')">전체</button>
       <button class="fb"    onclick="setFilter(this,'가맹')">가맹</button>
@@ -170,7 +171,36 @@
         <div class="pager" id="recentPager"></div>
       </div>
     </div>
+
+    <!-- ── 위험도 히트맵 (영역 × 브랜드) ──────────────── -->
+    <div class="btm-row" style="margin-top:12px">
+      <div class="card" id="heatmapCard" style="flex:1 1 100%">
+        <div class="card-hd">
+          <span class="card-tit">브랜드/영역별 위험도 <span class="card-sub-note">— 위반 건수 상위 브랜드 · Top 3 영역</span></span>
+          <span class="card-tag">카드/칩 클릭 시 상세</span>
+        </div>
+        <div class="heatmap-wrap" id="heatmapWrap"></div>
+      </div>
+    </div>
   </div>
+
+  <!-- ── 드릴다운 사이드 패널 ─────────────────────────── -->
+  <div class="drill-overlay" id="drillOverlay" onclick="closeDrill()"></div>
+  <aside class="drill-panel" id="drillPanel">
+    <div class="drill-hd">
+      <div>
+        <p class="drill-tit" id="drillTit">상세</p>
+        <p class="drill-sub" id="drillSub"></p>
+      </div>
+      <button class="drill-close" onclick="closeDrill()">✕</button>
+    </div>
+    <div class="drill-body">
+      <table class="drill-tbl">
+        <thead><tr><th>날짜</th><th>상세유형</th><th>브랜드</th><th>건수</th><th>상태</th><th>작성자</th><th>비고</th></tr></thead>
+        <tbody id="drillTbody"></tbody>
+      </table>
+    </div>
+  </aside>
 
   <!-- ── 데이터 입력 ─────────────────────────────────── -->
   <div id="page-input" class="pg">
@@ -366,6 +396,19 @@
           <thead><tr><th>아이디</th><th>이름</th><th>권한</th><th>접근 브랜드</th><th>가입일</th><th></th></tr></thead>
           <tbody id="userTbody"></tbody>
         </table>
+      </div>
+    </div>
+    <div class="fsec">
+      <p class="fsec-tit">영역별 알림 임계치 <span class="fsec-tit-note">— 당월 위반이 전월 대비 +건수 또는 +% 이상 증가하면 대시보드 상단에 알림</span></p>
+      <div class="recs">
+        <table>
+          <thead><tr><th>영역</th><th>전월 대비 +건수 임계</th><th>전월 대비 +% 임계</th></tr></thead>
+          <tbody id="thresholdTbody"></tbody>
+        </table>
+      </div>
+      <div class="f-acts" style="margin-top:0.8rem">
+        <button class="btn-pri" onclick="saveThresholds()">임계치 저장</button>
+        <button class="btn-sec" onclick="resetThresholds()">기본값 복원</button>
       </div>
     </div>
   </div>

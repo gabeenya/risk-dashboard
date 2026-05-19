@@ -28,6 +28,123 @@ function monCnt(r) {
 // 환산값 합계를 보기 좋게 — 정수면 정수로, 소수면 소수 1자리로
 function fmtMon(n) { return Number.isInteger(n) ? n.toLocaleString() : (Math.round(n * 10) / 10).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
 
+// SLA: '위반(처리중)' 상태로 발생일(date)로부터 N일 이상 경과 → 장기 미해결
+const SLA_DAYS = 14;
+function daysSince(dateStr) {
+  if (!dateStr) return 0;
+  const d = new Date(dateStr);
+  if (isNaN(d)) return 0;
+  return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+function isSlaOver(r) { return r.status === '위반(처리중)' && daysSince(r.date) >= SLA_DAYS; }
+
+// SLA 초과 건 호버 팝업 — 현재 영역 필터(curFilter) 기준
+let __slaPopupEl = null;
+function showSlaPopup(target) {
+  hideSlaPopup();
+  const list = getFR(curFilter).filter(isSlaOver)
+    .map(r => ({ ...r, days: daysSince(r.date) }))
+    .sort((a, b) => b.days - a.days);
+  if (!list.length) return;
+
+  const rows = list.map(r => `
+    <tr>
+      <td>${r.date}</td>
+      <td class="sla-popup-days">${r.days}일</td>
+      <td>${r.type}${r.subtype ? ' / ' + r.subtype : ''}</td>
+      <td>${r.brand || '-'}</td>
+      <td style="text-align:right">${r.count.toLocaleString()}</td>
+    </tr>`).join('');
+
+  const totalCnt = list.reduce((s, r) => s + r.count, 0);
+  __slaPopupEl = document.createElement('div');
+  __slaPopupEl.className = 'sla-popup';
+  __slaPopupEl.innerHTML = `
+    <div class="sla-popup-hd">14일 이상 위반(처리중) — ${list.length}레코드 · ${totalCnt.toLocaleString()}건</div>
+    <table class="sla-popup-tbl">
+      <thead><tr><th>발생일</th><th>경과</th><th>영역/상세</th><th>브랜드</th><th style="text-align:right">건수</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  document.body.appendChild(__slaPopupEl);
+
+  // 위치 조정: 트리거 아래, 화면 밖이면 위/좌로 보정
+  const rect = target.getBoundingClientRect();
+  const pop  = __slaPopupEl.getBoundingClientRect();
+  const margin = 6;
+  let left = rect.left;
+  let top  = rect.bottom + margin;
+  if (left + pop.width > window.innerWidth - 12) left = Math.max(12, window.innerWidth - pop.width - 12);
+  if (top  + pop.height > window.innerHeight - 12) top = Math.max(12, rect.top - pop.height - margin);
+  __slaPopupEl.style.left = left + 'px';
+  __slaPopupEl.style.top  = top  + 'px';
+}
+function hideSlaPopup() {
+  if (__slaPopupEl) { __slaPopupEl.remove(); __slaPopupEl = null; }
+}
+
+// 임계치(영역별 위반 건수) — 전월 대비 +건수 / 전월 대비 +% 둘 다 검사
+function getThresholds() {
+  try { const saved = JSON.parse(localStorage.getItem('riskThresholds') || '{}');
+        // 구버전 abs 키가 남아있어도 새 delta 기본값으로 자연스럽게 폴백
+        const merged = { ...THRESHOLDS_DEFAULT };
+        Object.keys(saved).forEach(k => {
+          merged[k] = {
+            delta: (saved[k] && typeof saved[k].delta === 'number') ? saved[k].delta : (THRESHOLDS_DEFAULT[k] ? THRESHOLDS_DEFAULT[k].delta : 10),
+            mom:   (saved[k] && typeof saved[k].mom   === 'number') ? saved[k].mom   : (THRESHOLDS_DEFAULT[k] ? THRESHOLDS_DEFAULT[k].mom   : 50)
+          };
+        });
+        return merged; }
+  catch { return { ...THRESHOLDS_DEFAULT }; }
+}
+function checkThresholds() {
+  const alerts = [];
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevYm = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}`;
+  const T = getThresholds();
+  TYPES.forEach(type => {
+    const t = T[type] || THRESHOLDS_DEFAULT[type];
+    if (!t) return;
+    const currVio = records.filter(r => r.type === type && r.date && r.date.startsWith(ym) && r.status !== '모니터링').reduce((s,r) => s+r.count, 0);
+    const prevVio = records.filter(r => r.type === type && r.date && r.date.startsWith(prevYm) && r.status !== '모니터링').reduce((s,r) => s+r.count, 0);
+    const delta = currVio - prevVio;
+    if (delta >= t.delta && t.delta > 0) {
+      alerts.push({ type, kind: 'delta', curr: currVio, prev: prevVio, delta, threshold: t.delta });
+    }
+    if (prevVio > 0) {
+      const pct = ((currVio - prevVio) / prevVio) * 100;
+      if (pct >= t.mom && t.mom > 0) {
+        alerts.push({ type, kind: 'mom', curr: currVio, prev: prevVio, pct: Math.round(pct) });
+      }
+    }
+  });
+  return alerts;
+}
+function renderAlerts() {
+  const bar = document.getElementById('alertBar');
+  if (!bar) return;
+  const alerts = checkThresholds();
+  if (!alerts.length) { bar.style.display = 'none'; bar.innerHTML = ''; updateAlertFilterDots(new Set()); return; }
+  const typesInAlert = new Set(alerts.map(a => a.type));
+  bar.style.display = '';
+  const items = alerts.map(a => {
+    if (a.kind === 'delta') return `<span class="alert-chip" onclick="setFilter(document.querySelector('.fb[onclick*=&quot;${a.type}&quot;]'),'${a.type}')"><b>${a.type}</b> 전월 대비 <b>+${a.delta.toLocaleString()}건</b> (${a.prev}→${a.curr})</span>`;
+    return `<span class="alert-chip" onclick="setFilter(document.querySelector('.fb[onclick*=&quot;${a.type}&quot;]'),'${a.type}')"><b>${a.type}</b> 전월 대비 <b>+${a.pct}%</b> (${a.prev}→${a.curr})</span>`;
+  }).join('');
+  bar.innerHTML = `<span class="alert-lead">🔔 알림 ${alerts.length}건</span>${items}`;
+  updateAlertFilterDots(typesInAlert);
+}
+function updateAlertFilterDots(typesInAlert) {
+  document.querySelectorAll('.fb').forEach(btn => {
+    btn.classList.remove('has-alert');
+    const m = btn.getAttribute('onclick') || '';
+    TYPES.forEach(t => {
+      if (typesInAlert.has(t) && m.includes(`'${t}'`)) btn.classList.add('has-alert');
+    });
+  });
+}
+
 function renderDash(k) {
   const d = getFR(k);
   const tot = d.reduce((s, r) => s + monCnt(r), 0);
@@ -38,6 +155,7 @@ function renderDash(k) {
   const mVio = d.filter(r => r.date.startsWith(ym) && (r.status === '위반(처리중)' || r.status === '완료')).reduce((s, r) => s + r.count, 0);
   const done = d.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
   const act  = d.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);
+  const slaOver = d.filter(isSlaOver).reduce((s, r) => s + r.count, 0);
   const dr  = vio  ? (done / vio  * 100).toFixed(1) : 0;
   const vr  = tot  ? (vio  / tot  * 100).toFixed(1) : 0;
   const mvr = mTot ? (mVio / mTot * 100).toFixed(1) : 0;
@@ -51,7 +169,12 @@ function renderDash(k) {
   document.getElementById('kpi3').textContent  = dr + '%';
   document.getElementById('kpi3s').textContent = `완료 ${done.toLocaleString()} / 위반 ${vio.toLocaleString()}건`;
   document.getElementById('kpi4').textContent  = act.toLocaleString();
-  document.getElementById('kpi4s').textContent = '위반(처리중) 상태 건수';
+  const k4s = document.getElementById('kpi4s');
+  if (slaOver > 0) {
+    k4s.innerHTML = `위반(처리중) 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()">${SLA_DAYS}일 초과 ${slaOver.toLocaleString()}건</span>`;
+  } else {
+    k4s.textContent = '위반(처리중) 상태 건수';
+  }
 
   renderLine(d, now);
   renderRight(d, k, now);
@@ -65,6 +188,8 @@ function renderDash(k) {
     if (barCard) barCard.style.display = 'none';
   }
   renderRecent(d);
+  renderHeatmap();
+  renderAlerts();
 
   // 영업비밀 10:1 환산 안내: 도넛·브랜드별 현황은 전체·영업비밀에서, 추이 그래프는 영업비밀 탭에서만 노출
   const showNote = (k === 'all' || k === '영업비밀') ? '' : 'none';
@@ -74,6 +199,107 @@ function renderDash(k) {
   if (rNote) rNote.style.display = showNote;
   if (bNote) bNote.style.display = showNote;
   if (lNote) lNote.style.display = (k === '영업비밀') ? '' : 'none';
+}
+
+// ── 브랜드/영역별 위험도 리더보드 ──────────────────
+// 고정 브랜드 순서로 카드 배치, 각 카드에 Top 3 영역을 칩으로 표시
+const BRAND_ORDER = ['애슐리','피자몰','로운','자연별곡','리미니','델리바이애슐리','프랜차이즈','카페','프랑제리','기흥ck','광주ck','주안ck','CX팀','상권','본부'];
+
+function renderHeatmap() {
+  const wrap = document.getElementById('heatmapWrap');
+  if (!wrap) return;
+  const brands = isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b));
+  if (!brands.length) { wrap.innerHTML = '<div class="drill-empty">표시할 브랜드가 없습니다.</div>'; return; }
+
+  const cnt = (type, brand) => records
+    .filter(r => r.type === type && r.brand === brand && r.status !== '모니터링')
+    .reduce((s, r) => s + r.count, 0);
+
+  const items = brands.map(b => {
+    const areas = TYPES.map(t => ({ type: t, count: cnt(t, b) }))
+      .filter(a => a.count > 0)
+      .sort((x, y) => y.count - x.count);
+    const total = areas.reduce((s, a) => s + a.count, 0);
+    return { brand: b, total, areas };
+  })
+  .filter(it => it.total > 0)
+  .sort((a, b) => {
+    const ai = BRAND_ORDER.indexOf(a.brand);
+    const bi = BRAND_ORDER.indexOf(b.brand);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
+
+  if (!items.length) {
+    wrap.innerHTML = '<div class="drill-empty">표시할 위반 데이터가 없습니다.</div>';
+    return;
+  }
+
+  // 전역 max: 모든 (브랜드, 영역) 조합 중 최대값 → 카드 간 동일 스케일로 위험도 비교
+  const globalMax = Math.max(1, ...items.flatMap(it => it.areas.map(a => a.count)));
+
+  let html = '<div class="rank-grid">';
+  items.forEach(it => {
+    const areaRows = it.areas.map(a => {
+      const pct = Math.max(6, Math.round(a.count / globalMax * 100));
+      return `
+        <div class="rank-area" onclick="event.stopPropagation();openDrill('type-brand','${a.type}','${it.brand}')">
+          <span class="rank-area-name">${a.type}</span>
+          <div class="rank-area-bar"><div class="rank-area-fill" style="width:${pct}%"></div></div>
+          <span class="rank-area-count">${a.count.toLocaleString()}</span>
+        </div>`;
+    }).join('');
+
+    html += `
+      <div class="rank-card" onclick="openDrill('brand','${it.brand}')">
+        <div class="rank-card-hd">
+          <span class="rank-brand">${it.brand}</span>
+          <span class="rank-total">누적위반 ${it.total.toLocaleString()}건</span>
+        </div>
+        <div class="rank-areas">${areaRows}</div>
+      </div>`;
+  });
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+// ── 드릴다운: 영역×브랜드 / 영역 / 브랜드 / 상세유형 등 조건으로 records 필터해서 패널 표시
+function openDrill(mode, a, b) {
+  let filtered = records.slice();
+  let title = '', sub = '';
+  if (mode === 'type-brand')   { filtered = filtered.filter(r => r.type === a && r.brand === b); title = `${a} × ${b}`;  sub = `위반 건수 ${filtered.filter(r => r.status !== '모니터링').reduce((s,r)=>s+r.count,0)}건 · 모니터링 포함 총 ${filtered.length}레코드`; }
+  else if (mode === 'type')    { filtered = filtered.filter(r => r.type === a);                   title = `${a} 전체`;   sub = `${filtered.length}레코드`; }
+  else if (mode === 'brand')   { filtered = filtered.filter(r => r.brand === a);                  title = `${a} 전체`;   sub = `${filtered.length}레코드`; }
+  else if (mode === 'subtype') { filtered = filtered.filter(r => r.type === a && r.subtype === b); title = `${a} · ${b}`; sub = `${filtered.length}레코드`; }
+  else if (mode === 'month')   { filtered = filtered.filter(r => r.date && r.date.startsWith(a)); title = `${a} 발생`;   sub = `${filtered.length}레코드`; }
+
+  filtered.sort((x, y) => y.date.localeCompare(x.date));
+  document.getElementById('drillTit').textContent = title;
+  document.getElementById('drillSub').textContent = sub;
+  const tb = document.getElementById('drillTbody');
+  if (!filtered.length) {
+    tb.innerHTML = '<tr><td colspan="7"><div class="drill-empty">해당 데이터가 없습니다.</div></td></tr>';
+  } else {
+    tb.innerHTML = filtered.map(r => {
+      const over = isSlaOver(r);
+      const ageBadge = over ? ` <span class="sla-badge">${daysSince(r.date)}일</span>` : '';
+      return `<tr${over ? ' class="sla-over"' : ''}>
+      <td>${r.date}</td>
+      <td>${r.subtype || '-'}</td>
+      <td>${r.brand}</td>
+      <td>${r.count}</td>
+      <td><span class="st ${sc(r.status)}">${r.status}</span>${ageBadge}</td>
+      <td>${r.author || '-'}</td>
+      <td>${r.note || '-'}</td>
+    </tr>`;
+    }).join('');
+  }
+  document.getElementById('drillOverlay').classList.add('on');
+  document.getElementById('drillPanel').classList.add('on');
+}
+
+function closeDrill() {
+  document.getElementById('drillOverlay').classList.remove('on');
+  document.getElementById('drillPanel').classList.remove('on');
 }
 
 function renderLine(d, now) {
@@ -128,7 +354,10 @@ function renderRight(d, k, now) {
     rChart = new Chart(document.getElementById('rightChart'), {
       type: 'doughnut',
       data: { labels: TYPES, datasets: [{ data: cnt, backgroundColor: TC, borderWidth: 3, borderColor: '#fff' }] },
-      options: { responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{display:false}} }
+      options: {
+        responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{display:false}},
+        onClick: (_, els) => { if (els.length) openDrill('type', TYPES[els[0].index]); }
+      }
     });
   } else {
     tit.textContent = '상세 위반 유형별 분포';
@@ -146,7 +375,10 @@ function renderRight(d, k, now) {
     rChart = new Chart(document.getElementById('rightChart'), {
       type: 'doughnut',
       data: { labels: subs, datasets: [{ data: cnt, backgroundColor: subs.map((_,i) => SC[i%SC.length]), borderWidth: 3, borderColor: '#fff' }] },
-      options: { responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{display:false}} }
+      options: {
+        responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{display:false}},
+        onClick: (_, els) => { if (els.length) openDrill('subtype', k, subs[els[0].index]); }
+      }
     });
   }
 }
@@ -172,7 +404,8 @@ function renderBar(d) {
       scales: {
         x: { grid:{color:'rgba(0,0,0,0.03)'}, ticks:{font:{size:10},color:'#94a3b8'}, beginAtZero:true },
         y: { grid:{display:false}, ticks:{font:{size:10},color:'#475569'} }
-      }
+      },
+      onClick: (_, els) => { if (els.length) openDrill('brand', labels[els[0].index]); }
     }
   });
 }
@@ -194,14 +427,18 @@ function renderRecent(d) {
     pg.innerHTML = '';
     return;
   }
-  let html = slice.map(r => `<tr>
+  let html = slice.map(r => {
+    const over = isSlaOver(r);
+    const ageBadge = over ? ` <span class="sla-badge" title="발생 후 ${daysSince(r.date)}일 경과">${daysSince(r.date)}일</span>` : '';
+    return `<tr${over ? ' class="sla-over"' : ''}>
     <td>${r.date.slice(5).replace('-','/')}</td>
     <td>${r.type}</td>
     <td class="cell-sub">${r.subtype||'-'}</td>
     <td>${r.brand}</td>
-    <td><span class="st ${sc(r.status)}">${r.status}</span></td>
+    <td><span class="st ${sc(r.status)}">${r.status}</span>${ageBadge}</td>
     <td class="cell-sub">${r.note||'-'}</td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
   for (let i = slice.length; i < PAGE_SIZE; i++) {
     html += '<tr class="ph-row"><td colspan="6">&nbsp;</td></tr>';
   }

@@ -1,5 +1,36 @@
 // ── 관리자 ───────────────────────────────────────────
 
+// 영역별 알림 임계치 편집 — localStorage('riskThresholds') 저장 (브라우저 단위 공유)
+function renderThresholdTable() {
+  const tb = document.getElementById('thresholdTbody');
+  if (!tb) return;
+  const cur = (typeof getThresholds === 'function') ? getThresholds() : THRESHOLDS_DEFAULT;
+  tb.innerHTML = TYPES.map(t => {
+    const v = cur[t] || THRESHOLDS_DEFAULT[t] || { delta: 0, mom: 0 };
+    return `<tr>
+      <td><b>${t}</b></td>
+      <td><input type="number" min="0" class="st-sel th-inp" id="th-delta-${t}" value="${v.delta}" style="width:80px"> 건</td>
+      <td><input type="number" min="0" class="st-sel th-inp" id="th-mom-${t}" value="${v.mom}" style="width:80px"> %</td>
+    </tr>`;
+  }).join('');
+}
+function saveThresholds() {
+  const out = {};
+  TYPES.forEach(t => {
+    const delta = parseInt(document.getElementById('th-delta-'+t).value) || 0;
+    const mom   = parseInt(document.getElementById('th-mom-'+t).value)   || 0;
+    out[t] = { delta, mom };
+  });
+  localStorage.setItem('riskThresholds', JSON.stringify(out));
+  toast('임계치 저장 완료 — 대시보드로 돌아가면 반영됩니다.');
+}
+function resetThresholds() {
+  if (!confirm('모든 영역의 임계치를 기본값으로 되돌릴까요?')) return;
+  localStorage.removeItem('riskThresholds');
+  renderThresholdTable();
+  toast('기본값으로 복원되었습니다.');
+}
+
 // 신규 계정용 브랜드 체크박스 그리드 렌더
 function renderNewBrandPicker() {
   const grid = document.getElementById('newBrandGrid');
@@ -59,6 +90,7 @@ function copyUser() {
 async function renderAdmin() {
   renderNewBrandPicker();
   toggleNewBrandPicker();
+  renderThresholdTable();
   await loadUsers();
   document.getElementById('userTbody').innerHTML = users.map(u => {
     const isProtected = u.id === ADMIN;

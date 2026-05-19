@@ -187,8 +187,9 @@ function renderInputTable() {
            <option value="">-</option>
            ${subs.map(s => `<option${r.subtype===s?' selected':''}>${s}</option>`).join('')}
          </select>`;
-    return `<tr>
-    <td><input type="date" class="st-sel date-sel" value="${r.date}" onchange="updDate(${r.id},this.value)"></td>
+    const over = isSlaOver(r);
+    return `<tr${over ? ' class="sla-over"' : ''}>
+    <td><input type="date" class="st-sel date-sel" value="${r.date}" onchange="updDate(${r.id},this.value)">${over ? ` <span class="sla-badge" title="${daysSince(r.date)}일 경과">${daysSince(r.date)}일</span>` : ''}</td>
     <td>${r.type}</td>
     <td>${subCell}</td>
     <td>

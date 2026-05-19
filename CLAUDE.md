@@ -35,6 +35,8 @@ risk_dashboard/
 
 **캐시 버스터**: `index.html` 상단의 `window.__ASSET_V`(index.html:18)와 모든 `<link>/<script>`의 `?v=YYYYMMDD<suffix>`(예: `?v=20260428m`)는 **같은 값**으로 일괄 갱신해야 합니다. CSS·JS를 수정해 배포할 때마다 새 값으로 바꿔주세요 — 그래야 사용자 브라우저가 옛 캐시를 버립니다. 같은 날 두 번 배포하면 `m → n → o` 식으로 접미사만 올리면 됩니다.
 
+> **자동 갱신**: 프로젝트 루트에서 `powershell -ExecutionPolicy Bypass -File .\tools\update-cache-buster.ps1` 실행하면 `__ASSET_V`와 모든 `?v=` 값을 한 번에 새 버전으로 바꿔줍니다(같은 날이면 접미사 한 칸 증가, 날짜가 바뀌면 `a`부터 재시작). CSS·JS·index.html을 수정했다면 커밋 직전 이 스크립트를 돌리세요.
+
 **외부 의존성** (CDN 로드, 번들 없음, index.html:10-12):
 - `Chart.js 4.4.1` — 라인/도넛/바 차트
 - `pptxgenjs 3.12.0` — PPTX 보고서 생성

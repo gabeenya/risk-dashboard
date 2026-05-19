@@ -69,3 +69,16 @@ const SC          = ['#4f86c6','#e8845a','#5eba8a','#e8c35a','#9b7ed4','#e87a9f'
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 const STATS  = ['모니터링','위반(처리중)','완료'];
 const ADMIN  = 'admin';
+
+// 임계치(영역별) — delta: 전월 대비 위반 +N건 증가 / mom: 전월 대비 위반 +N% 증가
+// 관리자가 localStorage('riskThresholds')로 오버라이드 가능
+const THRESHOLDS_DEFAULT = {
+  '가맹':    { delta: 10, mom: 50 },
+  '불법파견': { delta: 10, mom: 50 },
+  '표시광고': { delta: 10, mom: 50 },
+  '노무':    { delta: 10, mom: 50 },
+  '영업비밀': { delta: 10, mom: 50 },
+  'IP':      { delta: 10, mom: 50 },
+  '부실채권': { delta: 10, mom: 50 },
+  '징계':    { delta: 10, mom: 50 }
+};
