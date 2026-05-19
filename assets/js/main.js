@@ -2,11 +2,9 @@
 async function init() {
   await loadUsers();
 
-  // 관리자 기본 계정 자동 생성 (데모용)
-  if (!users.find(u => u.id === ADMIN)) {
-    await sbIns('users', { id: ADMIN, name: '관리자', pw: hp('admin1234'), role: 'admin', joined: td(), brands: [] });
-    await loadUsers();
-  }
+  // 관리자 계정은 Supabase 콘솔에서 수동 시드합니다 (자동 생성 X).
+  // users 테이블이 비어 있으면 아무도 로그인 못 하므로, 초기 1회는 콘솔에서
+  // id='admin', role='admin', pw=강력한 해시값으로 직접 INSERT 하세요.
 
   // 로그인 페이지가 게이트 — 로그인 전에는 데이터 로드 / 폼 초기화 / 차트 렌더 모두 보류
   applyUser();

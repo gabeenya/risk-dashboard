@@ -180,48 +180,50 @@ function renderInputTable() {
     return;
   }
   tb.innerHTML = fl.map(r => {
+    // r.id는 Date.now() 기반 정수여야 하지만, RLS off 상태에서 외부 조작 가능성 → 강제 정수 캐스팅으로 인라인 핸들러 JS 인젝션 차단
+    const rid = Number(r.id) || 0;
     const subs = SUB[r.type] || [];
     const subCell = subs.length === 0
       ? '<span class="cell-sub">-</span>'
-      : `<select class="st-sel sub-sel" onchange="updSubtype(${r.id},this.value)">
+      : `<select class="st-sel sub-sel" onchange="updSubtype(${rid},this.value)">
            <option value="">-</option>
-           ${subs.map(s => `<option${r.subtype===s?' selected':''}>${s}</option>`).join('')}
+           ${subs.map(s => `<option${r.subtype===s?' selected':''}>${esc(s)}</option>`).join('')}
          </select>`;
     const over = isSlaOver(r);
     return `<tr${over ? ' class="sla-over"' : ''}>
-    <td><input type="date" class="st-sel date-sel" value="${r.date}" onchange="updDate(${r.id},this.value)">${over ? ` <span class="sla-badge" title="${daysSince(r.date)}일 경과">${daysSince(r.date)}일</span>` : ''}</td>
-    <td>${r.type}</td>
+    <td><input type="date" class="st-sel date-sel" value="${esc(r.date)}" onchange="updDate(${rid},this.value)">${over ? ` <span class="sla-badge" title="${daysSince(r.date)}일 경과">${daysSince(r.date)}일</span>` : ''}</td>
+    <td>${esc(r.type)}</td>
     <td>${subCell}</td>
     <td>
-      <select class="st-sel brand-sel" onchange="updBrand(${r.id},this.value)">
-        ${BRANDS.map(b => `<option${r.brand===b?' selected':''}>${b}</option>`).join('')}
+      <select class="st-sel brand-sel" onchange="updBrand(${rid},this.value)">
+        ${BRANDS.map(b => `<option${r.brand===b?' selected':''}>${esc(b)}</option>`).join('')}
       </select>
     </td>
     <td>
       <div class="note-wrap count-wrap">
-        <input type="number" min="1" class="note-inp count-inp" id="cnt-inp-${r.id}"
-          value="${r.count}"
-          onkeydown="if(event.key==='Enter'){const b=document.getElementById('cnt-btn-${r.id}');updCount(${r.id},this.value,b)}">
-        <button class="note-save-btn" id="cnt-btn-${r.id}"
-          onclick="updCount(${r.id},document.getElementById('cnt-inp-${r.id}').value,this)">저장</button>
+        <input type="number" min="1" class="note-inp count-inp" id="cnt-inp-${rid}"
+          value="${Number(r.count) || 0}"
+          onkeydown="if(event.key==='Enter'){const b=document.getElementById('cnt-btn-${rid}');updCount(${rid},this.value,b)}">
+        <button class="note-save-btn" id="cnt-btn-${rid}"
+          onclick="updCount(${rid},document.getElementById('cnt-inp-${rid}').value,this)">저장</button>
       </div>
     </td>
     <td>
-      <select class="st-sel" onchange="updStatus(${r.id},this.value)">
-        ${STATS.map(s => `<option value="${s}"${r.status===s?' selected':''}>${s}</option>`).join('')}
+      <select class="st-sel" onchange="updStatus(${rid},this.value)">
+        ${STATS.map(s => `<option value="${esc(s)}"${r.status===s?' selected':''}>${esc(s)}</option>`).join('')}
       </select>
     </td>
     <td>
       <div class="note-wrap">
-        <input type="text" class="note-inp" id="note-inp-${r.id}"
-          value="${(r.note||'').replace(/"/g,'&quot;')}" placeholder="-"
-          onkeydown="if(event.key==='Enter'){const b=document.getElementById('note-btn-${r.id}');updNote(${r.id},this.value,b)}">
-        <button class="note-save-btn" id="note-btn-${r.id}"
-          onclick="updNote(${r.id},document.getElementById('note-inp-${r.id}').value,this)">저장</button>
+        <input type="text" class="note-inp" id="note-inp-${rid}"
+          value="${esc(r.note||'')}" placeholder="-"
+          onkeydown="if(event.key==='Enter'){const b=document.getElementById('note-btn-${rid}');updNote(${rid},this.value,b)}">
+        <button class="note-save-btn" id="note-btn-${rid}"
+          onclick="updNote(${rid},document.getElementById('note-inp-${rid}').value,this)">저장</button>
       </div>
     </td>
-    <td class="cell-muted">${r.author||'-'}</td>
-    <td><button class="del-btn" onclick="delRecord(${r.id})">✕</button></td>
+    <td class="cell-muted">${esc(r.author||'-')}</td>
+    <td><button class="del-btn" onclick="delRecord(${rid})">✕</button></td>
   </tr>`;
   }).join('');
 }
@@ -353,17 +355,20 @@ function renderXlPreview(rows) {
   document.getElementById('xlConfirmBtn').disabled = ok === 0;
 
   const tb = document.getElementById('xlPvTbody');
-  tb.innerHTML = rows.map(r => `<tr class="${r.ok?'xl-row-ok':'xl-row-err'}">
+  tb.innerHTML = rows.map(r => {
+    const errsTxt = r.errs.join(' / ');
+    return `<tr class="${r.ok?'xl-row-ok':'xl-row-err'}">
     <td>${r.lineNo}</td>
-    <td>${r.date||'-'}</td>
-    <td>${r.type||'-'}</td>
-    <td>${r.subtype||'-'}</td>
-    <td>${r.brand||'-'}</td>
+    <td>${esc(r.date||'-')}</td>
+    <td>${esc(r.type||'-')}</td>
+    <td>${esc(r.subtype||'-')}</td>
+    <td>${esc(r.brand||'-')}</td>
     <td>${r.count||'-'}</td>
-    <td>${r.status||'-'}</td>
-    <td>${r.note||''}</td>
-    <td>${r.ok?'<span class="xl-badge xl-badge-ok">유효</span>':`<span class="xl-badge xl-badge-err" title="${r.errs.join(' / ')}">${r.errs.join(' / ')}</span>`}</td>
-  </tr>`).join('');
+    <td>${esc(r.status||'-')}</td>
+    <td>${esc(r.note||'')}</td>
+    <td>${r.ok?'<span class="xl-badge xl-badge-ok">유효</span>':`<span class="xl-badge xl-badge-err" title="${esc(errsTxt)}">${esc(errsTxt)}</span>`}</td>
+  </tr>`;
+  }).join('');
 
   document.getElementById('xlPreview').classList.remove('hide');
 }

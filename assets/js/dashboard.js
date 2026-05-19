@@ -49,10 +49,10 @@ function showSlaPopup(target) {
 
   const rows = list.map(r => `
     <tr>
-      <td>${r.date}</td>
+      <td>${esc(r.date)}</td>
       <td class="sla-popup-days">${r.days}일</td>
-      <td>${r.type}${r.subtype ? ' / ' + r.subtype : ''}</td>
-      <td>${r.brand || '-'}</td>
+      <td>${esc(r.type)}${r.subtype ? ' / ' + esc(r.subtype) : ''}</td>
+      <td>${esc(r.brand || '-')}</td>
       <td style="text-align:right">${r.count.toLocaleString()}</td>
     </tr>`).join('');
 
@@ -283,13 +283,13 @@ function openDrill(mode, a, b) {
       const over = isSlaOver(r);
       const ageBadge = over ? ` <span class="sla-badge">${daysSince(r.date)}일</span>` : '';
       return `<tr${over ? ' class="sla-over"' : ''}>
-      <td>${r.date}</td>
-      <td>${r.subtype || '-'}</td>
-      <td>${r.brand}</td>
+      <td>${esc(r.date)}</td>
+      <td>${esc(r.subtype || '-')}</td>
+      <td>${esc(r.brand)}</td>
       <td>${r.count}</td>
-      <td><span class="st ${sc(r.status)}">${r.status}</span>${ageBadge}</td>
-      <td>${r.author || '-'}</td>
-      <td>${r.note || '-'}</td>
+      <td><span class="st ${sc(r.status)}">${esc(r.status)}</span>${ageBadge}</td>
+      <td>${esc(r.author || '-')}</td>
+      <td>${esc(r.note || '-')}</td>
     </tr>`;
     }).join('');
   }
@@ -431,12 +431,12 @@ function renderRecent(d) {
     const over = isSlaOver(r);
     const ageBadge = over ? ` <span class="sla-badge" title="발생 후 ${daysSince(r.date)}일 경과">${daysSince(r.date)}일</span>` : '';
     return `<tr${over ? ' class="sla-over"' : ''}>
-    <td>${r.date.slice(5).replace('-','/')}</td>
-    <td>${r.type}</td>
-    <td class="cell-sub">${r.subtype||'-'}</td>
-    <td>${r.brand}</td>
-    <td><span class="st ${sc(r.status)}">${r.status}</span>${ageBadge}</td>
-    <td class="cell-sub">${r.note||'-'}</td>
+    <td>${esc(r.date.slice(5).replace('-','/'))}</td>
+    <td>${esc(r.type)}</td>
+    <td class="cell-sub">${esc(r.subtype||'-')}</td>
+    <td>${esc(r.brand)}</td>
+    <td><span class="st ${sc(r.status)}">${esc(r.status)}</span>${ageBadge}</td>
+    <td class="cell-sub">${esc(r.note||'-')}</td>
   </tr>`;
   }).join('');
   for (let i = slice.length; i < PAGE_SIZE; i++) {

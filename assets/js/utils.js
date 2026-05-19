@@ -42,6 +42,14 @@ function err(id, m) {
   el.classList.toggle('show', !!m);
 }
 
+// HTML escape — innerHTML/속성값에 사용자 입력 들어갈 때 반드시 거치기.
+// records/users 테이블의 자유 입력 필드(note·author·name·id 등)와
+// (RLS off 상태에서) 외부에서 조작될 수 있는 모든 DB 값에 적용한다.
+const __ESC_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => __ESC_MAP[c]);
+}
+
 // 로고 클릭 → 대시보드 + 전체 필터로 복귀
 function goHome() {
   document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));

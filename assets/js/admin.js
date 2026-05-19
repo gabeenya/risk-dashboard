@@ -60,6 +60,8 @@ async function createUser() {
     : Array.from(document.querySelectorAll('.new-brand-cb:checked')).map(cb => cb.value);
 
   if (!n || !id || !pw) { toast('모든 항목을 입력하세요.'); return; }
+  // 아이디는 영문/숫자/._- 만 허용 — 인라인 핸들러 JS 인젝션과 URL/SQL 이상문자 방지
+  if (!/^[a-zA-Z0-9._-]+$/.test(id)) { toast('아이디는 영문/숫자/.-_만 사용할 수 있습니다.'); return; }
   if (pw.length < 4) { toast('비밀번호는 4자 이상이어야 합니다.'); return; }
   if (role === 'user' && !brands.length) { toast('브랜드장 계정은 접근 브랜드를 1개 이상 선택해야 합니다.'); return; }
 
@@ -95,22 +97,25 @@ async function renderAdmin() {
   document.getElementById('userTbody').innerHTML = users.map(u => {
     const isProtected = u.id === ADMIN;
     const uBrands = Array.isArray(u.brands) ? u.brands : [];
+    // u.id를 인라인 핸들러 JS 문자열에 직접 박지 않고 data-uid 속성으로 분리 → HTML escape만으로 안전
+    const uidAttr = esc(u.id);
     const roleSel = isProtected
       ? '<span class="adm-badge">관리자</span>'
-      : `<select class="st-sel role-sel" onchange="updRole('${u.id}', this.value)">
+      : `<select class="st-sel role-sel" data-uid="${uidAttr}" onchange="updRole(this.dataset.uid, this.value)">
            <option value="user"${u.role==='user'?' selected':''}>브랜드장</option>
            <option value="admin"${u.role==='admin'?' selected':''}>관리자</option>
          </select>`;
+    const brandsTxt = uBrands.length ? uBrands.map(esc).join(', ') : '미지정';
     const brandsCell = u.role === 'admin'
       ? '<span class="cell-muted">전체</span>'
-      : `<button class="brand-edit-btn" onclick="editBrands('${u.id}')">${uBrands.length ? uBrands.join(', ') : '미지정'} ✎</button>`;
+      : `<button class="brand-edit-btn" data-uid="${uidAttr}" onclick="editBrands(this.dataset.uid)">${brandsTxt} ✎</button>`;
     return `<tr>
-      <td>${u.id}</td>
-      <td>${u.name}</td>
+      <td>${esc(u.id)}</td>
+      <td>${esc(u.name)}</td>
       <td>${roleSel}</td>
       <td>${brandsCell}</td>
-      <td>${u.joined || '-'}</td>
-      <td>${isProtected ? '' : `<button class="del-btn" onclick="delUser('${u.id}')">✕</button>`}</td>
+      <td>${esc(u.joined || '-')}</td>
+      <td>${isProtected ? '' : `<button class="del-btn" data-uid="${uidAttr}" onclick="delUser(this.dataset.uid)">✕</button>`}</td>
     </tr>`;
   }).join('');
 }
