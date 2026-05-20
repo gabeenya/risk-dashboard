@@ -208,7 +208,8 @@ async function confirmApprove() {
   const types  = Array.from(document.querySelectorAll('.appr-type-cb:checked')).map(cb => cb.value);
   if (!brands.length) { toast('접근 브랜드를 1개 이상 선택하세요.'); return; }
   if (!types.length)  { toast('확인 가능 영역을 1개 이상 선택하세요.'); return; }
-  await sbUpd('users', id, { brands, types, status: 'active' });
+  const ok = await sbUpd('users', id, { brands, types, status: 'active' });
+  if (!ok) { toast('승인 저장 실패 — 콘솔(F12) 확인'); return; }
   closeApproveModal();
   await loadUsers();
   renderAdmin();
@@ -283,7 +284,8 @@ async function saveEditBrands() {
   const id = document.getElementById('editBrandsModal').dataset.uid;
   const sel = Array.from(document.querySelectorAll('.edit-brand-cb:checked')).map(cb => cb.value);
   if (!sel.length) { toast('최소 1개 이상의 브랜드를 선택하세요.'); return; }
-  await sbUpd('users', id, { brands: sel });
+  const ok = await sbUpd('users', id, { brands: sel });
+  if (!ok) { toast('저장 실패 — 콘솔(F12) 확인'); return; }
   closeEditBrands();
   await loadUsers();
   renderAdmin();
@@ -312,7 +314,8 @@ async function saveEditTypes() {
   const id = document.getElementById('editTypesModal').dataset.uid;
   const sel = Array.from(document.querySelectorAll('.edit-type-cb:checked')).map(cb => cb.value);
   if (!sel.length) { toast('최소 1개 이상의 영역을 선택하세요.'); return; }
-  await sbUpd('users', id, { types: sel });
+  const ok = await sbUpd('users', id, { types: sel });
+  if (!ok) { toast('저장 실패 — 콘솔(F12) 확인'); return; }
   closeEditTypes();
   await loadUsers();
   renderAdmin();
