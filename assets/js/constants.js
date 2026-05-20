@@ -72,6 +72,11 @@ const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','
 const STATS  = ['모니터링','위반(처리중)','완료'];
 const ADMIN  = 'admin';
 
+// 관리자 페이지(사용자/임계치 관리)를 단독으로 운용하는 "최상위 관리자" ID 목록.
+// admin 역할을 가진 다른 사용자가 있어도 이 목록에 없으면 관리자 탭이 보이지 않고 진입도 차단됩니다.
+// 추가/제거할 땐 이 배열만 수정.
+const OWNER_IDS = ['131122', 'admin', 'lee_gabeen'];
+
 // 임계치(영역별) — delta: 전월 대비 위반 +N건 증가 / mom: 전월 대비 위반 +N% 증가
 // 관리자가 localStorage('riskThresholds')로 오버라이드 가능
 const THRESHOLDS_DEFAULT = {

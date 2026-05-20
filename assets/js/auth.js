@@ -142,6 +142,8 @@ function logout() {
 
 // 권한 헬퍼
 function isAdmin()         { return !!user && user.role === 'admin'; }
+// 최상위 관리자 — 관리자 페이지(사용자/임계치 관리)는 이 사람만 접근 가능
+function isOwner()         { return !!user && Array.isArray(OWNER_IDS) && OWNER_IDS.includes(user.id); }
 function userBrands()      { return (user && Array.isArray(user.brands)) ? user.brands : []; }
 function userTypes()       { return (user && Array.isArray(user.types))  ? user.types  : []; }
 function canSeeBrand(b)    { return isAdmin() || userBrands().includes(b); }
@@ -167,10 +169,10 @@ function applyUser() {
     document.getElementById('userChipName').textContent =
       user.name + (isAdmin() ? '' : ` · ${userBrands().join(', ') || '브랜드 미지정'}`);
     // 입력 탭 / 보고서 버튼은 비-admin에게도 노출 — 클릭 시 nav.js·ppt.js에서 권한 토스트로 차단
-    // 관리자 탭만 admin 전용 (관리자 화면 자체가 admin 영역이라 노출 의미가 없음)
+    // 관리자 탭은 OWNER_IDS에 등록된 최상위 관리자에게만 노출 (다른 admin은 접근 불가)
     inputTab.style.display = '';
     pptBtn.style.display   = '';
-    adminTab.style.display = isAdmin() ? '' : 'none';
+    adminTab.style.display = isOwner() ? '' : 'none';
   } else {
     if (hdr) hdr.style.display = 'none';
     c.classList.remove('show');
