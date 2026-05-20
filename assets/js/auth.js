@@ -59,7 +59,7 @@ async function doSignup() {
   const ok = await sbIns('users', {
     id, name: n, pw: hp(pw), role: 'user', joined: td(), brands, status: 'pending'
   });
-  if (!ok) { err('signupErr', '신청에 실패했습니다. 잠시 후 다시 시도해 주세요.'); return; }
+  if (!ok) { err('signupErr', '신청 실패 — ' + (window.__sbLastErr || '잠시 후 다시 시도해 주세요.')); return; }
 
   document.getElementById('su-name').value = '';
   document.getElementById('su-id').value   = '';

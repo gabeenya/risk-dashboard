@@ -9,16 +9,16 @@ const sbGet = async t => {
   const r = await fetch(`${SB_URL}/rest/v1/${t}?select=*`, { headers: H });
   return r.ok ? r.json() : [];
 };
+// 마지막 에러 메시지 (UI 토스트에서 참조). console에도 자동 기록됨.
+window.__sbLastErr = '';
 const sbIns = async (t, d) => {
   const r = await fetch(`${SB_URL}/rest/v1/${t}`, {
     method: 'POST',
     headers: { ...H, 'Prefer': 'return=representation' },
     body: JSON.stringify(d)
   });
-  if (!r.ok) { const msg = await r.text(); console.error('[sbIns]', t, r.status, msg); return false; }
-  // RLS가 SELECT를 막으면 200 OK + [] 가 돌아옴 → 빈 결과면 실패로 간주
-  const body = await r.json().catch(() => []);
-  if (Array.isArray(body) && body.length === 0) { console.error('[sbIns] empty result — RLS may block', t, d); return false; }
+  if (!r.ok) { const msg = await r.text(); console.error('[sbIns]', t, r.status, msg); window.__sbLastErr = msg; return false; }
+  window.__sbLastErr = '';
   return true;
 };
 const sbUpd = async (t, id, d) => {
@@ -27,16 +27,13 @@ const sbUpd = async (t, id, d) => {
     headers: { ...H, 'Prefer': 'return=representation' },
     body: JSON.stringify(d)
   });
-  if (!r.ok) { const msg = await r.text(); console.error('[sbUpd]', t, id, r.status, msg); return false; }
-  const body = await r.json().catch(() => []);
-  if (Array.isArray(body) && body.length === 0) {
-    console.error('[sbUpd] empty result — RLS blocked UPDATE or no matching row', t, id, d);
-    return false;
-  }
+  if (!r.ok) { const msg = await r.text(); console.error('[sbUpd]', t, id, r.status, msg); window.__sbLastErr = msg; return false; }
+  window.__sbLastErr = '';
   return true;
 };
 const sbDel = async (t, id) => {
   const r = await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`, { method: 'DELETE', headers: H });
-  if (!r.ok) { const msg = await r.text(); console.error('[sbDel]', t, id, r.status, msg); return false; }
+  if (!r.ok) { const msg = await r.text(); console.error('[sbDel]', t, id, r.status, msg); window.__sbLastErr = msg; return false; }
+  window.__sbLastErr = '';
   return true;
 };

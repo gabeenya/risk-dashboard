@@ -85,7 +85,11 @@ async function createUser() {
   await loadUsers();
   if (users.find(u => u.id === id)) { toast('이미 사용 중인 아이디입니다.'); return; }
 
-  await sbIns('users', { id, name: n, pw: hp(pw), role, joined: td(), brands, types, status: 'active' });
+  const ok = await sbIns('users', { id, name: n, pw: hp(pw), role, joined: td(), brands, types, status: 'active' });
+  if (!ok) {
+    toast('계정 추가 실패 — ' + (window.__sbLastErr || '콘솔(F12) 확인'));
+    return;
+  }
   const roleLabel = role === 'admin'
     ? '관리자'
     : `브랜드장 (${brands.join(', ')} / 영역: ${types.join(', ')})`;
@@ -209,7 +213,7 @@ async function confirmApprove() {
   if (!brands.length) { toast('접근 브랜드를 1개 이상 선택하세요.'); return; }
   if (!types.length)  { toast('확인 가능 영역을 1개 이상 선택하세요.'); return; }
   const ok = await sbUpd('users', id, { brands, types, status: 'active' });
-  if (!ok) { toast('승인 저장 실패 — 콘솔(F12) 확인'); return; }
+  if (!ok) { toast('승인 저장 실패 — ' + (window.__sbLastErr || '콘솔(F12) 확인')); return; }
   closeApproveModal();
   await loadUsers();
   renderAdmin();
@@ -285,7 +289,7 @@ async function saveEditBrands() {
   const sel = Array.from(document.querySelectorAll('.edit-brand-cb:checked')).map(cb => cb.value);
   if (!sel.length) { toast('최소 1개 이상의 브랜드를 선택하세요.'); return; }
   const ok = await sbUpd('users', id, { brands: sel });
-  if (!ok) { toast('저장 실패 — 콘솔(F12) 확인'); return; }
+  if (!ok) { toast('저장 실패 — ' + (window.__sbLastErr || '콘솔(F12) 확인')); return; }
   closeEditBrands();
   await loadUsers();
   renderAdmin();
@@ -315,7 +319,7 @@ async function saveEditTypes() {
   const sel = Array.from(document.querySelectorAll('.edit-type-cb:checked')).map(cb => cb.value);
   if (!sel.length) { toast('최소 1개 이상의 영역을 선택하세요.'); return; }
   const ok = await sbUpd('users', id, { types: sel });
-  if (!ok) { toast('저장 실패 — 콘솔(F12) 확인'); return; }
+  if (!ok) { toast('저장 실패 — ' + (window.__sbLastErr || '콘솔(F12) 확인')); return; }
   closeEditTypes();
   await loadUsers();
   renderAdmin();
