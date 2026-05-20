@@ -42,8 +42,14 @@ function daysSince(dateStr) {
 }
 function isSlaOver(r) { return r.status === '위반(처리중)' && daysSince(r.date) >= SLA_DAYS; }
 
-// SLA 초과 건 호버 팝업 — 현재 영역 필터(curFilter) 기준
+// SLA 초과 건 호버/탭 팝업 — 현재 영역 필터(curFilter) 기준
+// PC: mouseenter/leave / 모바일: 탭하면 토글되고 바깥 탭 시 닫힘
 let __slaPopupEl = null;
+function toggleSlaPopup(target, ev) {
+  if (ev) ev.stopPropagation();
+  if (__slaPopupEl) hideSlaPopup();
+  else showSlaPopup(target);
+}
 function showSlaPopup(target) {
   hideSlaPopup();
   const list = getFR(curFilter).filter(isSlaOver)
@@ -81,6 +87,15 @@ function showSlaPopup(target) {
   if (top  + pop.height > window.innerHeight - 12) top = Math.max(12, rect.top - pop.height - margin);
   __slaPopupEl.style.left = left + 'px';
   __slaPopupEl.style.top  = top  + 'px';
+
+  // 모바일: 팝업 바깥 탭 시 닫힘 (다음 tick부터 등록해 현재 클릭이 즉시 닫는 것 방지)
+  setTimeout(() => {
+    document.addEventListener('click', __slaOutsideClick, { once: true });
+  }, 0);
+}
+function __slaOutsideClick(ev) {
+  if (__slaPopupEl && !__slaPopupEl.contains(ev.target)) hideSlaPopup();
+  else if (__slaPopupEl) document.addEventListener('click', __slaOutsideClick, { once: true });
 }
 function hideSlaPopup() {
   if (__slaPopupEl) { __slaPopupEl.remove(); __slaPopupEl = null; }
@@ -101,6 +116,7 @@ function getThresholds() {
   catch { return { ...THRESHOLDS_DEFAULT }; }
 }
 function checkThresholds() {
+  // 한 영역당 최대 1개 alert. 두 조건(건수 / %) 모두 충족하면 양쪽 값을 함께 표시.
   const alerts = [];
   const now = new Date();
   const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -113,14 +129,15 @@ function checkThresholds() {
     const currVio = records.filter(r => r.type === type && r.date && r.date.startsWith(ym) && r.status !== '모니터링').reduce((s,r) => s+r.count, 0);
     const prevVio = records.filter(r => r.type === type && r.date && r.date.startsWith(prevYm) && r.status !== '모니터링').reduce((s,r) => s+r.count, 0);
     const delta = currVio - prevVio;
-    if (delta >= t.delta && t.delta > 0) {
-      alerts.push({ type, kind: 'delta', curr: currVio, prev: prevVio, delta, threshold: t.delta });
-    }
-    if (prevVio > 0) {
-      const pct = ((currVio - prevVio) / prevVio) * 100;
-      if (pct >= t.mom && t.mom > 0) {
-        alerts.push({ type, kind: 'mom', curr: currVio, prev: prevVio, pct: Math.round(pct) });
-      }
+    const hitDelta = delta >= t.delta && t.delta > 0;
+    const pct = prevVio > 0 ? ((currVio - prevVio) / prevVio) * 100 : null;
+    const hitMom = pct !== null && pct >= t.mom && t.mom > 0;
+    if (hitDelta || hitMom) {
+      alerts.push({
+        type, curr: currVio, prev: prevVio,
+        delta: hitDelta ? delta : null,
+        pct:   hitMom   ? Math.round(pct) : null
+      });
     }
   });
   return alerts;
@@ -133,8 +150,11 @@ function renderAlerts() {
   const typesInAlert = new Set(alerts.map(a => a.type));
   bar.style.display = '';
   const items = alerts.map(a => {
-    if (a.kind === 'delta') return `<span class="alert-chip" onclick="setFilter(document.querySelector('.fb[onclick*=&quot;${a.type}&quot;]'),'${a.type}')"><b>${a.type}</b> 전월 대비 <b>+${a.delta.toLocaleString()}건</b> (${a.prev}→${a.curr})</span>`;
-    return `<span class="alert-chip" onclick="setFilter(document.querySelector('.fb[onclick*=&quot;${a.type}&quot;]'),'${a.type}')"><b>${a.type}</b> 전월 대비 <b>+${a.pct}%</b> (${a.prev}→${a.curr})</span>`;
+    const parts = [];
+    if (a.delta !== null) parts.push(`<b>+${a.delta.toLocaleString()}건</b>`);
+    if (a.pct !== null)   parts.push(`<b>+${a.pct}%</b>`);
+    const metric = parts.join(' / ');
+    return `<span class="alert-chip" onclick="setFilter(document.querySelector('.fb[onclick*=&quot;${a.type}&quot;]'),'${a.type}')"><b>${a.type}</b> 전월 대비 ${metric} (${a.prev}→${a.curr})</span>`;
   }).join('');
   bar.innerHTML = `<span class="alert-lead">🔔 알림 ${alerts.length}건</span>${items}`;
   updateAlertFilterDots(typesInAlert);
@@ -188,7 +208,7 @@ function renderDash(k) {
   document.getElementById('kpi4').textContent  = act.toLocaleString();
   const k4s = document.getElementById('kpi4s');
   if (slaOver > 0) {
-    k4s.innerHTML = `${lblIng} 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()">${SLA_DAYS}일 초과 ${slaOver.toLocaleString()}건</span>`;
+    k4s.innerHTML = `${lblIng} 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()" onclick="toggleSlaPopup(this, event)">${SLA_DAYS}일 초과 ${slaOver.toLocaleString()}건</span>`;
   } else {
     k4s.textContent = `${lblIng} 상태 건수`;
   }

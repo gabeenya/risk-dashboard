@@ -63,8 +63,8 @@ function buildCoverSlide(pres, ctx) {
   s.background = { color: PPT_NAVY };
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:4.3, w:10, h:1.325, fill:{color:'16307a'} });
   s.addShape(pres.shapes.RECTANGLE, { x:0.6, y:1.5, w:0.08, h:1.8, fill:{color:'CADCFC'} });
-  s.addText('외식 BG 리스크',                       { x:0.85, y:1.45, w:8.5, h:0.75, fontSize:36, bold:true, color:PPT_WHITE, fontFace:'Calibri' });
-  s.addText(monthName + '월 리스크 관리 현황',         { x:0.85, y:2.15, w:8.5, h:0.75, fontSize:36, bold:true, color:'CADCFC', fontFace:'Calibri' });
+  s.addText('외식BG',                                  { x:0.85, y:1.45, w:8.5, h:0.75, fontSize:36, bold:true, color:PPT_WHITE, fontFace:'Calibri' });
+  s.addText(monthName + '월 리스크 관리 현황',           { x:0.85, y:2.15, w:8.5, h:0.75, fontSize:36, bold:true, color:'CADCFC', fontFace:'Calibri' });
   s.addText('Risk Monitoring & Analytics Report',  { x:0.85, y:3.05, w:8.5, h:0.4,  fontSize:15, color:'8fa8c8', fontFace:'Calibri', italic:true });
   s.addText('기준일: ' + now.toLocaleDateString('ko-KR') + '   |   외식BG RO실',
                                                     { x:0.85, y:4.5,  w:8.5, h:0.4,  fontSize:13, color:'8fa8c8', fontFace:'Calibri' });
@@ -108,107 +108,94 @@ function buildOverviewSlide(pres, ctx) {
   addVioNote(s, 5.10);
 }
 
-// ── 슬라이드 3: 브랜드별 종합 표 ─────────────────────
+// ── 슬라이드 3: 브랜드별 종합 표 (연누적 / 전월 두 슬라이드로 분할) ─────────────
+// 같은 표 구조를 mode만 바꿔 두 번 그림 — 전 브랜드 한 화면에 표시되고, 영역 컬럼이 두 배 폭이 되어 가독성↑
 function buildBrandSummarySlide(pres, ctx) {
+  buildBrandSummaryPage(pres, ctx, 'year');
+  buildBrandSummaryPage(pres, ctx, 'month');
+}
+
+function buildBrandSummaryPage(pres, ctx, mode) {
+  // mode: 'year' (연누적 전체) | 'month' (전월만)
   const { prevYr: yr, prevMonthName: monthName, prevYm: ym, d } = ctx;
   const s = pres.addSlide();
-  addPptHeader(pres, s, '브랜드별 현황', yr + '년 ' + String(monthName).padStart(2,'0') + '월 기준');
+  const title    = mode === 'year' ? '브랜드별 현황 (연누적)' : '브랜드별 현황 (전월)';
+  const hdrColor = mode === 'year' ? '1e3a8a'              : '2563eb';
+  const hdrSub   = mode === 'year' ? '1a3270'              : '1d4ed8';
+  addPptHeader(pres, s, title, yr + '년 ' + String(monthName).padStart(2,'0') + '월 기준');
+
+  // 한 행의 records 필터 — mode에 따라 연누적/당월
+  const filterRecs = (brand, type) => mode === 'year'
+    ? d.filter(r => r.brand === brand && r.type === type)
+    : d.filter(r => r.brand === brand && r.type === type && r.date && r.date.startsWith(ym));
+  const filterTypeRecs = (type) => mode === 'year'
+    ? d.filter(r => r.type === type)
+    : d.filter(r => r.type === type && r.date && r.date.startsWith(ym));
 
   const data = [];
 
-  // 헤더행1: 브랜드 | 연누적(영역×2 colspan) | 당월(영역×2 colspan) | 합계(2 colspan)
-  data.push([
-    { text:'브랜드',           options:{ bold:true, fill:{color:PPT_NAVY},   color:PPT_WHITE, fontSize:10, align:'center', valign:'middle', rowspan:3 } },
-    { text:'연 누 적',         options:{ bold:true, fill:{color:'1e3a8a'},   color:PPT_WHITE, fontSize:10, align:'center', colspan:TYPES.length*2 } },
-    { text:'전 월 ('+monthName+'월)', options:{ bold:true, fill:{color:'2563eb'}, color:PPT_WHITE, fontSize:10, align:'center', colspan:TYPES.length*2 } },
-    { text:'합계',             options:{ bold:true, fill:{color:'334155'},   color:PPT_WHITE, fontSize:10, align:'center', valign:'middle', colspan:2, rowspan:3 } }
-  ]);
+  // 헤더1: 브랜드 | 영역명(colspan 2) × TYPES | 합계(colspan 2)
+  const h1 = [{ text:'브랜드', options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:7, align:'center', valign:'middle', rowspan:2 } }];
+  TYPES.forEach(t => h1.push({ text:t, options:{ bold:true, fill:{color:hdrColor}, color:PPT_WHITE, fontSize:6, align:'center', colspan:2 } }));
+  h1.push({ text:'합계', options:{ bold:true, fill:{color:'334155'}, color:PPT_WHITE, fontSize:7, align:'center', valign:'middle', colspan:2, rowspan:2 } });
+  data.push(h1);
 
-  // 헤더행2: 영역명 (연누적 N개, 당월 N개)
-  const hRow2 = [];
-  TYPES.forEach(t => {
-    hRow2.push({ text:t, options:{ bold:true, fill:{color:'1a3270'}, color:PPT_WHITE, fontSize:7, align:'center', colspan:2 } });
-  });
-  TYPES.forEach(t => {
-    hRow2.push({ text:t, options:{ bold:true, fill:{color:'1d4ed8'}, color:PPT_WHITE, fontSize:7, align:'center', colspan:2 } });
-  });
-  data.push(hRow2);
-
-  // 헤더행3: "전체/위반" 반복
-  const hRow3 = [];
+  // 헤더2: 전체/위반 반복
+  const h2 = [];
   TYPES.forEach(() => {
-    hRow3.push({ text:'전체', options:{ bold:true, fill:{color:'1e3a8a'}, color:'CADCFC', fontSize:8, align:'center' } });
-    hRow3.push({ text:'위반', options:{ bold:true, fill:{color:'1e3a8a'}, color:'CADCFC', fontSize:8, align:'center' } });
+    h2.push({ text:'전체', options:{ bold:true, fill:{color:hdrSub}, color:'CADCFC', fontSize:5, align:'center' } });
+    h2.push({ text:'위반', options:{ bold:true, fill:{color:hdrSub}, color:'CADCFC', fontSize:5, align:'center' } });
   });
-  TYPES.forEach(() => {
-    hRow3.push({ text:'전체', options:{ bold:true, fill:{color:'2563eb'}, color:'BFDBFE', fontSize:8, align:'center' } });
-    hRow3.push({ text:'위반', options:{ bold:true, fill:{color:'2563eb'}, color:'BFDBFE', fontSize:8, align:'center' } });
-  });
-  data.push(hRow3);
+  data.push(h2);
 
-  // 데이터행: 브랜드별
+  // 데이터행: 전 브랜드
   BRANDS.forEach((brand, bi) => {
     const bg = bi % 2 === 0 ? 'f8fafc' : PPT_WHITE;
-    const row = [{ text:brand, options:{ fontSize:9, bold:true, align:'center', fill:{color:bg} } }];
-    let bYearTot = 0, bYearVio = 0;
-
-    // 연누적
+    const row = [{ text:brand, options:{ fontSize:6, bold:true, align:'center', valign:'middle', fill:{color:bg} } }];
+    let bTot = 0, bVio = 0;
     TYPES.forEach(type => {
-      const recs = d.filter(r => r.brand === brand && r.type === type);
+      const recs = filterRecs(brand, type);
       const t = recs.reduce((s, r) => s + pptMonCnt(r), 0);
       const v = recs.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
-      bYearTot += t; bYearVio += v;
-      row.push({ text:pptFmt(t), options:{ fontSize:8, align:'center', fill:{color:bg} } });
-      row.push({ text:v || '-', options:{ fontSize:8, align:'center', color:v>0?'dc2626':'94a3b8', bold:v>0, fill:{color:bg} } });
+      bTot += t; bVio += v;
+      row.push({ text:pptFmt(t), options:{ fontSize:6, align:'center', valign:'middle', fill:{color:bg} } });
+      row.push({ text:v || '-', options:{ fontSize:6, align:'center', valign:'middle', color:v>0?'dc2626':'94a3b8', bold:v>0, fill:{color:bg} } });
     });
-
-    // 당월
-    TYPES.forEach(type => {
-      const recs = d.filter(r => r.brand === brand && r.type === type && r.date && r.date.startsWith(ym));
-      const t = recs.reduce((s, r) => s + pptMonCnt(r), 0);
-      const v = recs.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
-      row.push({ text:pptFmt(t), options:{ fontSize:8, align:'center', fill:{color:bg} } });
-      row.push({ text:v || '-', options:{ fontSize:8, align:'center', color:v>0?'dc2626':'94a3b8', bold:v>0, fill:{color:bg} } });
-    });
-
-    // 합계 (연누적만)
-    row.push({ text:pptFmt(bYearTot), options:{ fontSize:8, align:'center', bold:true, fill:{color:'eef2ff'} } });
-    row.push({ text:bYearVio || '-', options:{ fontSize:8, align:'center', bold:bYearVio>0, color:bYearVio>0?'dc2626':'94a3b8', fill:{color:'eef2ff'} } });
+    row.push({ text:pptFmt(bTot), options:{ fontSize:6, align:'center', valign:'middle', bold:true, fill:{color:'eef2ff'} } });
+    row.push({ text:bVio || '-', options:{ fontSize:6, align:'center', valign:'middle', bold:bVio>0, color:bVio>0?'dc2626':'94a3b8', fill:{color:'eef2ff'} } });
     data.push(row);
   });
 
-  // 합계행
-  const sumRow = [{ text:'합계', options:{ bold:true, fontSize:9, align:'center', fill:{color:PPT_NAVY}, color:PPT_WHITE } }];
-  let gYearTot = 0, gYearVio = 0;
+  // 합계행: 전체 브랜드 기준
+  const sumRow = [{ text:'합계', options:{ bold:true, fontSize:6, align:'center', valign:'middle', fill:{color:PPT_NAVY}, color:PPT_WHITE } }];
+  let gTot = 0, gVio = 0;
   TYPES.forEach(type => {
-    const t = d.filter(r => r.type === type).reduce((s, r) => s + pptMonCnt(r), 0);
-    const v = d.filter(r => r.type === type && r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
-    gYearTot += t; gYearVio += v;
-    sumRow.push({ text:pptFmt(t), options:{ bold:true, fontSize:8, align:'center', fill:{color:PPT_NAVY}, color:PPT_WHITE } });
-    sumRow.push({ text:v || '-', options:{ bold:true, fontSize:8, align:'center', fill:{color:PPT_NAVY}, color:v>0?'fca5a5':PPT_WHITE } });
+    const recs = filterTypeRecs(type);
+    const t = recs.reduce((s, r) => s + pptMonCnt(r), 0);
+    const v = recs.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
+    gTot += t; gVio += v;
+    sumRow.push({ text:pptFmt(t), options:{ bold:true, fontSize:6, align:'center', valign:'middle', fill:{color:PPT_NAVY}, color:PPT_WHITE } });
+    sumRow.push({ text:v || '-', options:{ bold:true, fontSize:6, align:'center', valign:'middle', fill:{color:PPT_NAVY}, color:v>0?'fca5a5':PPT_WHITE } });
   });
-  TYPES.forEach(type => {
-    const t = d.filter(r => r.type === type && r.date && r.date.startsWith(ym)).reduce((s, r) => s + pptMonCnt(r), 0);
-    const v = d.filter(r => r.type === type && r.date && r.date.startsWith(ym) && r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
-    sumRow.push({ text:pptFmt(t), options:{ bold:true, fontSize:8, align:'center', fill:{color:'2563eb'}, color:PPT_WHITE } });
-    sumRow.push({ text:v || '-', options:{ bold:true, fontSize:8, align:'center', fill:{color:'2563eb'}, color:v>0?'fca5a5':PPT_WHITE } });
-  });
-  sumRow.push({ text:pptFmt(gYearTot), options:{ bold:true, fontSize:8, align:'center', fill:{color:'334155'}, color:PPT_WHITE } });
-  sumRow.push({ text:gYearVio || '-', options:{ bold:true, fontSize:8, align:'center', fill:{color:'334155'}, color:gYearVio>0?'fca5a5':PPT_WHITE } });
+  sumRow.push({ text:pptFmt(gTot), options:{ bold:true, fontSize:6, align:'center', valign:'middle', fill:{color:'334155'}, color:PPT_WHITE } });
+  sumRow.push({ text:gVio || '-', options:{ bold:true, fontSize:6, align:'center', valign:'middle', fill:{color:'334155'}, color:gVio>0?'fca5a5':PPT_WHITE } });
   data.push(sumRow);
 
-  // 열 너비: 브랜드(0.7) + 연누적(영역×2×CW) + 당월(영역×2×CW) + 합계(0.42×2) = 9.70"
-  //   CW = (9.7 - 0.7 - 0.84) / (TYPES.length * 4)
-  const CW = (9.7 - 0.7 - 0.84) / (TYPES.length * 4);
+  // 열 너비: 브랜드(0.7) + 영역×2 + 합계(0.42×2) = 9.7
+  const CW = (9.7 - 0.7 - 0.84) / (TYPES.length * 2);
   const typeColW = TYPES.flatMap(() => [CW, CW]);
+  // 행 수: 헤더 2 + 브랜드 15 + 합계 1 = 18
+  // 폰트 축소에 맞춰 행 높이도 슬림하게 → 표가 슬라이드에 여유 있게 들어옴
+  const totalRows = 2 + BRANDS.length + 1;
+  const available = 5.625 - 0.85 - 0.30;
+  const rowH = Math.min(0.24, available / totalRows);
   s.addTable(data, {
     x:0.15, y:0.85, w:9.7,
     border:{ pt:0.3, color:'e2e8f0' },
-    colW:[0.7, ...typeColW, ...typeColW, 0.42, 0.42],
-    rowH:0.255
+    colW:[0.7, ...typeColW, 0.42, 0.42],
+    rowH
   });
-  // 표 종료 y = 0.85 + 17 × 0.255 = 5.185
-  addVioNote(s, 5.21, true);
+  addVioNote(s, 0.85 + totalRows * rowH + 0.05, true);
 }
 
 // ── 슬라이드 4~: 영역별 상세 ─────────────────────────
@@ -290,56 +277,107 @@ function buildTypeDetailSlide(pres, ctx, type, typeIdx) {
   sumR.push({ text:gV || '-', options:{ bold:true, fontSize:dataFs, align:'center', fill:{color:PPT_NAVY}, color:gV>0?'fca5a5':PPT_WHITE } });
   tableData.push(sumR);
 
-  // 불법파견(16행): 압축, 그 외: 보통
-  const rowHeight = type === '불법파견' ? 0.18 : 0.28;
+  // 표만 표시 (하단 도넛/KPI 요약은 별도 슬라이드로 이동)
+  const rowHeight = type === '불법파견' ? 0.22 : 0.34;
   s.addTable(tableData, { x:TABLE_X, y:TABLE_Y, w:SLIDE_W, border:{pt:0.3,color:'e2e8f0'}, colW:colWs2, rowH:rowHeight });
 
-  // 영업비밀 슬라이드는 환산 안내 푸터 공간 확보를 위해 하단행 위치를 0.20" 위로 올림
-  const isSecret = type === '영업비밀';
-  const btmY = isSecret ? 4.00 : BTM_Y;
+  // 영업비밀 슬라이드에만 환산 안내 푸터
+  if (type === '영업비밀') addVioNote(s, 5.40, true);
+  void typeColor; void typeDone; void typeRate; void typeAct;
+}
 
-  // 하단: 도넛(좌) + KPI 요약(우)
+// ── 영역별 모니터링 결과 요약 (영역 상세 섹션 뒤에 1~2장 슬라이드에 모아서 출력)
+// 9개 영역을 카드 그리드(2행 × 3열)로 배치. 6개 초과분은 다음 슬라이드로.
+function buildTypeSummarySlides(pres, ctx) {
+  const cols = 3, rowsPerSlide = 2, perSlide = cols * rowsPerSlide;
+  const groups = [];
+  for (let i = 0; i < TYPES.length; i += perSlide) groups.push(TYPES.slice(i, i + perSlide));
+  groups.forEach((group, gi) => buildTypeSummaryPage(pres, ctx, group, gi, groups.length, cols, rowsPerSlide));
+}
+
+function buildTypeSummaryPage(pres, ctx, typeGroup, slideIdx, totalSlides, cols, rowsPerSlide) {
+  const { prevYr, prevMonthName } = ctx;
+  const s = pres.addSlide();
+  const titleSuf = totalSlides > 1 ? ` (${slideIdx + 1}/${totalSlides})` : '';
+  addPptHeader(pres, s, '영역별 모니터링 결과 요약' + titleSuf,
+               prevYr + '년 ' + String(prevMonthName).padStart(2,'0') + '월 기준 (전월)');
+
+  const startY = 0.85;
+  const endY   = 5.55; // 슬라이드 하단까지
+  const cardW  = (10 - 0.30 - (cols - 1) * 0.12) / cols;            // 좌우 0.15 여백 + 카드 사이 0.12
+  const cardH  = (endY - startY - (rowsPerSlide - 1) * 0.12) / rowsPerSlide;
+
+  typeGroup.forEach((type, idx) => {
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const x = 0.15 + col * (cardW + 0.12);
+    const y = startY + row * (cardH + 0.12);
+    drawTypeSummaryCard(pres, s, ctx, type, x, y, cardW, cardH);
+  });
+}
+
+// 카드 1개: 좌측 도넛 + 우측 KPI 4개
+function drawTypeSummaryCard(pres, s, ctx, type, x, y, w, h) {
+  const { d, prevYm } = ctx;
+  const typeIdx = TYPES.indexOf(type);
+  const typeColor = TYPE_COLORS[typeIdx] || '94a3b8';
+  const typeRecs  = d.filter(r => r.type === type && r.date && r.date.startsWith(prevYm));
+
+  const typeTot  = typeRecs.reduce((sum, r) => sum + pptMonCnt(r), 0);
+  const typeVio  = typeRecs.filter(r => r.status !== '모니터링').reduce((sum, r) => sum + r.count, 0);
+  const typeDone = typeRecs.filter(r => r.status === '완료').reduce((sum, r) => sum + r.count, 0);
+  const typeAct  = typeRecs.filter(r => r.status === '위반(처리중)').reduce((sum, r) => sum + r.count, 0);
+  const typeRate = typeVio ? Math.round(typeDone / typeVio * 100) : 0;
+
+  // 카드 배경 + 좌측 영역색 띠
+  s.addShape(pres.shapes.RECTANGLE, { x, y, w, h, fill:{color:PPT_WHITE}, shadow:{type:'outer',blur:5,offset:2,angle:135,color:'000000',opacity:0.07} });
+  s.addShape(pres.shapes.RECTANGLE, { x, y, w:0.06, h, fill:{color:typeColor} });
+
+  // 카드 제목 (영역명)
+  s.addText(type, { x:x+0.15, y:y+0.06, w:w-0.20, h:0.32, fontSize:13, bold:true, color:'0f172a', fontFace:'Calibri' });
+
+  // 본문 영역: 도넛(좌) + KPI(우)
+  const bodyY = y + 0.42;
+  const bodyH = h - 0.50;
+  const donW  = w * 0.46;
+  const kpiX  = x + donW + 0.05;
+  const kpiW  = w - donW - 0.20;
+
+  // 좌측: 미니 도넛
   const subs = SUB[type];
   if (subs && subs.length) {
     const subCnts        = subs.map(sub => typeRecs.filter(r => r.subtype === sub && r.status !== '모니터링').reduce((sum, r) => sum + r.count, 0));
     const filteredLabels = subs.filter((_, i) => subCnts[i] > 0);
     const filteredCnts   = subCnts.filter(v => v > 0);
-    s.addChart(pres.charts.DOUGHNUT, [{ name:'건수', labels:filteredLabels, values:filteredCnts }], {
-      x:TABLE_X, y:btmY, w:3.5, h:BTM_H,
-      chartColors: SUB_COLORS.slice(0, filteredLabels.length),
-      showLegend:true, legendPos:'r', legendFontSize:9,
-      showPercent:true,
-      dataLabelColor:PPT_WHITE,
-      dataLabelFontSize:6,
-      chartArea:{ fill:{ color: PPT_WHITE } },
-      holeSize:55
-    });
+    if (filteredCnts.length) {
+      s.addChart(pres.charts.DOUGHNUT, [{ name:'건수', labels:filteredLabels, values:filteredCnts }], {
+        x:x+0.10, y:bodyY, w:donW, h:bodyH,
+        chartColors: SUB_COLORS.slice(0, filteredLabels.length),
+        showLegend:true, legendPos:'b', legendFontSize:6,
+        showPercent:false,
+        dataLabelColor:PPT_WHITE,
+        dataLabelFontSize:6,
+        chartArea:{ fill:{ color: PPT_WHITE } },
+        holeSize:50
+      });
+    } else {
+      s.addText('위반 데이터 없음', { x:x+0.10, y:bodyY + bodyH/2 - 0.15, w:donW, h:0.3, fontSize:10, color:'94a3b8', fontFace:'Calibri', align:'center' });
+    }
   }
 
-  // KPI 요약 박스 (2×2)
-  const kpiX = 3.85;
-  const kpiW = 6.0;
-  s.addShape(pres.shapes.RECTANGLE, { x:kpiX, y:btmY, w:kpiW, h:BTM_H, fill:{color:PPT_WHITE}, shadow:{type:'outer',blur:5,offset:2,angle:135,color:'000000',opacity:0.07} });
-  s.addShape(pres.shapes.RECTANGLE, { x:kpiX, y:btmY, w:0.06, h:BTM_H, fill:{color:typeColor} });
-  s.addText(type + ' 모니터링 결과 요약', { x:kpiX+0.15, y:btmY+0.05, w:kpiW-0.25, h:0.3, fontSize:12, bold:true, color:'334155', fontFace:'Calibri' });
-
-  const cellW = (kpiW - 0.3) / 2;
-  [
+  // 우측: KPI 4행
+  const kpis = [
     ['전체 모니터링', pptFmt(typeTot) + '건'],
-    ['위반 건수',     typeVio + '건 (' + (typeTot ? Math.round(typeVio/typeTot*100) : 0) + '%)'],
+    ['위반 건수',     typeVio + '건' + (typeTot ? ' (' + Math.round(typeVio/typeTot*100) + '%)' : '')],
     ['처리 완료율',   typeRate + '%'],
     ['조치중',       typeAct + '건']
-  ].forEach(([label, val], i) => {
-    const col  = i % 2;
-    const rowI = Math.floor(i / 2);
-    const cx = kpiX + 0.15 + col * cellW;
-    const cy = btmY + 0.4 + rowI * 0.45;
-    s.addText(label + ':', { x:cx, y:cy, w:cellW*0.55, h:0.4, fontSize:10, color:'64748b', fontFace:'Calibri', valign:'middle' });
-    s.addText(val,         { x:cx + cellW*0.55, y:cy, w:cellW*0.45, h:0.4, fontSize:12, bold:true, color:'0f172a', fontFace:'Calibri', align:'right', valign:'middle' });
+  ];
+  const rowH = bodyH / kpis.length;
+  kpis.forEach(([label, val], i) => {
+    const cy = bodyY + i * rowH;
+    s.addText(label, { x:kpiX,             y:cy, w:kpiW * 0.55, h:rowH, fontSize:9,  color:'64748b', fontFace:'Calibri', valign:'middle' });
+    s.addText(val,   { x:kpiX + kpiW*0.55, y:cy, w:kpiW * 0.45, h:rowH, fontSize:11, bold:true, color:'0f172a', fontFace:'Calibri', align:'right', valign:'middle' });
   });
-
-  // 영업비밀 슬라이드에만 환산 안내 푸터 표기 (그 외 영역은 영업비밀 데이터를 포함하지 않음)
-  if (isSecret) addVioNote(s, btmY + BTM_H + 0.02, true);
 }
 
 // ── 슬라이드 N: 브랜드별 영역 현황 ───────────────────
@@ -432,11 +470,15 @@ function buildBrandDetailSlide(pres, ctx, brand) {
     { text:bVio || '-',   options:{ bold:true, fill:{color:PPT_NAVY}, color:bVio>0?'fca5a5':PPT_WHITE, fontSize:10, align:'center', valign:'middle' } }
   ]);
 
+  // 행 높이는 슬라이드 안에 깔끔하게 들어오도록 동적 산출
+  // 표 시작 y=2.20, 푸터 위치 5.42 → 사용 가능 약 3.10인치, 행 수 = TYPES + 헤더 + 합계
+  const totalRows = TYPES.length + 2;
+  const rowH = Math.min(0.32, (5.40 - 2.20) / totalRows);
   s.addTable(tblData, {
     x:5.70, y:2.20, w:4.15,
     colW:[1.90, 1.10, 1.15],
     border:{ pt:0.3, color:'e2e8f0' },
-    rowH:0.39
+    rowH
   });
 
   // 영업비밀 행이 포함되므로 환산 안내 푸터 표기 (하단)
@@ -492,6 +534,8 @@ async function generatePPT() {
     buildOverviewSlide(pres, ctx);
     buildBrandSummarySlide(pres, ctx);
     TYPES.forEach((type, idx) => buildTypeDetailSlide(pres, ctx, type, idx));
+    // 영역별 상세 섹션 직후, 9개 영역 요약(KPI + 미니 도넛)을 1~2장 슬라이드에 카드 그리드로 통합
+    buildTypeSummarySlides(pres, ctx);
     BRANDS.forEach(brand => buildBrandDetailSlide(pres, ctx, brand));
 
     const fn = '외식BG_리스크_' + yr + '년_' + monthName + '월_리스크관리현황.pptx';
