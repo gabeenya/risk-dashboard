@@ -327,6 +327,9 @@ async function saveEditTypes() {
 }
 
 async function delUser(id) {
+  const u = users.find(x => x.id === id);
+  const label = u ? `${u.name} (${u.id})` : id;
+  if (!confirm(`${label} 계정을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`)) return;
   await sbDel('users', id);
   await loadUsers();
   renderAdmin();
