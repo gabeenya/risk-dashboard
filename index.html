@@ -16,32 +16,32 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260520l';</script>
+<script>window.__ASSET_V = '20260520m';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260520l">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260520l">
-<link rel="stylesheet" href="assets/css/input.css?v=20260520l">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260520l">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260520l">
+<link rel="stylesheet" href="assets/css/base.css?v=20260520m">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260520m">
+<link rel="stylesheet" href="assets/css/input.css?v=20260520m">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260520m">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260520m">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260520l"     defer></script>
-<script src="assets/js/constants.js?v=20260520l"  defer></script>
-<script src="assets/js/state.js?v=20260520l"      defer></script>
-<script src="assets/js/utils.js?v=20260520l"      defer></script>
-<script src="assets/js/auth.js?v=20260520l"       defer></script>
-<script src="assets/js/nav.js?v=20260520l"        defer></script>
-<script src="assets/js/dashboard.js?v=20260520l"  defer></script>
-<script src="assets/js/input.js?v=20260520l"      defer></script>
-<script src="assets/js/admin.js?v=20260520l"      defer></script>
-<script src="assets/js/ai.js?v=20260520l"         defer></script>
-<script src="assets/js/ppt.js?v=20260520l"        defer></script>
-<script src="assets/js/main.js?v=20260520l"       defer></script>
+<script src="assets/js/config.js?v=20260520m"     defer></script>
+<script src="assets/js/constants.js?v=20260520m"  defer></script>
+<script src="assets/js/state.js?v=20260520m"      defer></script>
+<script src="assets/js/utils.js?v=20260520m"      defer></script>
+<script src="assets/js/auth.js?v=20260520m"       defer></script>
+<script src="assets/js/nav.js?v=20260520m"        defer></script>
+<script src="assets/js/dashboard.js?v=20260520m"  defer></script>
+<script src="assets/js/input.js?v=20260520m"      defer></script>
+<script src="assets/js/admin.js?v=20260520m"      defer></script>
+<script src="assets/js/ai.js?v=20260520m"         defer></script>
+<script src="assets/js/ppt.js?v=20260520m"        defer></script>
+<script src="assets/js/main.js?v=20260520m"       defer></script>
 </head>
 <body>
 
@@ -144,15 +144,15 @@
     <div class="alert-bar" id="alertBar" style="display:none"></div>
     <div class="filter-bar">
       <button class="fb on" onclick="setFilter(this,'all')">전체</button>
-      <button class="fb"    onclick="setFilter(this,'가맹')">가맹</button>
       <button class="fb"    onclick="setFilter(this,'불법파견')">불법파견</button>
       <button class="fb"    onclick="setFilter(this,'표시광고')">표시광고</button>
       <button class="fb"    onclick="setFilter(this,'노무')">노무</button>
       <button class="fb"    onclick="setFilter(this,'영업비밀')">영업비밀</button>
+      <button class="fb"    onclick="setFilter(this,'가맹')">가맹</button>
       <button class="fb"    onclick="setFilter(this,'IP')">IP</button>
       <button class="fb"    onclick="setFilter(this,'부실채권')">부실채권</button>
-      <button class="fb"    onclick="setFilter(this,'징계')">징계</button>
       <button class="fb"    onclick="setFilter(this,'클레임')">클레임</button>
+      <button class="fb"    onclick="setFilter(this,'징계')">징계</button>
       <button class="rf-btn" onclick="loadData()">↻ 새로고침</button>
     </div>
 
@@ -247,15 +247,15 @@
       <p class="pg-title">데이터 입력</p>
       <p class="pg-sub">영역을 선택하고 데이터를 입력하세요.</p>
       <div class="type-tabs">
-        <button class="tt on" onclick="setInputType(this,'가맹')">가맹</button>
-        <button class="tt"    onclick="setInputType(this,'불법파견')">불법파견</button>
+        <button class="tt on" onclick="setInputType(this,'불법파견')">불법파견</button>
         <button class="tt"    onclick="setInputType(this,'표시광고')">표시광고</button>
         <button class="tt"    onclick="setInputType(this,'노무')">노무</button>
         <button class="tt"    onclick="setInputType(this,'영업비밀')">영업비밀</button>
+        <button class="tt"    onclick="setInputType(this,'가맹')">가맹</button>
         <button class="tt"    onclick="setInputType(this,'IP')">IP</button>
         <button class="tt"    onclick="setInputType(this,'부실채권')">부실채권</button>
-        <button class="tt"    onclick="setInputType(this,'징계')">징계</button>
         <button class="tt"    onclick="setInputType(this,'클레임')">클레임</button>
+        <button class="tt"    onclick="setInputType(this,'징계')">징계</button>
       </div>
       <div class="fsec">
         <p class="fsec-tit">엑셀 일괄 업로드 <span class="fsec-tit-note">— 정해진 양식의 엑셀 파일로 여러 건을 한 번에 등록합니다</span></p>
@@ -290,7 +290,7 @@
         </div>
       </div>
       <div class="fsec">
-        <p class="fsec-tit">신규 입력 <span class="a-badge" id="areaBadge">가맹</span></p>
+        <p class="fsec-tit">신규 입력 <span class="a-badge" id="areaBadge">불법파견</span></p>
         <div class="fgrid">
           <div class="fgroup"><label>날짜</label><input type="date" id="f-date"></div>
           <div class="fgroup"><label>위반 유형</label><input type="text" id="f-type" readonly></div>
@@ -320,7 +320,7 @@
         </div>
       </div>
       <div class="fsec">
-        <p class="fsec-tit">데이터 목록 <span class="a-badge" id="listBadge">가맹</span> <span class="fsec-tit-note">— 상세유형 · 브랜드 · 건수 · 상태 · 비고 수정 가능</span></p>
+        <p class="fsec-tit">데이터 목록 <span class="a-badge" id="listBadge">불법파견</span> <span class="fsec-tit-note">— 상세유형 · 브랜드 · 건수 · 상태 · 비고 수정 가능</span></p>
         <div class="inp-filter-bar">
           <label class="inp-filter-lbl">상세유형
             <select id="inpSubFilter" class="inp-filter-sel" onchange="setInpSubFilter(this.value)">

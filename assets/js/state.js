@@ -3,7 +3,7 @@ let records     = [];
 let users       = [];
 let lChart, rChart, bChart;
 let curFilter   = 'all';
-let curType     = '가맹';
+let curType     = '불법파견';
 let user        = null;
 let deleted     = null;
 let uTimer      = null;

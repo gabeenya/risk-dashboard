@@ -59,11 +59,12 @@ const ILLEGAL_DISPATCH_CATS = {
   '근로조건 구조적 통제': ['근로시간 통제','작업방식 관리','복리후생 간섭','작업환경 결정']
 };
 
-const TYPES   = ['가맹','불법파견','표시광고','노무','영업비밀','IP','부실채권','징계','클레임'];
+const TYPES   = ['불법파견','표시광고','노무','영업비밀','가맹','IP','부실채권','클레임','징계'];
 const BRANDS  = ['애슐리','피자몰','로운','자연별곡','델리바이애슐리','리미니','프랑제리','카페','프랜차이즈','상권','본부','광주ck','주안ck','기흥ck','CX팀'];
 
-const TC          = ['#4f86c6','#e8845a','#5eba8a','#e8c35a','#9b7ed4','#e87a9f','#5abfbf','#c4a86e','#8a9eb8'];
-const TYPE_COLORS = ['4f86c6','e8845a','5eba8a','e8c35a','9b7ed4','e87a9f','5abfbf','c4a86e','8a9eb8'];
+// 색상은 새 TYPES 순서에 맞춰 재배열 — 각 영역의 기존 색은 그대로 유지
+const TC          = ['#e8845a','#5eba8a','#e8c35a','#9b7ed4','#4f86c6','#e87a9f','#5abfbf','#8a9eb8','#c4a86e'];
+const TYPE_COLORS = ['e8845a','5eba8a','e8c35a','9b7ed4','4f86c6','e87a9f','5abfbf','8a9eb8','c4a86e'];
 const BC          = BRANDS.map(()=>'#9e9e9e');
 const SC          = ['#4f86c6','#e8845a','#5eba8a','#e8c35a','#9b7ed4','#e87a9f','#5abfbf','#c4a86e','#7ab8d4','#d4846e','#82c4a0','#b8a0d4','#e8a05a'];
 

@@ -12,7 +12,7 @@ async function init() {
 
   // 폼 기본값은 로그인과 무관하게 미리 세팅해도 무해 (admin이 들어와야만 보이는 영역)
   document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
-  setInputType(document.querySelector('.tt.on'), '가맹');
+  setInputType(document.querySelector('.tt.on'), '불법파견');
   initAIStyle();
 }
 
