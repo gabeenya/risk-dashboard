@@ -93,7 +93,11 @@ main { max-width: 1300px; margin: 0 auto; padding: 1.75rem 1.5rem; }
 }
 .login-tit { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 4px; letter-spacing: -0.3px; }
 .login-sub { font-size: 10.5px; color: #94a3b8; letter-spacing: 0.6px; text-transform: uppercase; }
-.login-foot { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 1rem; }
+.login-foot { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 1rem; line-height: 1.6; }
+.signup-link { color: #1e3a8a; font-weight: 600; cursor: pointer; text-decoration: none; }
+.signup-link:hover { text-decoration: underline; }
+.login-card.hide { display: none; }
+.login-card-wide { max-width: 480px; }
 
 /* ── Modal (브랜드 편집 등) ────────────────────────── */
 .mb { position: fixed; inset: 0; background: rgba(15,23,42,0.45); backdrop-filter: blur(2px); z-index: 200; display: flex; align-items: center; justify-content: center; }

@@ -68,7 +68,7 @@ async function createUser() {
   await loadUsers();
   if (users.find(u => u.id === id)) { toast('이미 사용 중인 아이디입니다.'); return; }
 
-  await sbIns('users', { id, name: n, pw: hp(pw), role, joined: td(), brands });
+  await sbIns('users', { id, name: n, pw: hp(pw), role, joined: td(), brands, status: 'active' });
   const roleLabel = role === 'admin' ? '관리자' : `브랜드장 (${brands.join(', ')})`;
   document.getElementById('newUserInfo').textContent = `아이디: ${id} / 임시 비밀번호: ${pw} / 권한: ${roleLabel}`;
   document.getElementById('newUserResult').style.display = '';
@@ -94,7 +94,13 @@ async function renderAdmin() {
   toggleNewBrandPicker();
   renderThresholdTable();
   await loadUsers();
-  document.getElementById('userTbody').innerHTML = users.map(u => {
+
+  // 가입 신청 대기 (status='pending') 분리
+  const pending = users.filter(u => u.status === 'pending');
+  const active  = users.filter(u => u.status !== 'pending');
+  renderPendingList(pending);
+
+  document.getElementById('userTbody').innerHTML = active.map(u => {
     const isProtected = u.id === ADMIN;
     const uBrands = Array.isArray(u.brands) ? u.brands : [];
     // u.id를 인라인 핸들러 JS 문자열에 직접 박지 않고 data-uid 속성으로 분리 → HTML escape만으로 안전
@@ -109,15 +115,82 @@ async function renderAdmin() {
     const brandsCell = u.role === 'admin'
       ? '<span class="cell-muted">전체</span>'
       : `<button class="brand-edit-btn" data-uid="${uidAttr}" onclick="editBrands(this.dataset.uid)">${brandsTxt} ✎</button>`;
+    const nameCell = isProtected
+      ? esc(u.name)
+      : `<button class="name-edit-btn" data-uid="${uidAttr}" onclick="editName(this.dataset.uid)">${esc(u.name)} ✎</button>`;
     return `<tr>
       <td>${esc(u.id)}</td>
-      <td>${esc(u.name)}</td>
+      <td>${nameCell}</td>
       <td>${roleSel}</td>
       <td>${brandsCell}</td>
       <td>${esc(u.joined || '-')}</td>
       <td>${isProtected ? '' : `<button class="del-btn" data-uid="${uidAttr}" onclick="delUser(this.dataset.uid)">✕</button>`}</td>
     </tr>`;
   }).join('');
+}
+
+// ── 가입 신청 대기 ──────────────────────────────────
+function renderPendingList(pending) {
+  const sec   = document.getElementById('pendingSec');
+  const tbody = document.getElementById('pendingTbody');
+  const badge = document.getElementById('pendingCntBadge');
+  if (!sec || !tbody) return;
+  if (!pending.length) { sec.style.display = 'none'; tbody.innerHTML = ''; return; }
+  sec.style.display = '';
+  badge.textContent = pending.length;
+  tbody.innerHTML = pending.map(u => {
+    const uidAttr = esc(u.id);
+    const brandsTxt = (Array.isArray(u.brands) && u.brands.length) ? u.brands.map(esc).join(', ') : '미지정';
+    return `<tr>
+      <td>${esc(u.id)}</td>
+      <td>${esc(u.name)}</td>
+      <td>${brandsTxt}</td>
+      <td>${esc(u.joined || '-')}</td>
+      <td>
+        <button class="btn-pri btn-mini" data-uid="${uidAttr}" onclick="approveUser(this.dataset.uid)">승인</button>
+        <button class="btn-sec btn-mini" data-uid="${uidAttr}" onclick="rejectUser(this.dataset.uid)">거절</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function approveUser(id) {
+  await sbUpd('users', id, { status: 'active' });
+  await loadUsers();
+  renderAdmin();
+  toast('가입 신청을 승인했습니다.');
+}
+
+async function rejectUser(id) {
+  if (!confirm('이 가입 신청을 거절(삭제)할까요?')) return;
+  await sbDel('users', id);
+  await loadUsers();
+  renderAdmin();
+  toast('가입 신청을 거절했습니다.');
+}
+
+// ── 이름 편집 ───────────────────────────────────────
+function editName(id) {
+  const u = users.find(x => x.id === id);
+  if (!u) return;
+  document.getElementById('editNameTitle').textContent = `${u.id} 이름 변경`;
+  document.getElementById('editNameInput').value = u.name || '';
+  document.getElementById('editNameModal').dataset.uid = id;
+  document.getElementById('editNameModal').classList.remove('hide');
+  setTimeout(() => { const f = document.getElementById('editNameInput'); if (f) { f.focus(); f.select(); } }, 30);
+}
+function closeEditName() {
+  document.getElementById('editNameModal').classList.add('hide');
+}
+async function saveEditName() {
+  const id = document.getElementById('editNameModal').dataset.uid;
+  const n  = document.getElementById('editNameInput').value.trim();
+  if (!n) { toast('이름을 입력하세요.'); return; }
+  await sbUpd('users', id, { name: n });
+  closeEditName();
+  await loadUsers();
+  renderAdmin();
+  toast('이름이 변경되었습니다.');
 }
 
 async function updRole(id, role) {

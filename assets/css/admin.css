@@ -25,6 +25,14 @@
 .brand-edit-btn { font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px dashed #cbd5e1; background: #fff; color: #475569; cursor: pointer; max-width: 280px; text-align: left; }
 .brand-edit-btn:hover { border-color: #1e3a8a; color: #1e3a8a; border-style: solid; }
 
+/* 이름 편집 버튼 (관리자 표 안) */
+.name-edit-btn { font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px dashed #cbd5e1; background: #fff; color: #334155; cursor: pointer; text-align: left; font-weight: 500; }
+.name-edit-btn:hover { border-color: #1e3a8a; color: #1e3a8a; border-style: solid; }
+
+/* 가입 신청 대기 행 — 승인/거절 버튼 미니 사이즈 */
+.btn-mini { padding: 5px 12px; font-size: 11px; }
+.btn-mini + .btn-mini { margin-left: 6px; }
+
 /* 와이드 모달 (브랜드 편집용) */
 .modal-wide { max-width: 560px; }
 
