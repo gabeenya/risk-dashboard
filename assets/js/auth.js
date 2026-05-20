@@ -99,6 +99,38 @@ async function doLogin() {
   renderInputPg();
 }
 
+// ── 비밀번호 변경 (로그인 사용자 본인만) ──────────────
+function openChangePw() {
+  if (!user) { showLogin(); return; }
+  document.getElementById('cp-cur').value  = '';
+  document.getElementById('cp-new').value  = '';
+  document.getElementById('cp-new2').value = '';
+  err('changePwErr', '');
+  document.getElementById('changePwModal').classList.remove('hide');
+  setTimeout(() => { const f = document.getElementById('cp-cur'); if (f) f.focus(); }, 30);
+}
+function closeChangePw() {
+  document.getElementById('changePwModal').classList.add('hide');
+}
+async function doChangePw() {
+  if (!user) { showLogin(); return; }
+  const cur  = document.getElementById('cp-cur').value;
+  const next = document.getElementById('cp-new').value;
+  const conf = document.getElementById('cp-new2').value;
+  if (!cur || !next || !conf) { err('changePwErr', '모든 항목을 입력하세요.'); return; }
+  if (user.pw !== hp(cur))    { err('changePwErr', '현재 비밀번호가 올바르지 않습니다.'); return; }
+  if (next.length < 4)        { err('changePwErr', '새 비밀번호는 4자 이상이어야 합니다.'); return; }
+  if (next !== conf)          { err('changePwErr', '새 비밀번호 확인이 일치하지 않습니다.'); return; }
+  if (next === cur)           { err('changePwErr', '현재 비밀번호와 동일합니다.'); return; }
+
+  const newHash = hp(next);
+  const ok = await sbUpd('users', user.id, { pw: newHash });
+  if (!ok) { err('changePwErr', '변경 실패 — ' + (window.__sbLastErr || '잠시 후 다시 시도해 주세요.')); return; }
+  user.pw = newHash;
+  closeChangePw();
+  toast('비밀번호가 변경되었습니다.');
+}
+
 function logout() {
   user = null;
   records = [];   // 다른 사용자 데이터가 잔상으로 남지 않도록

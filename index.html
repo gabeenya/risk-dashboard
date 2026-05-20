@@ -16,32 +16,32 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260520m';</script>
+<script>window.__ASSET_V = '20260520n';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260520m">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260520m">
-<link rel="stylesheet" href="assets/css/input.css?v=20260520m">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260520m">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260520m">
+<link rel="stylesheet" href="assets/css/base.css?v=20260520n">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260520n">
+<link rel="stylesheet" href="assets/css/input.css?v=20260520n">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260520n">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260520n">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260520m"     defer></script>
-<script src="assets/js/constants.js?v=20260520m"  defer></script>
-<script src="assets/js/state.js?v=20260520m"      defer></script>
-<script src="assets/js/utils.js?v=20260520m"      defer></script>
-<script src="assets/js/auth.js?v=20260520m"       defer></script>
-<script src="assets/js/nav.js?v=20260520m"        defer></script>
-<script src="assets/js/dashboard.js?v=20260520m"  defer></script>
-<script src="assets/js/input.js?v=20260520m"      defer></script>
-<script src="assets/js/admin.js?v=20260520m"      defer></script>
-<script src="assets/js/ai.js?v=20260520m"         defer></script>
-<script src="assets/js/ppt.js?v=20260520m"        defer></script>
-<script src="assets/js/main.js?v=20260520m"       defer></script>
+<script src="assets/js/config.js?v=20260520n"     defer></script>
+<script src="assets/js/constants.js?v=20260520n"  defer></script>
+<script src="assets/js/state.js?v=20260520n"      defer></script>
+<script src="assets/js/utils.js?v=20260520n"      defer></script>
+<script src="assets/js/auth.js?v=20260520n"       defer></script>
+<script src="assets/js/nav.js?v=20260520n"        defer></script>
+<script src="assets/js/dashboard.js?v=20260520n"  defer></script>
+<script src="assets/js/input.js?v=20260520n"      defer></script>
+<script src="assets/js/admin.js?v=20260520n"      defer></script>
+<script src="assets/js/ai.js?v=20260520n"         defer></script>
+<script src="assets/js/ppt.js?v=20260520n"        defer></script>
+<script src="assets/js/main.js?v=20260520n"       defer></script>
 </head>
 <body>
 
@@ -59,6 +59,7 @@
     <span class="yr-badge">2026년 기준</span>
     <div class="uchip" id="userChip">
       <span id="userChipName"></span>
+      <button class="lo-btn" onclick="openChangePw()" title="비밀번호 변경">🔑</button>
       <button class="lo-btn" onclick="logout()">로그아웃</button>
     </div>
     <div class="nav-group">
@@ -473,6 +474,32 @@
   </div>
 
 </main>
+
+<!-- ── Change password modal ───────────────────────── -->
+<div class="mb hide" id="changePwModal">
+  <div class="modal">
+    <p class="mo-title">비밀번호 변경</p>
+    <p class="mo-sub">현재 비밀번호를 입력하고 새 비밀번호를 설정하세요.</p>
+    <div class="mo-err" id="changePwErr"></div>
+    <div class="fg">
+      <label>현재 비밀번호</label>
+      <input type="password" id="cp-cur" placeholder="현재 비밀번호">
+    </div>
+    <div class="fg">
+      <label>새 비밀번호</label>
+      <input type="password" id="cp-new" placeholder="4자 이상">
+    </div>
+    <div class="fg">
+      <label>새 비밀번호 확인</label>
+      <input type="password" id="cp-new2" placeholder="다시 입력"
+             onkeydown="if(event.key==='Enter')doChangePw()">
+    </div>
+    <div class="mo-acts">
+      <button class="btn-full" onclick="doChangePw()">변경</button>
+      <button class="btn-lnk"  onclick="closeChangePw()">취소</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Edit name modal ─────────────────────────────── -->
 <div class="mb hide" id="editNameModal">
