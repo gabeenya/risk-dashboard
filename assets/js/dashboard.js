@@ -212,16 +212,29 @@ function renderHeatmap() {
   const brands = isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b));
   if (!brands.length) { wrap.innerHTML = '<div class="drill-empty">표시할 브랜드가 없습니다.</div>'; return; }
 
-  const cnt = (type, brand) => records
-    .filter(r => r.type === type && r.brand === brand && r.status !== '모니터링')
-    .reduce((s, r) => s + r.count, 0);
+  // 영역 탭이 'all'이면 영역(TYPES) 기준, 특정 영역이면 그 영역의 상세 위반 유형(SUB[type]) 기준
+  const isAll = curFilter === 'all';
+  const dim   = isAll ? TYPES : (SUB[curFilter] || []);
+
+  // 카드 제목 동적 갱신
+  const titEl = document.querySelector('#heatmapCard .card-tit');
+  if (titEl) {
+    titEl.innerHTML = isAll
+      ? '브랜드/영역별 위험도 <span class="card-sub-note">— 위반 건수 상위 브랜드 · Top 3 영역</span>'
+      : `브랜드/상세유형별 위험도 <span class="card-sub-note">— ${esc(curFilter)} · 상세 위반 유형별 위반 건수</span>`;
+  }
+
+  // 카운트: 전체 모드는 (영역, 브랜드), 영역 모드는 (상세유형, 브랜드)
+  const cnt = isAll
+    ? (key, brand) => records.filter(r => r.type === key && r.brand === brand && r.status !== '모니터링').reduce((s, r) => s + r.count, 0)
+    : (key, brand) => records.filter(r => r.type === curFilter && r.subtype === key && r.brand === brand && r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
 
   const items = brands.map(b => {
-    const areas = TYPES.map(t => ({ type: t, count: cnt(t, b) }))
+    const cells = dim.map(k => ({ key: k, count: cnt(k, b) }))
       .filter(a => a.count > 0)
       .sort((x, y) => y.count - x.count);
-    const total = areas.reduce((s, a) => s + a.count, 0);
-    return { brand: b, total, areas };
+    const total = cells.reduce((s, a) => s + a.count, 0);
+    return { brand: b, total, cells };
   })
   .filter(it => it.total > 0)
   .sort((a, b) => {
@@ -235,16 +248,19 @@ function renderHeatmap() {
     return;
   }
 
-  // 전역 max: 모든 (브랜드, 영역) 조합 중 최대값 → 카드 간 동일 스케일로 위험도 비교
-  const globalMax = Math.max(1, ...items.flatMap(it => it.areas.map(a => a.count)));
+  // 전역 max: 모든 (브랜드, 차원키) 조합 중 최대값 → 카드 간 동일 스케일
+  const globalMax = Math.max(1, ...items.flatMap(it => it.cells.map(a => a.count)));
 
   let html = '<div class="rank-grid">';
   items.forEach(it => {
-    const areaRows = it.areas.map(a => {
+    const cellRows = it.cells.map(a => {
       const pct = Math.max(6, Math.round(a.count / globalMax * 100));
+      const drillCall = isAll
+        ? `openDrill('type-brand','${a.key}','${it.brand}')`
+        : `openDrill('subtype-brand','${curFilter}','${it.brand}','${a.key}')`;
       return `
-        <div class="rank-area" onclick="event.stopPropagation();openDrill('type-brand','${a.type}','${it.brand}')">
-          <span class="rank-area-name">${a.type}</span>
+        <div class="rank-area" onclick="event.stopPropagation();${drillCall}">
+          <span class="rank-area-name">${esc(a.key)}</span>
           <div class="rank-area-bar"><div class="rank-area-fill" style="width:${pct}%"></div></div>
           <span class="rank-area-count">${a.count.toLocaleString()}</span>
         </div>`;
@@ -253,10 +269,10 @@ function renderHeatmap() {
     html += `
       <div class="rank-card" onclick="openDrill('brand','${it.brand}')">
         <div class="rank-card-hd">
-          <span class="rank-brand">${it.brand}</span>
+          <span class="rank-brand">${esc(it.brand)}</span>
           <span class="rank-total">누적위반 ${it.total.toLocaleString()}건</span>
         </div>
-        <div class="rank-areas">${areaRows}</div>
+        <div class="rank-areas">${cellRows}</div>
       </div>`;
   });
   html += '</div>';
@@ -264,10 +280,11 @@ function renderHeatmap() {
 }
 
 // ── 드릴다운: 영역×브랜드 / 영역 / 브랜드 / 상세유형 등 조건으로 records 필터해서 패널 표시
-function openDrill(mode, a, b) {
+function openDrill(mode, a, b, c) {
   let filtered = records.slice();
   let title = '', sub = '';
   if (mode === 'type-brand')   { filtered = filtered.filter(r => r.type === a && r.brand === b); title = `${a} × ${b}`;  sub = `위반 건수 ${filtered.filter(r => r.status !== '모니터링').reduce((s,r)=>s+r.count,0)}건 · 모니터링 포함 총 ${filtered.length}레코드`; }
+  else if (mode === 'subtype-brand') { filtered = filtered.filter(r => r.type === a && r.brand === b && r.subtype === c); title = `${a} · ${c} × ${b}`; sub = `위반 건수 ${filtered.filter(r => r.status !== '모니터링').reduce((s,r)=>s+r.count,0)}건 · 모니터링 포함 총 ${filtered.length}레코드`; }
   else if (mode === 'type')    { filtered = filtered.filter(r => r.type === a);                   title = `${a} 전체`;   sub = `${filtered.length}레코드`; }
   else if (mode === 'brand')   { filtered = filtered.filter(r => r.brand === a);                  title = `${a} 전체`;   sub = `${filtered.length}레코드`; }
   else if (mode === 'subtype') { filtered = filtered.filter(r => r.type === a && r.subtype === b); title = `${a} · ${b}`; sub = `${filtered.length}레코드`; }
