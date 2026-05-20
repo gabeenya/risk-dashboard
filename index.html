@@ -16,32 +16,32 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260520f';</script>
+<script>window.__ASSET_V = '20260520h';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260520f">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260520f">
-<link rel="stylesheet" href="assets/css/input.css?v=20260520f">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260520f">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260520f">
+<link rel="stylesheet" href="assets/css/base.css?v=20260520h">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260520h">
+<link rel="stylesheet" href="assets/css/input.css?v=20260520h">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260520h">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260520h">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260520f"     defer></script>
-<script src="assets/js/constants.js?v=20260520f"  defer></script>
-<script src="assets/js/state.js?v=20260520f"      defer></script>
-<script src="assets/js/utils.js?v=20260520f"      defer></script>
-<script src="assets/js/auth.js?v=20260520f"       defer></script>
-<script src="assets/js/nav.js?v=20260520f"        defer></script>
-<script src="assets/js/dashboard.js?v=20260520f"  defer></script>
-<script src="assets/js/input.js?v=20260520f"      defer></script>
-<script src="assets/js/admin.js?v=20260520f"      defer></script>
-<script src="assets/js/ai.js?v=20260520f"         defer></script>
-<script src="assets/js/ppt.js?v=20260520f"        defer></script>
-<script src="assets/js/main.js?v=20260520f"       defer></script>
+<script src="assets/js/config.js?v=20260520h"     defer></script>
+<script src="assets/js/constants.js?v=20260520h"  defer></script>
+<script src="assets/js/state.js?v=20260520h"      defer></script>
+<script src="assets/js/utils.js?v=20260520h"      defer></script>
+<script src="assets/js/auth.js?v=20260520h"       defer></script>
+<script src="assets/js/nav.js?v=20260520h"        defer></script>
+<script src="assets/js/dashboard.js?v=20260520h"  defer></script>
+<script src="assets/js/input.js?v=20260520h"      defer></script>
+<script src="assets/js/admin.js?v=20260520h"      defer></script>
+<script src="assets/js/ai.js?v=20260520h"         defer></script>
+<script src="assets/js/ppt.js?v=20260520h"        defer></script>
+<script src="assets/js/main.js?v=20260520h"       defer></script>
 </head>
 <body>
 
@@ -152,23 +152,24 @@
       <button class="fb"    onclick="setFilter(this,'IP')">IP</button>
       <button class="fb"    onclick="setFilter(this,'부실채권')">부실채권</button>
       <button class="fb"    onclick="setFilter(this,'징계')">징계</button>
+      <button class="fb"    onclick="setFilter(this,'클레임')">클레임</button>
       <button class="rf-btn" onclick="loadData()">↻ 새로고침</button>
     </div>
 
     <div class="kpi-grid">
-      <div class="kpi"><p class="kpi-lbl">누적</p><p class="kpi-str">위반 / 모니터링</p><p class="kpi-val" id="kpi1">-</p><p class="kpi-rate" id="kpi1r">-</p><p class="kpi-sub" id="kpi1s">-</p></div>
-      <div class="kpi"><p class="kpi-lbl">당월</p><p class="kpi-str">위반 / 모니터링</p><p class="kpi-val" id="kpi2">-</p><p class="kpi-rate" id="kpi2r">-</p><p class="kpi-sub" id="kpi2s">-</p></div>
-      <div class="kpi dim"><p class="kpi-lbl">처리</p><p class="kpi-str">완료율</p><p class="kpi-val" id="kpi3">-</p><p class="kpi-sub" id="kpi3s">-</p></div>
-      <div class="kpi dim"><p class="kpi-lbl">현재</p><p class="kpi-str">조치중 건수</p><p class="kpi-val" id="kpi4">-</p><p class="kpi-sub" id="kpi4s">-</p></div>
+      <div class="kpi"><p class="kpi-lbl">누적</p><p class="kpi-str" id="kpi1Str">위반 / 모니터링</p><p class="kpi-val" id="kpi1">-</p><p class="kpi-rate" id="kpi1r">-</p><p class="kpi-sub" id="kpi1s">-</p></div>
+      <div class="kpi"><p class="kpi-lbl">당월</p><p class="kpi-str" id="kpi2Str">위반 / 모니터링</p><p class="kpi-val" id="kpi2">-</p><p class="kpi-rate" id="kpi2r">-</p><p class="kpi-sub" id="kpi2s">-</p></div>
+      <div class="kpi dim"><p class="kpi-lbl">처리</p><p class="kpi-str" id="kpi3Str">완료율</p><p class="kpi-val" id="kpi3">-</p><p class="kpi-sub" id="kpi3s">-</p></div>
+      <div class="kpi dim"><p class="kpi-lbl">현재</p><p class="kpi-str" id="kpi4Str">조치중 건수</p><p class="kpi-val" id="kpi4">-</p><p class="kpi-sub" id="kpi4s">-</p></div>
     </div>
 
     <div class="charts-row">
       <div class="card">
-        <div class="card-hd"><span class="card-tit">월별 모니터링 / 위반 건수 추이</span><span class="card-tag" id="lineYear">-</span></div>
+        <div class="card-hd"><span class="card-tit" id="lineCardTit">월별 모니터링 / 위반 건수 추이</span><span class="card-tag" id="lineYear">-</span></div>
         <div class="chart-box chart-box-line"><canvas id="lineChart"></canvas></div>
         <div class="leg leg-line">
-          <span><span class="ld" style="background:#8fa8c8"></span>모니터링</span>
-          <span><span class="ld" style="background:#e8845a"></span>위반</span>
+          <span><span class="ld" style="background:#8fa8c8"></span><span id="lineLegMon">모니터링</span></span>
+          <span><span class="ld" style="background:#e8845a"></span><span id="lineLegVio">위반</span></span>
         </div>
         <p class="chart-note" id="lineChartNote" style="display:none">※ 영업비밀 '모니터링 건수'의 경우 10:1 환산 반영 / '위반 건수'의 경우 1:1 정상값 반영.<br><span class="chart-note-ex">(ex. 실제 모니터링 건수가 1,540건, 위반 건수가 3건인 경우 그래프 내 각 154건, 3건으로 반영)</span></p>
       </div>
@@ -184,20 +185,20 @@
       <div class="card" id="barChartCard">
         <div class="card-hd"><span class="card-tit">브랜드별 현황</span><span class="card-tag">전체 브랜드</span></div>
         <div class="leg leg-bar">
-          <span><span class="ld" style="background:#8fa8c8"></span>총 모니터링 건수</span>
-          <span><span class="ld" style="background:#e8845a"></span>위반</span>
+          <span><span class="ld" style="background:#8fa8c8"></span><span id="barLegMon">총 모니터링 건수</span></span>
+          <span><span class="ld" style="background:#e8845a"></span><span id="barLegVio">위반</span></span>
         </div>
         <div class="chart-box chart-box-bar"><canvas id="barChart"></canvas></div>
         <p class="chart-note" id="barChartNote" style="display:none">※ 영업비밀 '모니터링 건수'의 경우 10:1 환산 반영 / '위반 건수'의 경우 1:1 정상값 반영.<br><span class="chart-note-ex">(ex. 실제 모니터링 건수가 1,540건, 위반 건수가 3건인 경우 그래프 내 각 154건, 3건으로 반영)</span></p>
       </div>
       <div class="card">
         <div class="card-hd">
-          <span class="card-tit">최근 모니터링 현황</span>
+          <span class="card-tit" id="recentCardTit">최근 모니터링 현황</span>
           <div class="recent-status">
             <button class="rs-btn on" data-st="all"        onclick="setRecentStatus(this,'all')">전체</button>
-            <button class="rs-btn"    data-st="모니터링"   onclick="setRecentStatus(this,'모니터링')">모니터링</button>
-            <button class="rs-btn"    data-st="위반(처리중)" onclick="setRecentStatus(this,'위반(처리중)')">위반(처리중)</button>
-            <button class="rs-btn"    data-st="완료"       onclick="setRecentStatus(this,'완료')">완료</button>
+            <button class="rs-btn" id="rsBtnMon" data-st="모니터링"   onclick="setRecentStatus(this,'모니터링')">모니터링</button>
+            <button class="rs-btn" id="rsBtnIng" data-st="위반(처리중)" onclick="setRecentStatus(this,'위반(처리중)')">위반(처리중)</button>
+            <button class="rs-btn" id="rsBtnDone" data-st="완료"       onclick="setRecentStatus(this,'완료')">완료</button>
           </div>
         </div>
         <div class="recs">
@@ -254,6 +255,7 @@
         <button class="tt"    onclick="setInputType(this,'IP')">IP</button>
         <button class="tt"    onclick="setInputType(this,'부실채권')">부실채권</button>
         <button class="tt"    onclick="setInputType(this,'징계')">징계</button>
+        <button class="tt"    onclick="setInputType(this,'클레임')">클레임</button>
       </div>
       <div class="fsec">
         <p class="fsec-tit">엑셀 일괄 업로드 <span class="fsec-tit-note">— 정해진 양식의 엑셀 파일로 여러 건을 한 번에 등록합니다</span></p>
@@ -304,7 +306,9 @@
           <div class="fgroup"><label>건수</label><input type="number" id="f-count" min="1" value="1"></div>
           <div class="fgroup"><label>상태</label>
             <select id="f-status">
-              <option>모니터링</option><option>위반(처리중)</option><option>완료</option>
+              <option value="모니터링">모니터링</option>
+              <option value="위반(처리중)">위반(처리중)</option>
+              <option value="완료">완료</option>
             </select>
           </div>
           <div class="fgroup"><label>비고 (선택)</label><input type="text" id="f-note" placeholder="메모 입력"></div>

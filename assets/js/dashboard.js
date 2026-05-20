@@ -4,8 +4,11 @@ async function loadData() {
   setSy('불러오는 중...', '#15803d', '#f0fdf4');
   try { records = await sbGet('records'); }
   catch(e) { records = []; }
-  // 레거시 영역명 정규화: 'IP(지식재산)' → 'IP'
-  records.forEach(r => { if (r.type === 'IP(지식재산)') r.type = 'IP'; });
+  // 레거시 영역명 정규화: 'IP(지식재산)' → 'IP', '고객지원' → '클레임'
+  records.forEach(r => {
+    if (r.type === 'IP(지식재산)') r.type = 'IP';
+    if (r.type === '고객지원')     r.type = '클레임';
+  });
   // 브랜드/영역 권한 필터링: admin이 아니면 본인이 접근 가능한 브랜드+영역만 노출
   if (!isAdmin()) {
     const allowB = userBrands();
@@ -161,21 +164,54 @@ function renderDash(k) {
   const vr  = tot  ? (vio  / tot  * 100).toFixed(1) : 0;
   const mvr = mTot ? (mVio / mTot * 100).toFixed(1) : 0;
 
+  // 클레임 영역 필터: '위반/모니터링' 단어를 '처리/접수'로 변환해 표시 (집계 로직은 그대로)
+  const isClm  = k === '클레임';
+  const lblMon = isClm ? '접수' : '모니터링';
+  const lblVio = isClm ? '처리' : '위반';
+  const lblIng = isClm ? '처리중' : '위반(처리중)';
+  const lblRate= isClm ? '처리율' : '위반율';
+
+  // KPI 카드 라벨/서브 동적 갱신
+  document.getElementById('kpi1Str').textContent = `${lblVio} / ${lblMon}`;
+  document.getElementById('kpi2Str').textContent = `${lblVio} / ${lblMon}`;
+  document.getElementById('kpi3Str').textContent = isClm ? '처리완료율' : '완료율';
+  document.getElementById('kpi4Str').textContent = isClm ? '처리중 건수' : '조치중 건수';
+
   document.getElementById('kpi1').textContent  = `${vio.toLocaleString()} / ${fmtMon(tot)}`;
-  document.getElementById('kpi1r').textContent = tot ? `위반율 ${vr}%` : '-';
-  document.getElementById('kpi1s').textContent = '위반 / 전체 모니터링';
+  document.getElementById('kpi1r').textContent = tot ? `${lblRate} ${vr}%` : '-';
+  document.getElementById('kpi1s').textContent = `${lblVio} / 전체 ${lblMon}`;
   document.getElementById('kpi2').textContent  = `${mVio.toLocaleString()} / ${fmtMon(mTot)}`;
-  document.getElementById('kpi2r').textContent = mTot ? `위반율 ${mvr}%` : '-';
+  document.getElementById('kpi2r').textContent = mTot ? `${lblRate} ${mvr}%` : '-';
   document.getElementById('kpi2s').textContent = `${now.getMonth()+1}월 기준`;
   document.getElementById('kpi3').textContent  = dr + '%';
-  document.getElementById('kpi3s').textContent = `완료 ${done.toLocaleString()} / 위반 ${vio.toLocaleString()}건`;
+  document.getElementById('kpi3s').textContent = `${isClm ? '처리완료' : '완료'} ${done.toLocaleString()} / ${lblVio} ${vio.toLocaleString()}건`;
   document.getElementById('kpi4').textContent  = act.toLocaleString();
   const k4s = document.getElementById('kpi4s');
   if (slaOver > 0) {
-    k4s.innerHTML = `위반(처리중) 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()">${SLA_DAYS}일 초과 ${slaOver.toLocaleString()}건</span>`;
+    k4s.innerHTML = `${lblIng} 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()">${SLA_DAYS}일 초과 ${slaOver.toLocaleString()}건</span>`;
   } else {
-    k4s.textContent = '위반(처리중) 상태 건수';
+    k4s.textContent = `${lblIng} 상태 건수`;
   }
+
+  // 차트 카드 제목 및 범례 갱신
+  const lineTit = document.getElementById('lineCardTit');
+  if (lineTit) lineTit.textContent = `월별 ${lblMon} / ${lblVio} 건수 추이`;
+  const lLegMon = document.getElementById('lineLegMon');
+  const lLegVio = document.getElementById('lineLegVio');
+  if (lLegMon) lLegMon.textContent = lblMon;
+  if (lLegVio) lLegVio.textContent = lblVio;
+  const bLegMon = document.getElementById('barLegMon');
+  const bLegVio = document.getElementById('barLegVio');
+  if (bLegMon) bLegMon.textContent = `총 ${lblMon} 건수`;
+  if (bLegVio) bLegVio.textContent = lblVio;
+
+  // 최근 모니터링 카드 제목/상태 버튼 라벨
+  const recTit = document.getElementById('recentCardTit');
+  if (recTit) recTit.textContent = isClm ? '최근 접수 현황' : '최근 모니터링 현황';
+  const rb = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  rb('rsBtnMon',  isClm ? '접수'    : '모니터링');
+  rb('rsBtnIng',  isClm ? '처리중'  : '위반(처리중)');
+  rb('rsBtnDone', isClm ? '처리완료' : '완료');
 
   renderLine(d, now);
   renderRight(d, k, now);
@@ -219,9 +255,12 @@ function renderHeatmap() {
   // 카드 제목 동적 갱신
   const titEl = document.querySelector('#heatmapCard .card-tit');
   if (titEl) {
+    const isClm = curFilter === '클레임';
     titEl.innerHTML = isAll
       ? '브랜드/영역별 위험도 <span class="card-sub-note">— 위반 건수 상위 브랜드 · Top 3 영역</span>'
-      : `브랜드/상세유형별 위험도 <span class="card-sub-note">— ${esc(curFilter)} · 상세 위반 유형별 위반 건수</span>`;
+      : isClm
+        ? `브랜드/상세유형별 처리 현황 <span class="card-sub-note">— ${esc(curFilter)} · 상세 처리 유형별 처리 건수</span>`
+        : `브랜드/상세유형별 위험도 <span class="card-sub-note">— ${esc(curFilter)} · 상세 위반 유형별 위반 건수</span>`;
   }
 
   // 카운트: 전체 모드는 (영역, 브랜드), 영역 모드는 (상세유형, 브랜드)
@@ -305,7 +344,7 @@ function openDrill(mode, a, b, c) {
       <td>${esc(r.subtype || '-')}</td>
       <td>${esc(r.brand)}</td>
       <td>${r.count}</td>
-      <td><span class="st ${sc(r.status)}">${esc(r.status)}</span>${ageBadge}</td>
+      <td><span class="st ${sc(r.status)}">${esc(statLbl(r.status, r.type))}</span>${ageBadge}</td>
       <td>${esc(r.author || '-')}</td>
       <td>${esc(r.note || '-')}</td>
     </tr>`;
@@ -378,7 +417,7 @@ function renderRight(d, k, now) {
       }
     });
   } else {
-    tit.textContent = '상세 위반 유형별 분포';
+    tit.textContent = k === '클레임' ? '상세 처리 유형별 분포' : '상세 위반 유형별 분포';
     tag.textContent = k;
     const subs = SUB[k];
     if (!subs || !subs.length) {
@@ -453,7 +492,7 @@ function renderRecent(d) {
     <td>${esc(r.type)}</td>
     <td class="cell-sub">${esc(r.subtype||'-')}</td>
     <td>${esc(r.brand)}</td>
-    <td><span class="st ${sc(r.status)}">${esc(r.status)}</span>${ageBadge}</td>
+    <td><span class="st ${sc(r.status)}">${esc(statLbl(r.status, r.type))}</span>${ageBadge}</td>
     <td class="cell-sub">${esc(r.note||'-')}</td>
   </tr>`;
   }).join('');

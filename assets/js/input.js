@@ -210,7 +210,7 @@ function renderInputTable() {
     </td>
     <td>
       <select class="st-sel" onchange="updStatus(${rid},this.value)">
-        ${STATS.map(s => `<option value="${esc(s)}"${r.status===s?' selected':''}>${esc(s)}</option>`).join('')}
+        ${STATS.map(s => `<option value="${esc(s)}"${r.status===s?' selected':''}>${esc(statLbl(s, r.type))}</option>`).join('')}
       </select>
     </td>
     <td>
