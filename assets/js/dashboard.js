@@ -6,10 +6,11 @@ async function loadData() {
   catch(e) { records = []; }
   // 레거시 영역명 정규화: 'IP(지식재산)' → 'IP'
   records.forEach(r => { if (r.type === 'IP(지식재산)') r.type = 'IP'; });
-  // 브랜드 권한 필터링: admin이 아니면 본인 브랜드만 노출
+  // 브랜드/영역 권한 필터링: admin이 아니면 본인이 접근 가능한 브랜드+영역만 노출
   if (!isAdmin()) {
-    const allow = userBrands();
-    records = records.filter(r => allow.includes(r.brand));
+    const allowB = userBrands();
+    const allowT = userTypes();
+    records = records.filter(r => allowB.includes(r.brand) && allowT.includes(r.type));
   }
   records.sort((a, b) => b.date.localeCompare(a.date));
   setSy('동기화됨', '#15803d', '#f0fdf4');

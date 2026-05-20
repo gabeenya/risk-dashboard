@@ -24,6 +24,7 @@ function switchTab(pg, btn) {
 
 // 대시보드 영역 필터
 function setFilter(btn, key) {
+  if (key !== 'all' && !canSeeType(key)) { toast('권한이 없습니다.'); return; }
   document.querySelectorAll('.fb').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
   curFilter = key;

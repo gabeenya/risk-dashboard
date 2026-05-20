@@ -31,7 +31,7 @@ function resetThresholds() {
   toast('기본값으로 복원되었습니다.');
 }
 
-// 신규 계정용 브랜드 체크박스 그리드 렌더
+// 신규 계정용 브랜드 / 영역 체크박스 그리드 렌더
 function renderNewBrandPicker() {
   const grid = document.getElementById('newBrandGrid');
   if (!grid) return;
@@ -39,15 +39,28 @@ function renderNewBrandPicker() {
     `<label class="brand-pick-opt"><input type="checkbox" class="new-brand-cb" value="${b}"> ${b}</label>`
   ).join('');
 }
+function renderNewTypePicker() {
+  const grid = document.getElementById('newTypeGrid');
+  if (!grid) return;
+  grid.innerHTML = TYPES.map(t =>
+    `<label class="brand-pick-opt"><input type="checkbox" class="new-type-cb" value="${t}"> ${t}</label>`
+  ).join('');
+}
 
 function newBrandAll(checked) {
   document.querySelectorAll('.new-brand-cb').forEach(cb => { cb.checked = checked; });
 }
+function newTypeAll(checked) {
+  document.querySelectorAll('.new-type-cb').forEach(cb => { cb.checked = checked; });
+}
 
-// 권한이 admin이면 브랜드 picker 숨김 (admin은 전체 브랜드)
+// 권한이 admin이면 브랜드/영역 picker 숨김 (admin은 전체)
 function toggleNewBrandPicker() {
   const role = document.getElementById('new-role').value;
-  document.getElementById('newBrandWrap').style.display = role === 'admin' ? 'none' : '';
+  const show = role === 'admin' ? 'none' : '';
+  document.getElementById('newBrandWrap').style.display = show;
+  const tw = document.getElementById('newTypeWrap');
+  if (tw) tw.style.display = show;
 }
 
 async function createUser() {
@@ -58,18 +71,24 @@ async function createUser() {
   const brands = role === 'admin'
     ? []
     : Array.from(document.querySelectorAll('.new-brand-cb:checked')).map(cb => cb.value);
+  const types = role === 'admin'
+    ? []
+    : Array.from(document.querySelectorAll('.new-type-cb:checked')).map(cb => cb.value);
 
   if (!n || !id || !pw) { toast('모든 항목을 입력하세요.'); return; }
   // 아이디는 영문/숫자/._- 만 허용 — 인라인 핸들러 JS 인젝션과 URL/SQL 이상문자 방지
   if (!/^[a-zA-Z0-9._-]+$/.test(id)) { toast('아이디는 영문/숫자/.-_만 사용할 수 있습니다.'); return; }
   if (pw.length < 4) { toast('비밀번호는 4자 이상이어야 합니다.'); return; }
   if (role === 'user' && !brands.length) { toast('브랜드장 계정은 접근 브랜드를 1개 이상 선택해야 합니다.'); return; }
+  if (role === 'user' && !types.length)  { toast('브랜드장 계정은 확인 가능 영역을 1개 이상 선택해야 합니다.'); return; }
 
   await loadUsers();
   if (users.find(u => u.id === id)) { toast('이미 사용 중인 아이디입니다.'); return; }
 
-  await sbIns('users', { id, name: n, pw: hp(pw), role, joined: td(), brands, status: 'active' });
-  const roleLabel = role === 'admin' ? '관리자' : `브랜드장 (${brands.join(', ')})`;
+  await sbIns('users', { id, name: n, pw: hp(pw), role, joined: td(), brands, types, status: 'active' });
+  const roleLabel = role === 'admin'
+    ? '관리자'
+    : `브랜드장 (${brands.join(', ')} / 영역: ${types.join(', ')})`;
   document.getElementById('newUserInfo').textContent = `아이디: ${id} / 임시 비밀번호: ${pw} / 권한: ${roleLabel}`;
   document.getElementById('newUserResult').style.display = '';
   document.getElementById('new-name').value = '';
@@ -78,6 +97,7 @@ async function createUser() {
   document.getElementById('new-role').value = 'user';
   toggleNewBrandPicker();
   newBrandAll(false);
+  newTypeAll(false);
 
   await loadUsers();
   renderAdmin();
@@ -91,6 +111,7 @@ function copyUser() {
 
 async function renderAdmin() {
   renderNewBrandPicker();
+  renderNewTypePicker();
   toggleNewBrandPicker();
   renderThresholdTable();
   await loadUsers();
@@ -103,6 +124,7 @@ async function renderAdmin() {
   document.getElementById('userTbody').innerHTML = active.map(u => {
     const isProtected = u.id === ADMIN;
     const uBrands = Array.isArray(u.brands) ? u.brands : [];
+    const uTypes  = Array.isArray(u.types)  ? u.types  : [];
     // u.id를 인라인 핸들러 JS 문자열에 직접 박지 않고 data-uid 속성으로 분리 → HTML escape만으로 안전
     const uidAttr = esc(u.id);
     const roleSel = isProtected
@@ -115,6 +137,10 @@ async function renderAdmin() {
     const brandsCell = u.role === 'admin'
       ? '<span class="cell-muted">전체</span>'
       : `<button class="brand-edit-btn" data-uid="${uidAttr}" onclick="editBrands(this.dataset.uid)">${brandsTxt} ✎</button>`;
+    const typesTxt = uTypes.length ? uTypes.map(esc).join(', ') : '미지정';
+    const typesCell = u.role === 'admin'
+      ? '<span class="cell-muted">전체</span>'
+      : `<button class="brand-edit-btn" data-uid="${uidAttr}" onclick="editTypes(this.dataset.uid)">${typesTxt} ✎</button>`;
     const nameCell = isProtected
       ? esc(u.name)
       : `<button class="name-edit-btn" data-uid="${uidAttr}" onclick="editName(this.dataset.uid)">${esc(u.name)} ✎</button>`;
@@ -123,6 +149,7 @@ async function renderAdmin() {
       <td>${nameCell}</td>
       <td>${roleSel}</td>
       <td>${brandsCell}</td>
+      <td>${typesCell}</td>
       <td>${esc(u.joined || '-')}</td>
       <td>${isProtected ? '' : `<button class="del-btn" data-uid="${uidAttr}" onclick="delUser(this.dataset.uid)">✕</button>`}</td>
     </tr>`;
@@ -154,8 +181,35 @@ function renderPendingList(pending) {
   }).join('');
 }
 
-async function approveUser(id) {
-  await sbUpd('users', id, { status: 'active' });
+// 승인 — 모달 띄워서 브랜드/영역 권한을 함께 지정
+function approveUser(id) {
+  const u = users.find(x => x.id === id);
+  if (!u) return;
+  const curB = Array.isArray(u.brands) ? u.brands : [];
+  const curT = Array.isArray(u.types)  ? u.types  : [];
+  document.getElementById('apprTitle').textContent = `${u.name} (${u.id}) 가입 승인`;
+  document.getElementById('apprBrandGrid').innerHTML = BRANDS.map(b =>
+    `<label class="brand-pick-opt"><input type="checkbox" class="appr-brand-cb" value="${b}"${curB.includes(b)?' checked':''}> ${b}</label>`
+  ).join('');
+  document.getElementById('apprTypeGrid').innerHTML = TYPES.map(t =>
+    `<label class="brand-pick-opt"><input type="checkbox" class="appr-type-cb" value="${t}"${curT.includes(t)?' checked':''}> ${t}</label>`
+  ).join('');
+  document.getElementById('apprModal').dataset.uid = id;
+  document.getElementById('apprModal').classList.remove('hide');
+}
+function closeApproveModal() {
+  document.getElementById('apprModal').classList.add('hide');
+}
+function apprBrandAll(c) { document.querySelectorAll('.appr-brand-cb').forEach(cb => { cb.checked = c; }); }
+function apprTypeAll(c)  { document.querySelectorAll('.appr-type-cb').forEach(cb => { cb.checked = c; }); }
+async function confirmApprove() {
+  const id = document.getElementById('apprModal').dataset.uid;
+  const brands = Array.from(document.querySelectorAll('.appr-brand-cb:checked')).map(cb => cb.value);
+  const types  = Array.from(document.querySelectorAll('.appr-type-cb:checked')).map(cb => cb.value);
+  if (!brands.length) { toast('접근 브랜드를 1개 이상 선택하세요.'); return; }
+  if (!types.length)  { toast('확인 가능 영역을 1개 이상 선택하세요.'); return; }
+  await sbUpd('users', id, { brands, types, status: 'active' });
+  closeApproveModal();
   await loadUsers();
   renderAdmin();
   toast('가입 신청을 승인했습니다.');
@@ -195,8 +249,8 @@ async function saveEditName() {
 
 async function updRole(id, role) {
   if (id === ADMIN) return;
-  // admin으로 바꾸면 brands는 비움 (전체 의미)
-  const patch = role === 'admin' ? { role, brands: [] } : { role };
+  // admin으로 바꾸면 brands·types는 비움 (전체 의미)
+  const patch = role === 'admin' ? { role, brands: [], types: [] } : { role };
   await sbUpd('users', id, patch);
   await loadUsers();
   renderAdmin();
@@ -234,6 +288,35 @@ async function saveEditBrands() {
   await loadUsers();
   renderAdmin();
   toast('브랜드 권한이 저장되었습니다.');
+}
+
+// ── 영역 권한 편집 ──────────────────────────────────
+function editTypes(id) {
+  const u = users.find(x => x.id === id);
+  if (!u) return;
+  const cur = Array.isArray(u.types) ? u.types : [];
+  document.getElementById('editTypesTitle').textContent = `${u.name} (${u.id}) 영역 권한`;
+  document.getElementById('editTypesGrid').innerHTML = TYPES.map(t =>
+    `<label class="brand-pick-opt"><input type="checkbox" class="edit-type-cb" value="${t}"${cur.includes(t)?' checked':''}> ${t}</label>`
+  ).join('');
+  document.getElementById('editTypesModal').dataset.uid = id;
+  document.getElementById('editTypesModal').classList.remove('hide');
+}
+function closeEditTypes() {
+  document.getElementById('editTypesModal').classList.add('hide');
+}
+function editTypesAll(checked) {
+  document.querySelectorAll('.edit-type-cb').forEach(cb => { cb.checked = checked; });
+}
+async function saveEditTypes() {
+  const id = document.getElementById('editTypesModal').dataset.uid;
+  const sel = Array.from(document.querySelectorAll('.edit-type-cb:checked')).map(cb => cb.value);
+  if (!sel.length) { toast('최소 1개 이상의 영역을 선택하세요.'); return; }
+  await sbUpd('users', id, { types: sel });
+  closeEditTypes();
+  await loadUsers();
+  renderAdmin();
+  toast('영역 권한이 저장되었습니다.');
 }
 
 async function delUser(id) {

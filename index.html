@@ -16,32 +16,32 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260520a';</script>
+<script>window.__ASSET_V = '20260520b';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260520a">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260520a">
-<link rel="stylesheet" href="assets/css/input.css?v=20260520a">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260520a">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260520a">
+<link rel="stylesheet" href="assets/css/base.css?v=20260520b">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260520b">
+<link rel="stylesheet" href="assets/css/input.css?v=20260520b">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260520b">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260520b">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260520a"     defer></script>
-<script src="assets/js/constants.js?v=20260520a"  defer></script>
-<script src="assets/js/state.js?v=20260520a"      defer></script>
-<script src="assets/js/utils.js?v=20260520a"      defer></script>
-<script src="assets/js/auth.js?v=20260520a"       defer></script>
-<script src="assets/js/nav.js?v=20260520a"        defer></script>
-<script src="assets/js/dashboard.js?v=20260520a"  defer></script>
-<script src="assets/js/input.js?v=20260520a"      defer></script>
-<script src="assets/js/admin.js?v=20260520a"      defer></script>
-<script src="assets/js/ai.js?v=20260520a"         defer></script>
-<script src="assets/js/ppt.js?v=20260520a"        defer></script>
-<script src="assets/js/main.js?v=20260520a"       defer></script>
+<script src="assets/js/config.js?v=20260520b"     defer></script>
+<script src="assets/js/constants.js?v=20260520b"  defer></script>
+<script src="assets/js/state.js?v=20260520b"      defer></script>
+<script src="assets/js/utils.js?v=20260520b"      defer></script>
+<script src="assets/js/auth.js?v=20260520b"       defer></script>
+<script src="assets/js/nav.js?v=20260520b"        defer></script>
+<script src="assets/js/dashboard.js?v=20260520b"  defer></script>
+<script src="assets/js/input.js?v=20260520b"      defer></script>
+<script src="assets/js/admin.js?v=20260520b"      defer></script>
+<script src="assets/js/ai.js?v=20260520b"         defer></script>
+<script src="assets/js/ppt.js?v=20260520b"        defer></script>
+<script src="assets/js/main.js?v=20260520b"       defer></script>
 </head>
 <body>
 
@@ -430,6 +430,14 @@
           <button type="button" class="ai-opt-link" onclick="newBrandAll(false)">모두 해제</button>
         </div>
       </div>
+      <div id="newTypeWrap" style="margin-top:1rem">
+        <p class="brand-pick-tit">확인 가능 영역 <span class="brand-pick-hint">— 브랜드장이 대시보드/AI에서 볼 수 있는 영역</span></p>
+        <div class="brand-pick-grid" id="newTypeGrid"><!-- JS에서 렌더 --></div>
+        <div class="brand-pick-acts">
+          <button type="button" class="ai-opt-link" onclick="newTypeAll(true)">모두 선택</button>
+          <button type="button" class="ai-opt-link" onclick="newTypeAll(false)">모두 해제</button>
+        </div>
+      </div>
       <div class="f-acts" style="margin-top:1rem"><button class="btn-pri" onclick="createUser()">계정 추가</button></div>
       <div id="newUserResult" style="display:none;margin-top:1rem">
         <div class="ibox"><span class="iurl" id="newUserInfo"></span><button class="cp-btn" onclick="copyUser()">복사</button></div>
@@ -440,7 +448,7 @@
       <p class="fsec-tit">가입된 사용자 <span class="fsec-tit-note">— 권한·브랜드는 행에서 직접 수정</span></p>
       <div class="recs">
         <table>
-          <thead><tr><th>아이디</th><th>이름</th><th>권한</th><th>접근 브랜드</th><th>가입일</th><th></th></tr></thead>
+          <thead><tr><th>아이디</th><th>이름</th><th>권한</th><th>접근 브랜드</th><th>접근 영역</th><th>가입일</th><th></th></tr></thead>
           <tbody id="userTbody"></tbody>
         </table>
       </div>
@@ -492,6 +500,50 @@
     <div class="mo-acts">
       <button class="btn-full" onclick="saveEditBrands()">저장</button>
       <button class="btn-lnk"  onclick="closeEditBrands()">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit types modal ────────────────────────────── -->
+<div class="mb hide" id="editTypesModal">
+  <div class="modal modal-wide">
+    <p class="mo-title" id="editTypesTitle">영역 권한</p>
+    <p class="mo-sub">이 사용자가 대시보드/AI에서 볼 수 있는 영역을 선택하세요.</p>
+    <div class="brand-pick-grid" id="editTypesGrid"></div>
+    <div class="brand-pick-acts" style="margin-top:0.6rem">
+      <button type="button" class="ai-opt-link" onclick="editTypesAll(true)">모두 선택</button>
+      <button type="button" class="ai-opt-link" onclick="editTypesAll(false)">모두 해제</button>
+    </div>
+    <div class="mo-acts">
+      <button class="btn-full" onclick="saveEditTypes()">저장</button>
+      <button class="btn-lnk"  onclick="closeEditTypes()">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Approve modal (가입 신청 승인) ───────────────── -->
+<div class="mb hide" id="apprModal">
+  <div class="modal modal-wide">
+    <p class="mo-title" id="apprTitle">가입 승인</p>
+    <p class="mo-sub">이 사용자에게 부여할 브랜드 및 영역 권한을 선택하세요.</p>
+
+    <p class="brand-pick-tit" style="margin-top:0.8rem">접근 브랜드 <span class="brand-pick-hint">— 신청자가 선택한 브랜드가 미리 체크되어 있습니다</span></p>
+    <div class="brand-pick-grid" id="apprBrandGrid"></div>
+    <div class="brand-pick-acts" style="margin-top:0.5rem">
+      <button type="button" class="ai-opt-link" onclick="apprBrandAll(true)">모두 선택</button>
+      <button type="button" class="ai-opt-link" onclick="apprBrandAll(false)">모두 해제</button>
+    </div>
+
+    <p class="brand-pick-tit" style="margin-top:1rem">확인 가능 영역</p>
+    <div class="brand-pick-grid" id="apprTypeGrid"></div>
+    <div class="brand-pick-acts" style="margin-top:0.5rem">
+      <button type="button" class="ai-opt-link" onclick="apprTypeAll(true)">모두 선택</button>
+      <button type="button" class="ai-opt-link" onclick="apprTypeAll(false)">모두 해제</button>
+    </div>
+
+    <div class="mo-acts">
+      <button class="btn-full" onclick="confirmApprove()">승인 완료</button>
+      <button class="btn-lnk"  onclick="closeApproveModal()">취소</button>
     </div>
   </div>
 </div>

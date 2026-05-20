@@ -111,7 +111,9 @@ function logout() {
 // 권한 헬퍼
 function isAdmin()         { return !!user && user.role === 'admin'; }
 function userBrands()      { return (user && Array.isArray(user.brands)) ? user.brands : []; }
+function userTypes()       { return (user && Array.isArray(user.types))  ? user.types  : []; }
 function canSeeBrand(b)    { return isAdmin() || userBrands().includes(b); }
+function canSeeType(t)     { return isAdmin() || userTypes().includes(t); }
 function requireAdmin(msg) {
   if (isAdmin()) return true;
   toast(msg || '권한이 없습니다.');
