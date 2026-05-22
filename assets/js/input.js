@@ -235,39 +235,89 @@ let xlParsed = [];
 // 헤더 키 (양식 다운로드 + 업로드 파싱 시 공통으로 사용)
 const XL_HEADERS = ['날짜','영역','상세유형','브랜드','건수','상태','비고'];
 
-function downloadExcelTemplate() {
-  if (typeof XLSX === 'undefined') { toast('엑셀 라이브러리 로드 실패'); return; }
-  const wb = XLSX.utils.book_new();
-
-  // 시트1: 데이터 — 헤더 + 예시 1행
+async function downloadExcelTemplate() {
+  if (typeof ExcelJS === 'undefined') { toast('엑셀 라이브러리 로드 실패'); return; }
+  const wb = new ExcelJS.Workbook();
   const today = td();
-  const sample = [XL_HEADERS,
-    [today, '가맹', '예상매출액 임의산정', '애슐리', 1, '모니터링', '예시 행 — 삭제 후 입력하세요'],
-  ];
-  const ws1 = XLSX.utils.aoa_to_sheet(sample);
-  ws1['!cols'] = [{wch:12},{wch:10},{wch:24},{wch:14},{wch:7},{wch:12},{wch:30}];
-  XLSX.utils.book_append_sheet(wb, ws1, '데이터');
+  const MAX_ROWS = 500; // 데이터 입력 가능 행 수
 
-  // 시트2: 참고_유효값 — 영역/상태/브랜드/영역별 상세유형
-  const ref = [];
-  ref.push(['영역', '상태', '브랜드']);
-  const maxLen = Math.max(TYPES.length, STATS.length, BRANDS.length);
+  // ── 시트1: 데이터 ─────────────────────────
+  const ws1 = wb.addWorksheet('데이터');
+  ws1.columns = XL_HEADERS.map((h, i) => ({
+    header: h,
+    width: [12,10,24,14,7,12,30][i]
+  }));
+  ws1.addRow([today, '가맹', '예상매출액 임의산정', '애슐리', 1, '모니터링', '예시 행 — 삭제 후 입력하세요']);
+  ws1.getRow(1).font = { bold: true };
+  ws1.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } };
+
+  // ── 시트2: 참고_유효값 ────────────────────
+  // 컬럼 레이아웃: A=영역, B=상태, C=브랜드, D~ = 각 영역별 상세유형
+  const ws2 = wb.addWorksheet('참고_유효값');
+  const refHeader = ['영역', '상태', '브랜드', ...TYPES];
+  ws2.addRow(refHeader);
+  ws2.getRow(1).font = { bold: true };
+
+  const subLists = TYPES.map(t => SUB[t] || []);
+  const maxLen = Math.max(TYPES.length, STATS.length, BRANDS.length, ...subLists.map(s => s.length));
   for (let i = 0; i < maxLen; i++) {
-    ref.push([TYPES[i]||'', STATS[i]||'', BRANDS[i]||'']);
+    ws2.addRow([
+      TYPES[i] || '',
+      STATS[i] || '',
+      BRANDS[i] || '',
+      ...subLists.map(s => s[i] || '')
+    ]);
   }
-  ref.push([]);
-  ref.push(['영역별 상세유형 (영역 선택에 맞는 값을 사용)']);
-  ref.push(['영역', '상세유형']);
-  TYPES.forEach(t => {
-    const subs = SUB[t] || [];
-    if (subs.length === 0) ref.push([t, '(상세유형 없음)']);
-    else subs.forEach(s => ref.push([t, s]));
-  });
-  const ws2 = XLSX.utils.aoa_to_sheet(ref);
-  ws2['!cols'] = [{wch:14},{wch:28},{wch:14}];
-  XLSX.utils.book_append_sheet(wb, ws2, '참고_유효값');
+  ws2.columns = [{ width: 14 }, { width: 14 }, { width: 14 }, ...TYPES.map(() => ({ width: 22 }))];
 
-  XLSX.writeFile(wb, `리스크데이터_양식_${today}.xlsx`);
+  // ── 정의된 이름(영역별 상세유형 범위) ─────
+  // 영역명이 그대로 정의된 이름이 되어 INDIRECT($B2) 로 참조됨
+  TYPES.forEach((t, idx) => {
+    const subsLen = subLists[idx].length;
+    if (subsLen === 0) return;
+    const colLetter = ws2.getColumn(4 + idx).letter;
+    const ref = `참고_유효값!$${colLetter}$2:$${colLetter}$${1 + subsLen}`;
+    wb.definedNames.add(ref, t);
+  });
+
+  // ── 데이터 시트 유효성 검사 ───────────────
+  const typesEnd  = 1 + TYPES.length;
+  const statsEnd  = 1 + STATS.length;
+  const brandsEnd = 1 + BRANDS.length;
+  const lastRow   = 1 + MAX_ROWS;
+
+  for (let r = 2; r <= lastRow; r++) {
+    ws1.getCell(`B${r}`).dataValidation = {
+      type: 'list', allowBlank: true, showErrorMessage: true,
+      errorStyle: 'warning', errorTitle: '영역', error: '목록에서 선택하세요.',
+      formulae: [`참고_유효값!$A$2:$A$${typesEnd}`]
+    };
+    ws1.getCell(`C${r}`).dataValidation = {
+      type: 'list', allowBlank: true, showErrorMessage: true,
+      errorStyle: 'warning', errorTitle: '상세유형', error: '영역에 맞는 값을 선택하세요.',
+      formulae: [`INDIRECT($B${r})`]
+    };
+    ws1.getCell(`D${r}`).dataValidation = {
+      type: 'list', allowBlank: true, showErrorMessage: true,
+      errorStyle: 'warning', errorTitle: '브랜드', error: '목록에서 선택하세요.',
+      formulae: [`참고_유효값!$C$2:$C$${brandsEnd}`]
+    };
+    ws1.getCell(`F${r}`).dataValidation = {
+      type: 'list', allowBlank: true, showErrorMessage: true,
+      errorStyle: 'warning', errorTitle: '상태', error: '목록에서 선택하세요.',
+      formulae: [`참고_유효값!$B$2:$B$${statsEnd}`]
+    };
+  }
+
+  // ── 파일 다운로드 ────────────────────────
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `리스크데이터_양식_${today}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function handleExcelFile(ev) {
