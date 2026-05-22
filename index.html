@@ -17,32 +17,32 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260522a';</script>
+<script>window.__ASSET_V = '20260522c';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260522a">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260522a">
-<link rel="stylesheet" href="assets/css/input.css?v=20260522a">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260522a">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260522a">
+<link rel="stylesheet" href="assets/css/base.css?v=20260522c">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260522c">
+<link rel="stylesheet" href="assets/css/input.css?v=20260522c">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260522c">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260522c">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260522a"     defer></script>
-<script src="assets/js/constants.js?v=20260522a"  defer></script>
-<script src="assets/js/state.js?v=20260522a"      defer></script>
-<script src="assets/js/utils.js?v=20260522a"      defer></script>
-<script src="assets/js/auth.js?v=20260522a"       defer></script>
-<script src="assets/js/nav.js?v=20260522a"        defer></script>
-<script src="assets/js/dashboard.js?v=20260522a"  defer></script>
-<script src="assets/js/input.js?v=20260522a"      defer></script>
-<script src="assets/js/admin.js?v=20260522a"      defer></script>
-<script src="assets/js/ai.js?v=20260522a"         defer></script>
-<script src="assets/js/ppt.js?v=20260522a"        defer></script>
-<script src="assets/js/main.js?v=20260522a"       defer></script>
+<script src="assets/js/config.js?v=20260522c"     defer></script>
+<script src="assets/js/constants.js?v=20260522c"  defer></script>
+<script src="assets/js/state.js?v=20260522c"      defer></script>
+<script src="assets/js/utils.js?v=20260522c"      defer></script>
+<script src="assets/js/auth.js?v=20260522c"       defer></script>
+<script src="assets/js/nav.js?v=20260522c"        defer></script>
+<script src="assets/js/dashboard.js?v=20260522c"  defer></script>
+<script src="assets/js/input.js?v=20260522c"      defer></script>
+<script src="assets/js/admin.js?v=20260522c"      defer></script>
+<script src="assets/js/ai.js?v=20260522c"         defer></script>
+<script src="assets/js/ppt.js?v=20260522c"        defer></script>
+<script src="assets/js/main.js?v=20260522c"       defer></script>
 </head>
 <body>
 
@@ -148,11 +148,13 @@
       <button class="fb on" onclick="setFilter(this,'all')">전체</button>
       <button class="fb"    onclick="setFilter(this,'불법파견')">불법파견</button>
       <button class="fb"    onclick="setFilter(this,'표시광고')">표시광고</button>
-      <button class="fb"    onclick="setFilter(this,'노무')">노무</button>
-      <button class="fb"    onclick="setFilter(this,'영업비밀')">영업비밀</button>
       <button class="fb"    onclick="setFilter(this,'가맹')">가맹</button>
       <button class="fb"    onclick="setFilter(this,'IP')">IP</button>
+      <button class="fb"    onclick="setFilter(this,'노무')">노무</button>
+      <button class="fb"    onclick="setFilter(this,'영업비밀')">영업비밀</button>
       <button class="fb"    onclick="setFilter(this,'부실채권')">부실채권</button>
+      <button class="fb"    onclick="setFilter(this,'위생')">위생</button>
+      <button class="fb"    onclick="setFilter(this,'안전')">안전</button>
       <button class="fb"    onclick="setFilter(this,'클레임')">클레임</button>
       <button class="fb"    onclick="setFilter(this,'징계')">징계</button>
       <button class="rf-btn" onclick="loadData()">↻ 새로고침</button>
@@ -251,11 +253,13 @@
       <div class="type-tabs">
         <button class="tt on" onclick="setInputType(this,'불법파견')">불법파견</button>
         <button class="tt"    onclick="setInputType(this,'표시광고')">표시광고</button>
-        <button class="tt"    onclick="setInputType(this,'노무')">노무</button>
-        <button class="tt"    onclick="setInputType(this,'영업비밀')">영업비밀</button>
         <button class="tt"    onclick="setInputType(this,'가맹')">가맹</button>
         <button class="tt"    onclick="setInputType(this,'IP')">IP</button>
+        <button class="tt"    onclick="setInputType(this,'노무')">노무</button>
+        <button class="tt"    onclick="setInputType(this,'영업비밀')">영업비밀</button>
         <button class="tt"    onclick="setInputType(this,'부실채권')">부실채권</button>
+        <button class="tt"    onclick="setInputType(this,'위생')">위생</button>
+        <button class="tt"    onclick="setInputType(this,'안전')">안전</button>
         <button class="tt"    onclick="setInputType(this,'클레임')">클레임</button>
         <button class="tt"    onclick="setInputType(this,'징계')">징계</button>
       </div>
