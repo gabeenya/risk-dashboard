@@ -270,7 +270,17 @@ async function downloadExcelTemplate() {
   }
   ws2.columns = [{ width: 14 }, { width: 14 }, { width: 14 }, ...TYPES.map(() => ({ width: 22 }))];
 
-  // ── 정의된 이름(영역별 상세유형 범위) ─────
+  // ── 클레임 전용 상태(접수/처리중/처리완료) 열 추가 ───
+  // 클레임 영역만 UI 표시 라벨이 다르므로 별도 드롭다운 소스를 둠
+  const CLAIM_STATS = ['접수', '처리중', '처리완료'];
+  const claimStatCol = 4 + TYPES.length;
+  ws2.getCell(1, claimStatCol).value = '클레임_상태';
+  ws2.getCell(1, claimStatCol).font = { bold: true };
+  CLAIM_STATS.forEach((s, i) => { ws2.getCell(i + 2, claimStatCol).value = s; });
+  ws2.getColumn(claimStatCol).width = 14;
+  const claimStatLetter = ws2.getColumn(claimStatCol).letter;
+
+  // ── 정의된 이름(영역별 상세유형 범위 + 상태 범위) ─────
   // 영역명이 그대로 정의된 이름이 되어 INDIRECT($B2) 로 참조됨
   TYPES.forEach((t, idx) => {
     const subsLen = subLists[idx].length;
@@ -279,6 +289,8 @@ async function downloadExcelTemplate() {
     const ref = `참고_유효값!$${colLetter}$2:$${colLetter}$${1 + subsLen}`;
     wb.definedNames.add(ref, t);
   });
+  wb.definedNames.add(`참고_유효값!$B$2:$B$${1 + STATS.length}`, '상태_기본');
+  wb.definedNames.add(`참고_유효값!$${claimStatLetter}$2:$${claimStatLetter}$${1 + CLAIM_STATS.length}`, '상태_클레임');
 
   // ── 데이터 시트 유효성 검사 ───────────────
   const typesEnd  = 1 + TYPES.length;
@@ -305,7 +317,7 @@ async function downloadExcelTemplate() {
     ws1.getCell(`F${r}`).dataValidation = {
       type: 'list', allowBlank: true, showErrorMessage: true,
       errorStyle: 'warning', errorTitle: '상태', error: '목록에서 선택하세요.',
-      formulae: [`참고_유효값!$B$2:$B$${statsEnd}`]
+      formulae: [`INDIRECT(IF($B${r}="클레임","상태_클레임","상태_기본"))`]
     };
   }
 
@@ -385,6 +397,9 @@ function validateXlRow(row, lineNo) {
   if (!count || count < 1 || isNaN(count)) errs.push('건수는 1 이상 정수');
 
   let status = String(row['상태'] || '').trim();
+  // 클레임 표시 라벨(접수/처리중/처리완료)도 받아 DB값(STATS)으로 정규화
+  const __STAT_ALIAS = { '접수':'모니터링', '처리중':'위반(처리중)', '처리완료':'완료' };
+  if (__STAT_ALIAS[status]) status = __STAT_ALIAS[status];
   if (!status) status = '모니터링';
   else if (!STATS.includes(status)) errs.push(`상태 (${status}) 알 수 없음`);
 
@@ -414,7 +429,7 @@ function renderXlPreview(rows) {
     <td>${esc(r.subtype||'-')}</td>
     <td>${esc(r.brand||'-')}</td>
     <td>${r.count||'-'}</td>
-    <td>${esc(r.status||'-')}</td>
+    <td>${esc(r.status ? statLbl(r.status, r.type) : '-')}</td>
     <td>${esc(r.note||'')}</td>
     <td>${r.ok?'<span class="xl-badge xl-badge-ok">유효</span>':`<span class="xl-badge xl-badge-err" title="${esc(errsTxt)}">${esc(errsTxt)}</span>`}</td>
   </tr>`;
