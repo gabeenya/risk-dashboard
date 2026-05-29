@@ -51,6 +51,7 @@ header {
 .lo-btn:hover { color: #1e3a8a; }
 
 .ppt-btn { font-size: 14px; padding: 8px 16px; border-radius: 7px; border: 1px solid #dbeafe; background: #eff6ff; color: #1e40af; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
+.ppt-month { font-size: 13px; padding: 7px 8px; border-radius: 7px; border: 1px solid #dbeafe; background: #fff; color: #1e40af; cursor: pointer; flex-shrink: 0; }
 .ppt-btn:hover { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
 .ppt-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .ppt-btn.hidden { display: none; }
@@ -207,6 +208,7 @@ tr:hover td { background: #f8fafc; }
   .nav-group { order: 99; flex: 1 1 100%; justify-content: center; padding: 2px; gap: 1px; }
   .tb { padding: 5px 10px; font-size: 11.5px; }
   .ppt-btn { padding: 5px 10px; font-size: 11px; }
+  .ppt-month { padding: 4px 6px; font-size: 11px; }
   .uchip { font-size: 11px; padding: 3px 10px; gap: 5px; }
   .lo-btn { font-size: 11px; }
 
@@ -326,6 +328,7 @@ tr:hover td { background: #f8fafc; }
   .uchip { font-size: 9.5px; padding: 2px 7px; gap: 4px; }
   .lo-btn { font-size: 9.5px; }
   .ppt-btn { font-size: 9.5px; padding: 3px 6px; }
+  .ppt-month { font-size: 9.5px; padding: 3px 4px; }
   .tb { padding: 3px 7px; font-size: 10.5px; }
 
   /* KPI — 2x2 유지, 가장 작은 화면에서도 정보 유지 */

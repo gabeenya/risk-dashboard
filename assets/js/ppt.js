@@ -448,41 +448,214 @@ function buildBrandDetailSlide(pres, ctx, brand) {
   ], barOpts);
 
   // 우측: 영역별 표 (영역 / 전체 / 위반)
+  // 영역(11개)+헤더+합계 = 13행. 좌측 막대그래프 높이(2.20~5.40)에 맞춰 폰트·행높이 슬림하게.
+  const dFs = 8;
   const tblData = [[
-    { text:'영역', options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:10, align:'center', valign:'middle' } },
-    { text:'전체', options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:10, align:'center', valign:'middle' } },
-    { text:'위반', options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:10, align:'center', valign:'middle' } }
+    { text:'영역', options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:dFs, align:'center', valign:'middle' } },
+    { text:'전체', options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:dFs, align:'center', valign:'middle' } },
+    { text:'위반', options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:dFs, align:'center', valign:'middle' } }
   ]];
 
   TYPES.forEach((type, ti) => {
     const bg = ti % 2 === 0 ? 'f8fafc' : PPT_WHITE;
     const t = typeMons[ti], v = typeVios[ti];
     tblData.push([
-      { text:type,     options:{ fontSize:10, bold:true, align:'center', valign:'middle', fill:{color:bg}, color:'334155' } },
-      { text:pptFmt(t), options:{ fontSize:10, align:'center', valign:'middle', fill:{color:bg} } },
-      { text:v || '-', options:{ fontSize:10, align:'center', valign:'middle', bold:v>0, color:v>0?'dc2626':'94a3b8', fill:{color:bg} } }
+      { text:type,     options:{ fontSize:dFs, bold:true, align:'center', valign:'middle', fill:{color:bg}, color:'334155' } },
+      { text:pptFmt(t), options:{ fontSize:dFs, align:'center', valign:'middle', fill:{color:bg} } },
+      { text:v || '-', options:{ fontSize:dFs, align:'center', valign:'middle', bold:v>0, color:v>0?'dc2626':'94a3b8', fill:{color:bg} } }
     ]);
   });
 
   tblData.push([
-    { text:'합계',        options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:10, align:'center', valign:'middle' } },
-    { text:pptFmt(bTot),  options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:10, align:'center', valign:'middle' } },
-    { text:bVio || '-',   options:{ bold:true, fill:{color:PPT_NAVY}, color:bVio>0?'fca5a5':PPT_WHITE, fontSize:10, align:'center', valign:'middle' } }
+    { text:'합계',        options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:dFs, align:'center', valign:'middle' } },
+    { text:pptFmt(bTot),  options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:dFs, align:'center', valign:'middle' } },
+    { text:bVio || '-',   options:{ bold:true, fill:{color:PPT_NAVY}, color:bVio>0?'fca5a5':PPT_WHITE, fontSize:dFs, align:'center', valign:'middle' } }
   ]);
 
-  // 행 높이는 슬라이드 안에 깔끔하게 들어오도록 동적 산출
-  // 표 시작 y=2.20, 푸터 위치 5.42 → 사용 가능 약 3.10인치, 행 수 = TYPES + 헤더 + 합계
+  // 행 높이: 막대그래프 높이(2.20~5.40, 3.2") 안에 13행이 들어오도록 — 폰트·여백 축소로 강제 슬림
   const totalRows = TYPES.length + 2;
-  const rowH = Math.min(0.32, (5.40 - 2.20) / totalRows);
+  const rowH = Math.min(0.24, (5.38 - 2.20) / totalRows);
   s.addTable(tblData, {
     x:5.70, y:2.20, w:4.15,
     colW:[1.90, 1.10, 1.15],
     border:{ pt:0.3, color:'e2e8f0' },
+    margin:[1, 2, 1, 2],
     rowH
   });
 
   // 영업비밀 행이 포함되므로 환산 안내 푸터 표기 (하단)
   addVioNote(s, 5.42, true);
+}
+
+// ── 슬라이드 2: [RO실] 고정화 1P ─────────────────────
+// 대부분 고정 템플릿(목표·25년누적 열, 라벨, 하단 문구, 빨간불 박스).
+// 계산 셀(주차 1~4 + 26년 누적)만 데이터로 채움:
+//   · 6개 영역 '조치/내부적발' (위반(처리중)+완료 / 전체)  → "v/t"
+//   · 부실채권 '부실 건수' (상세유형 '2개월 초과 미입금' 합계)
+//   · 분쟁해결 '해결/발생' (노무 중 '기타진정'·'직장내괴롭힘')
+// 주차: 달력 주차(월요일 시작), 5주차는 4주에 합산.
+// 26년 누적: 이미지 base값 + 기준월 신규 카운트.
+function buildFixedSlide(pres, ctx) {
+  const { d, prevYr, prevMonthName, prevYm } = ctx;
+  const NOMU_DISPUTE = ['기타진정', '직장내괴롭힘'];
+
+  // pred로 필터한 레코드를 달력 주차별/월합으로 집계 (v=위반(처리중)+완료, t=전체)
+  const agg = (pred) => {
+    const yr = +prevYm.slice(0,4), m0 = +prevYm.slice(5,7) - 1;
+    const fw = (new Date(yr, m0, 1).getDay() + 6) % 7; // 월요일=0
+    const w = [ {v:0,t:0}, {v:0,t:0}, {v:0,t:0}, {v:0,t:0} ];
+    let mv = 0, mt = 0;
+    d.forEach(r => {
+      if (!r.date || !r.date.startsWith(prevYm) || !pred(r)) return;
+      let wk = Math.floor((+r.date.slice(8,10) - 1 + fw) / 7);
+      if (wk > 3) wk = 3; // 5주차는 4주 칸에 합산
+      const mon = pptMonCnt(r); // 전체/모니터링: 영업비밀 10:1 환산 반영
+      const c   = r.count || 0; // 위반: 원값(1:1)
+      w[wk].t += mon; mt += mon;
+      if (r.status !== '모니터링') { w[wk].v += c; mv += c; }
+    });
+    return { w, mv, mt };
+  };
+  const xy = (v, t) => t ? v + '/' + pptFmt(t) : '';  // 주차 셀: 데이터 없으면 공란
+
+  // 톤: 회색(헤더)·노란색(섹션/지표)·흰색(영역명/값). 녹·주황·빨강 값 셀만 고정색.
+  const GRN = { fill:{color:'00b050'}, bold:true };
+  const RED = { fill:{color:'ff0000'}, color:'FFFFFF', bold:true };
+  const ORG = { fill:{color:'ffc000'}, bold:true };
+  const SEC = { fill:{color:'fdf3c0'}, bold:true };   // 1·2·3·4 제목 섹션 행 — 노란색 유지
+  const AREA= { fill:{color:'FFFFFF'}, bold:true };   // 영역명 칸(흰색)
+  const LBL = { fill:{color:'FFFFFF'} };              // 지표 칸(흰색)
+  const cel = (text, o) => ({ text: text == null ? '' : String(text),
+    options: Object.assign({ fontSize:6.5, bold:true, align:'center', valign:'middle', color:'333333', fill:{color:'FFFFFF'} }, o || {}) });
+  const blank4 = () => [cel(''), cel(''), cel(''), cel('')];
+  const secBlank4 = () => [cel('', SEC), cel('', SEC), cel('', SEC), cel('', SEC)]; // 섹션 행 빈 칸도 노랑
+
+  const hOpt = { fill:{color:'d9d9d9'}, color:'333333', bold:true, fontSize:7, align:'center', valign:'middle' };
+  const rows = [];
+
+  // 헤더 2행
+  rows.push([
+    cel('EBG 해결 제목', Object.assign({}, hOpt, { rowspan:2, align:'left' })),
+    cel('지표',          Object.assign({}, hOpt, { rowspan:2 })),
+    cel('목표',          Object.assign({}, hOpt, { rowspan:2 })),
+    cel('25년 누적',     Object.assign({}, hOpt, { rowspan:2 })),
+    cel('26년 누적',     Object.assign({}, hOpt, { rowspan:2 })),
+    cel(prevMonthName + '월', Object.assign({}, hOpt, { colspan:4 }))
+  ]);
+  rows.push([ cel('1주', hOpt), cel('2주', hOpt), cel('3주', hOpt), cel('4주', hOpt) ]);
+
+  // 1. AI 컴플라이언스 (고정) — 섹션 행 전체 노랑
+  rows.push([
+    cel('1. AI 컴플라이언스', Object.assign({}, SEC, { align:'left' })),
+    cel('AI 적발율', SEC), cel('100%', SEC), cel('-', SEC), cel('-', SEC), ...secBlank4()
+  ]);
+
+  // 6개 영역 정의 + 사전 집계 (핵심6대 합계 행을 먼저 그리므로 미리 계산)
+  const areas = [
+    { name:'① 불법파견', c25h:'0', c25a:'70/70',   color:GRN, pred:r=>r.type==='불법파견', base:[46,46] },
+    { name:'② 표시광고', c25h:'0', c25a:'118/118', color:GRN, pred:r=>r.type==='표시광고', base:[117,117] },
+    { name:'③ 가맹',     c25h:'0', c25a:'40/40',   color:GRN, pred:r=>r.type==='가맹',     base:[91,91] },
+    { name:'④ 지적재산', c25h:'0', c25a:'62/62',   color:GRN, pred:r=>r.type==='IP',       base:[26,26] },
+    { name:'⑤ 영업비밀', c25h:'-', c25a:'-',       color:null, pred:r=>r.type==='영업비밀', base:[56,118] },
+    { name:'⑥ 노무 감사(52시간/임금체불)', c25h:'3/3', c25a:'3/3', color:RED,
+      pred:r=>r.type==='노무' && !NOMU_DISPUTE.includes(r.subtype), base:[17,17] }
+  ];
+  const aggs = areas.map(a => agg(a.pred));
+
+  // 핵심 6대 합계: 6개 영역 '조치/내부적발'의 주차별·26누적 합
+  const c6w = [ {v:0,t:0}, {v:0,t:0}, {v:0,t:0}, {v:0,t:0} ];
+  let c6bv = 0, c6bt = 0, c6mv = 0, c6mt = 0;
+  areas.forEach((a, i) => {
+    const A = aggs[i];
+    c6bv += a.base[0]; c6bt += a.base[1]; c6mv += A.mv; c6mt += A.mt;
+    A.w.forEach((wk, k) => { c6w[k].v += wk.v; c6w[k].t += wk.t; });
+  });
+
+  // 2. 핵심 6대 영역 리스크 ZERO (요약 2행) — '내부 적발 조치율'에 6개 영역 합계 반영
+  rows.push([
+    cel('2. 핵심 6대 영역 리스크 ZERO', Object.assign({}, SEC, { align:'left', rowspan:2 })),
+    cel('해결 / 외부노출', SEC), cel('0건', SEC), cel('0건', SEC), cel('0건', SEC), ...secBlank4()
+  ]);
+  rows.push([
+    cel('내부 적발 조치율', SEC), cel('100%', SEC), cel('100%', SEC),
+    cel((c6bv + c6mv) + '/' + pptFmt(c6bt + c6mt), SEC),
+    cel(xy(c6w[0].v,c6w[0].t), SEC), cel(xy(c6w[1].v,c6w[1].t), SEC),
+    cel(xy(c6w[2].v,c6w[2].t), SEC), cel(xy(c6w[3].v,c6w[3].t), SEC)
+  ]);
+
+  // 6개 영역 행: 해결/외부노출(공란) + 조치/내부적발(계산)
+  areas.forEach((a, i) => {
+    const colr = a.color || {};
+    rows.push([
+      cel(a.name, Object.assign({}, AREA, { align:'left', rowspan:2, fontSize: a.name.length > 10 ? 6 : 6.5 })),
+      cel('해결 / 외부노출', LBL), cel('0'), cel(a.c25h, colr), cel(''), ...blank4()  // 26·주차 공란(req1)
+    ]);
+    const A = aggs[i];
+    rows.push([
+      cel('조치 / 내부적발', LBL), cel('100%'), cel(a.c25a, colr),
+      cel((a.base[0] + A.mv) + '/' + pptFmt(a.base[1] + A.mt)),
+      cel(xy(A.w[0].v,A.w[0].t)), cel(xy(A.w[1].v,A.w[1].t)), cel(xy(A.w[2].v,A.w[2].t)), cel(xy(A.w[3].v,A.w[3].t))
+    ]);
+  });
+
+  // 3. 부실 ZERO (고정 요약 2행) — 섹션 행 전체 노랑
+  rows.push([
+    cel('3. 부실 ZERO', Object.assign({}, SEC, { align:'left', rowspan:2 })),
+    cel('발생 건수', SEC), cel('0건', SEC), cel('3건(2.6억)', SEC), cel('3건(2.6억)', SEC), ...secBlank4()
+  ]);
+  rows.push([
+    cel('로스율(리미나)', SEC), cel('0.12%', SEC), cel('0.27%', SEC), cel('0.24%', SEC), ...secBlank4()
+  ]);
+
+  // ① 부실 채권 — 부실 건수(계산: 2개월 초과 미입금 합계)
+  const B = agg(r => r.type === '부실채권' && r.subtype === '2개월 초과 미입금');
+  rows.push([
+    cel('① 부실 채권', Object.assign({}, AREA, { align:'left' })),
+    cel('부실 건수', LBL), cel('0건'), cel('3', RED), cel(3 + B.mt),
+    cel(B.w[0].t || ''), cel(B.w[1].t || ''), cel(B.w[2].t || ''), cel(B.w[3].t || '')
+  ]);
+
+  // ② 재고 로스 (고정, req2)
+  rows.push([
+    cel('② 재고 로스', Object.assign({}, AREA, { align:'left' })),
+    cel('로스율', LBL), cel('0.2%'), cel('0.22%', ORG), cel('0.24%'), ...blank4()
+  ]);
+
+  // 4. 분쟁 해결 — 해결/발생(계산: 노무 중 기타진정·직장내괴롭힘)
+  const P = agg(r => r.type === '노무' && NOMU_DISPUTE.includes(r.subtype));
+  rows.push([
+    cel('4. 분쟁 해결\n(소송/외부신고·내부제보·주요분쟁)', Object.assign({}, SEC, { align:'left', fontSize:5.5 })),
+    cel('해결/발생(건수)', SEC), cel('100%', SEC), cel('46/46', SEC),
+    cel((21 + P.mv) + '/' + pptFmt(31 + P.mt), SEC),
+    cel(xy(P.w[0].v,P.w[0].t), SEC), cel(xy(P.w[1].v,P.w[1].t), SEC), cel(xy(P.w[2].v,P.w[2].t), SEC), cel(xy(P.w[3].v,P.w[3].t), SEC)
+  ]);
+
+  // ── 슬라이드 작성 ──
+  const s = pres.addSlide();
+  addPptHeader(pres, s, '[RO실] 고정화 1P', prevYr + '년 ' + String(prevMonthName).padStart(2,'0') + '월 기준');
+
+  // 22행을 한 페이지에: 폰트·여백을 슬림하게, 테두리는 회색(0.5pt)으로 칸 구분 또렷
+  const tableTop = 0.74, rowH = 0.148;
+  s.addTable(rows, {
+    x:0.15, y:tableTop, w:9.7,
+    colW:[1.85, 1.15, 0.5, 0.7, 0.72, 1.195, 1.195, 1.195, 1.195],
+    border:{ pt:0.5, color:'000000' },
+    rowH, margin:[1, 2, 1, 2], autoPage:false, valign:'middle', fontFace:'Calibri'
+  });
+
+  // 하단 고정 문구 + 빨간불 박스
+  const by = tableTop + rows.length * rowH + 0.24;
+  s.addText('1. EBG', { x:0.2, y:by, w:9, h:0.24, fontSize:11, bold:true, color:'0f172a', fontFace:'Calibri' });
+  s.addText([
+    { text:'우선순위1) [법위반 ZERO]',  options:{ breakLine:true } },
+    { text:'우선순위2) [부실 ZERO]',    options:{ breakLine:true } },
+    { text:'우선순위3) [분쟁 해결 100%]', options:{} }
+  ], { x:0.35, y:by + 0.25, w:9, h:0.52, fontSize:9, color:'334155', fontFace:'Calibri', lineSpacingMultiple:1.1 });
+
+  const ry = by + 0.82;
+  s.addShape(pres.shapes.RECTANGLE, { x:0.2,  y:ry, w:1.0,  h:0.36, fill:{color:'ff0000'} });
+  s.addText('빨간 불', { x:0.2, y:ry, w:1.0, h:0.36, fontSize:12, bold:true, color:'FFFFFF', align:'center', valign:'middle', fontFace:'Calibri' });
+  s.addShape(pres.shapes.RECTANGLE, { x:1.25, y:ry, w:8.55, h:0.36, fill:{color:'FFFFFF'}, line:{color:'808080', width:1} });
 }
 
 // ── 메인 진입점 ──────────────────────────────────────
@@ -501,13 +674,20 @@ async function generatePPT() {
 
     // 컨텍스트 사전 계산
     const now       = new Date();
-    const monthName = now.getMonth() + 1;
     const yr        = now.getFullYear();
     const ym        = yr + '-' + String(now.getMonth()+1).padStart(2,'0');
-    const prevDate     = new Date(yr, now.getMonth() - 1, 1);
-    const prevYr       = prevDate.getFullYear();
-    const prevMonthName = prevDate.getMonth() + 1;
-    const prevYm       = prevYr + '-' + String(prevMonthName).padStart(2,'0');
+    // 기준(데이터) 월: 선택값(YYYY-MM)이 있으면 그 달, 없으면 오늘 기준 지난 달
+    const sel = (document.getElementById('pptMonth') || {}).value;
+    const baseDate = sel
+      ? new Date(+sel.slice(0,4), +sel.slice(5,7) - 1, 1)
+      : new Date(yr, now.getMonth() - 1, 1);
+    const prevYr        = baseDate.getFullYear();
+    const prevMonthName = baseDate.getMonth() + 1;
+    const prevYm        = prevYr + '-' + String(prevMonthName).padStart(2,'0');
+    // 발행(표지·파일명) 월 = 기준 월 + 1 (기존 "지난 달 데이터 → 이번 달 보고서" 관례 유지)
+    const coverDate  = new Date(prevYr, prevMonthName, 1);
+    const coverYr    = coverDate.getFullYear();
+    const monthName  = coverDate.getMonth() + 1;
 
     const d    = records;
     const tot  = d.reduce((s, r) => s + pptMonCnt(r), 0);
@@ -531,6 +711,7 @@ async function generatePPT() {
     const ctx = { now, monthName, yr, ym, prevYr, prevMonthName, prevYm, d, tot, vio, mTot, mVio, prevMTot, prevMVio, done, act, rate, vr, mArr };
 
     buildCoverSlide(pres, ctx);
+    buildFixedSlide(pres, ctx);
     buildOverviewSlide(pres, ctx);
     buildBrandSummarySlide(pres, ctx);
     TYPES.forEach((type, idx) => buildTypeDetailSlide(pres, ctx, type, idx));
@@ -538,7 +719,7 @@ async function generatePPT() {
     buildTypeSummarySlides(pres, ctx);
     BRANDS.forEach(brand => buildBrandDetailSlide(pres, ctx, brand));
 
-    const fn = '외식BG_리스크_' + yr + '년_' + monthName + '월_리스크관리현황.pptx';
+    const fn = '외식BG_리스크_' + coverYr + '년_' + monthName + '월_리스크관리현황.pptx';
     await pres.writeFile({ fileName: fn });
     toast('✅ 보고서 저장 완료!');
   } catch(e) {
