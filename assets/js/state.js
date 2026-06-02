@@ -9,5 +9,6 @@ let deleted     = null;
 let uTimer      = null;
 let recentPage  = 0;
 let recentStatus = 'all';   // 최근 모니터링 상태별 필터: all | 모니터링 | 위반(처리중) | 완료
+let selYm       = '';       // 대시보드 기준 월(YYYY-MM). ''이면 당월. 도넛/막대/최근/히트맵/당월KPI/알림이 이 월로 스코프됨
 let inpSub      = 'all';    // 데이터 입력 목록 — 상세유형 필터: 'all' | <subtype>
 let inpBrand    = 'all';    // 데이터 입력 목록 — 브랜드 필터: 'all' | <brand>

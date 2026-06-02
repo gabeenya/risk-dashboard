@@ -17,32 +17,32 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260529g';</script>
+<script>window.__ASSET_V = '20260602a';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260529g">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260529g">
-<link rel="stylesheet" href="assets/css/input.css?v=20260529g">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260529g">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260529g">
+<link rel="stylesheet" href="assets/css/base.css?v=20260602a">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260602a">
+<link rel="stylesheet" href="assets/css/input.css?v=20260602a">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260602a">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260602a">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260529g"     defer></script>
-<script src="assets/js/constants.js?v=20260529g"  defer></script>
-<script src="assets/js/state.js?v=20260529g"      defer></script>
-<script src="assets/js/utils.js?v=20260529g"      defer></script>
-<script src="assets/js/auth.js?v=20260529g"       defer></script>
-<script src="assets/js/nav.js?v=20260529g"        defer></script>
-<script src="assets/js/dashboard.js?v=20260529g"  defer></script>
-<script src="assets/js/input.js?v=20260529g"      defer></script>
-<script src="assets/js/admin.js?v=20260529g"      defer></script>
-<script src="assets/js/ai.js?v=20260529g"         defer></script>
-<script src="assets/js/ppt.js?v=20260529g"        defer></script>
-<script src="assets/js/main.js?v=20260529g"       defer></script>
+<script src="assets/js/config.js?v=20260602a"     defer></script>
+<script src="assets/js/constants.js?v=20260602a"  defer></script>
+<script src="assets/js/state.js?v=20260602a"      defer></script>
+<script src="assets/js/utils.js?v=20260602a"      defer></script>
+<script src="assets/js/auth.js?v=20260602a"       defer></script>
+<script src="assets/js/nav.js?v=20260602a"        defer></script>
+<script src="assets/js/dashboard.js?v=20260602a"  defer></script>
+<script src="assets/js/input.js?v=20260602a"      defer></script>
+<script src="assets/js/admin.js?v=20260602a"      defer></script>
+<script src="assets/js/ai.js?v=20260602a"         defer></script>
+<script src="assets/js/ppt.js?v=20260602a"        defer></script>
+<script src="assets/js/main.js?v=20260602a"       defer></script>
 </head>
 <body>
 
@@ -143,7 +143,15 @@
 
   <!-- ── 대시보드 ────────────────────────────────────── -->
   <div id="page-dashboard" class="pg">
-    <p class="sec-label">Overview · 외식 BG 리스크 적발 및 처리 분석</p>
+    <div class="dash-top">
+      <p class="sec-label">Overview · 외식 BG 리스크 적발 및 처리 분석</p>
+      <div class="month-bar">
+        <span class="month-bar-lbl">기준 월</span>
+        <input type="month" id="dashMonth" class="dash-month" onchange="setDashMonth(this.value)">
+        <button class="month-now-btn" id="dashMonthNow" onclick="resetDashMonth()">당월</button>
+        <span class="month-bar-note" id="dashMonthNote"></span>
+      </div>
+    </div>
     <div class="alert-bar" id="alertBar" style="display:none"></div>
     <div class="filter-bar">
       <button class="fb on" onclick="setFilter(this,'all')">전체</button>

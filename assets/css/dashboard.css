@@ -1,3 +1,15 @@
+/* ── 상단 (Overview 라벨 + 기준 월 선택) ──────────── */
+.dash-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.dash-top .sec-label { margin-bottom: 16px; }
+.month-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.month-bar-lbl { font-size: 12px; font-weight: 600; color: #64748b; }
+.dash-month { font-size: 13px; padding: 5px 10px; border-radius: 6px; border: 1px solid #dbeafe; background: #eff6ff; color: #1e40af; font-weight: 500; cursor: pointer; }
+.dash-month:hover { border-color: #1e3a8a; }
+.month-now-btn { font-size: 12px; padding: 5px 12px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; font-weight: 500; }
+.month-now-btn:hover { border-color: #1e3a8a; color: #1e3a8a; }
+.month-now-btn.on { background: #1e3a8a; color: #fff; border-color: #1e3a8a; cursor: default; }
+.month-bar-note { font-size: 12px; color: #94a3b8; }
+
 /* ── Filter bar ───────────────────────────────────── */
 .filter-bar { display: flex; gap: 4px; margin-bottom: 1.4rem; align-items: center; background: #fff; padding: 5px; border-radius: 10px; border: 1px solid #eaecf0; flex-wrap: wrap; }
 .fb { font-size: 13px; padding: 6px 18px; border-radius: 6px; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: 500; transition: all 0.15s; }
@@ -144,6 +156,9 @@ tr.sla-over:hover td { background: #fee2e2; }
   /* 카드 헤더 안의 상태 필터도 가로 스크롤 */
   .recent-status { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; }
   .rs-btn { flex-shrink: 0; font-size: 10px; padding: 3px 8px; }
+  .dash-top { gap: 4px; }
+  .month-bar { margin-bottom: 10px; }
+  .month-bar-note { display: none; }
 }
 @media (max-width: 600px) {
   .filter-bar { padding: 3px; gap: 1px; }

@@ -24,6 +24,32 @@ async function loadData() {
 // 필터 적용된 records
 function getFR(k) { return k === 'all' ? records : records.filter(r => r.type === k); }
 
+// ── 기준 월 ──────────────────────────────────────────
+// 당월 문자열(YYYY-MM)
+function curYm() { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; }
+// 대시보드 기준 월(YYYY-MM): selYm이 비어있으면 당월
+function refYm() { return selYm || curYm(); }
+// 기준 월의 Date(1일)
+function refDate() { const [y, m] = refYm().split('-').map(Number); return new Date(y, m - 1, 1); }
+// 영역 필터 + 기준 월로 스코프된 records
+function getFRM(k) { const ym = refYm(); return getFR(k).filter(r => r.date && r.date.startsWith(ym)); }
+
+// 기준 월 변경/리셋 + 상단 컨트롤 UI 동기화
+function setDashMonth(v) { selYm = v || ''; recentPage = 0; renderDash(curFilter); }
+function resetDashMonth() { selYm = ''; recentPage = 0; renderDash(curFilter); }
+function syncDashMonthUI() {
+  const ym = refYm();
+  const inp = document.getElementById('dashMonth');
+  if (inp) inp.value = ym;
+  const isCur = ym === curYm();
+  const nowBtn = document.getElementById('dashMonthNow');
+  if (nowBtn) nowBtn.classList.toggle('on', isCur);
+  const note = document.getElementById('dashMonthNote');
+  if (note) note.textContent = isCur ? '당월 기준' : '과거/특정 월 조회 중';
+  const yb = document.querySelector('.yr-badge');
+  if (yb) yb.textContent = `${refDate().getFullYear()}년 기준`;
+}
+
 // 영업비밀은 모니터링 건수 집계 시 10:1 환산(위반 건수는 원값 유지)
 function monCnt(r) {
   if (r.type === '영업비밀') return r.count / 10;
@@ -52,7 +78,7 @@ function toggleSlaPopup(target, ev) {
 }
 function showSlaPopup(target) {
   hideSlaPopup();
-  const list = getFR(curFilter).filter(isSlaOver)
+  const list = getFRM(curFilter).filter(isSlaOver)
     .map(r => ({ ...r, days: daysSince(r.date) }))
     .sort((a, b) => b.days - a.days);
   if (!list.length) return;
@@ -118,9 +144,9 @@ function getThresholds() {
 function checkThresholds() {
   // 한 영역당 최대 1개 alert. 두 조건(건수 / %) 모두 충족하면 양쪽 값을 함께 표시.
   const alerts = [];
-  const now = new Date();
-  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const ref = refDate();
+  const ym = refYm();
+  const prevDate = new Date(ref.getFullYear(), ref.getMonth() - 1, 1);
   const prevYm = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}`;
   const T = getThresholds();
   TYPES.forEach(type => {
@@ -170,17 +196,32 @@ function updateAlertFilterDots(typesInAlert) {
 }
 
 function renderDash(k) {
-  const d = getFR(k);
-  const tot = d.reduce((s, r) => s + monCnt(r), 0);
-  const vio = d.filter(r => r.status === '위반(처리중)' || r.status === '완료').reduce((s, r) => s + r.count, 0);
-  const now = new Date();
-  const ym  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const mTot = d.filter(r => r.date.startsWith(ym)).reduce((s, r) => s + monCnt(r), 0);
-  const mVio = d.filter(r => r.date.startsWith(ym) && (r.status === '위반(처리중)' || r.status === '완료')).reduce((s, r) => s + r.count, 0);
-  const done = d.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
-  const act  = d.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);
-  const slaOver = d.filter(isSlaOver).reduce((s, r) => s + r.count, 0);
-  const dr  = vio  ? (done / vio  * 100).toFixed(1) : 0;
+  syncDashMonthUI();
+  const d   = getFR(k);
+  const ref = refDate();
+  const yr  = ref.getFullYear();
+  const mo  = ref.getMonth() + 1;
+  const ym  = refYm();                               // 기준 월(YYYY-MM)
+  const isVio = r => r.status === '위반(처리중)' || r.status === '완료';
+
+  // 기준 월 스코프(당월 KPI·차트·목록·히트맵·알림이 사용)
+  const dm = d.filter(r => r.date && r.date.startsWith(ym));
+  // 연 누적: 기준 연도 1월~기준 월
+  const dY = d.filter(r => {
+    if (!r.date) return false;
+    const [ry, rm] = r.date.split('-').map(Number);
+    return ry === yr && rm <= mo;
+  });
+
+  // 누적(연 누적) — dY / 당월·처리·현재 — dm
+  const tot = dY.reduce((s, r) => s + monCnt(r), 0);
+  const vio = dY.filter(isVio).reduce((s, r) => s + r.count, 0);
+  const mTot = dm.reduce((s, r) => s + monCnt(r), 0);
+  const mVio = dm.filter(isVio).reduce((s, r) => s + r.count, 0);
+  const done = dm.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
+  const act  = dm.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);
+  const slaOver = dm.filter(isSlaOver).reduce((s, r) => s + r.count, 0);
+  const dr  = mVio ? (done / mVio * 100).toFixed(1) : 0;
   const vr  = tot  ? (vio  / tot  * 100).toFixed(1) : 0;
   const mvr = mTot ? (mVio / mTot * 100).toFixed(1) : 0;
 
@@ -199,12 +240,12 @@ function renderDash(k) {
 
   document.getElementById('kpi1').textContent  = `${vio.toLocaleString()} / ${fmtMon(tot)}`;
   document.getElementById('kpi1r').textContent = tot ? `${lblRate} ${vr}%` : '-';
-  document.getElementById('kpi1s').textContent = `${lblVio} / 전체 ${lblMon}`;
+  document.getElementById('kpi1s').textContent = `${yr}년 ${mo}월까지 누적`;
   document.getElementById('kpi2').textContent  = `${mVio.toLocaleString()} / ${fmtMon(mTot)}`;
   document.getElementById('kpi2r').textContent = mTot ? `${lblRate} ${mvr}%` : '-';
-  document.getElementById('kpi2s').textContent = `${now.getMonth()+1}월 기준`;
+  document.getElementById('kpi2s').textContent = `${yr}년 ${mo}월 기준`;
   document.getElementById('kpi3').textContent  = dr + '%';
-  document.getElementById('kpi3s').textContent = `${isClm ? '처리완료' : '완료'} ${done.toLocaleString()} / ${lblVio} ${vio.toLocaleString()}건`;
+  document.getElementById('kpi3s').textContent = `${isClm ? '처리완료' : '완료'} ${done.toLocaleString()} / ${lblVio} ${mVio.toLocaleString()}건`;
   document.getElementById('kpi4').textContent  = act.toLocaleString();
   const k4s = document.getElementById('kpi4s');
   if (slaOver > 0) {
@@ -233,18 +274,18 @@ function renderDash(k) {
   rb('rsBtnIng',  isClm ? '처리중'  : '위반(처리중)');
   rb('rsBtnDone', isClm ? '처리완료' : '완료');
 
-  renderLine(d, now);
-  renderRight(d, k, now);
+  renderLine(d, ref);
+  renderRight(dm, k, ref);
   // 막대그래프(브랜드별 현황)는 admin만 — 브랜드장은 본인 1~몇 개만 보이면 차트 의미가 옅어 카드 자체를 숨김.
   // 브랜드장에게는 도넛/라인 차트의 환산 안내 푸터로 안내가 충분히 전달됨.
   const barCard = document.getElementById('barChartCard');
   if (isAdmin()) {
     if (barCard) barCard.style.display = '';
-    renderBar(d);
+    renderBar(dm);
   } else {
     if (barCard) barCard.style.display = 'none';
   }
-  renderRecent(d);
+  renderRecent(dm);
   renderHeatmap();
   renderAlerts();
 
@@ -283,10 +324,14 @@ function renderHeatmap() {
         : `브랜드/상세유형별 위험도 <span class="card-sub-note">— ${esc(curFilter)} · 상세 위반 유형별 위반 건수</span>`;
   }
 
+  // 기준 월로 스코프된 records
+  const ym = refYm();
+  const mr = records.filter(r => r.date && r.date.startsWith(ym));
+
   // 카운트: 전체 모드는 (영역, 브랜드), 영역 모드는 (상세유형, 브랜드)
   const cnt = isAll
-    ? (key, brand) => records.filter(r => r.type === key && r.brand === brand && r.status !== '모니터링').reduce((s, r) => s + r.count, 0)
-    : (key, brand) => records.filter(r => r.type === curFilter && r.subtype === key && r.brand === brand && r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
+    ? (key, brand) => mr.filter(r => r.type === key && r.brand === brand && r.status !== '모니터링').reduce((s, r) => s + r.count, 0)
+    : (key, brand) => mr.filter(r => r.type === curFilter && r.subtype === key && r.brand === brand && r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
 
   const items = brands.map(b => {
     const cells = dim.map(k => ({ key: k, count: cnt(k, b) }))
@@ -329,7 +374,7 @@ function renderHeatmap() {
       <div class="rank-card" onclick="openDrill('brand','${it.brand}')">
         <div class="rank-card-hd">
           <span class="rank-brand">${esc(it.brand)}</span>
-          <span class="rank-total">누적위반 ${it.total.toLocaleString()}건</span>
+          <span class="rank-total">위반 ${it.total.toLocaleString()}건</span>
         </div>
         <div class="rank-areas">${cellRows}</div>
       </div>`;
@@ -379,8 +424,9 @@ function closeDrill() {
   document.getElementById('drillPanel').classList.remove('on');
 }
 
-function renderLine(d, now) {
-  const yr = now.getFullYear();
+function renderLine(d, ref) {
+  const yr     = ref.getFullYear();
+  const selIdx = ref.getMonth();   // 기준 월 인덱스(0~11) — 라인차트에서 강조
   document.getElementById('lineYear').textContent = yr + '년';
 
   const m = Array(12).fill(0);
@@ -392,6 +438,8 @@ function renderLine(d, now) {
       if (r.status === '위반(처리중)' || r.status === '완료') v[x.getMonth()] += r.count;
     }
   });
+  // 기준 월 포인트만 크게 표시
+  const pr = MONTHS.map((_, i) => i === selIdx ? 6 : 3);
 
   if (lChart) lChart.destroy();
   lChart = new Chart(document.getElementById('lineChart'), {
@@ -399,8 +447,8 @@ function renderLine(d, now) {
     data: {
       labels: MONTHS,
       datasets: [
-        { label:'모니터링', data:m, borderColor:'#8fa8c8', backgroundColor:'rgba(143,168,200,0.07)', tension:0.4, pointRadius:3, pointBackgroundColor:'#8fa8c8', borderWidth:2 },
-        { label:'위반',     data:v, borderColor:'#e8845a', backgroundColor:'rgba(232,132,90,0.07)',  tension:0.4, pointRadius:3, pointBackgroundColor:'#e8845a', borderWidth:2 }
+        { label:'모니터링', data:m, borderColor:'#8fa8c8', backgroundColor:'rgba(143,168,200,0.07)', tension:0.4, pointRadius:pr, pointBackgroundColor:'#8fa8c8', borderWidth:2 },
+        { label:'위반',     data:v, borderColor:'#e8845a', backgroundColor:'rgba(232,132,90,0.07)',  tension:0.4, pointRadius:pr, pointBackgroundColor:'#e8845a', borderWidth:2 }
       ]
     },
     options: {
@@ -414,15 +462,16 @@ function renderLine(d, now) {
   });
 }
 
-function renderRight(d, k, now) {
+function renderRight(d, k, ref) {
   if (rChart) { rChart.destroy(); rChart = null; }
   const lg  = document.getElementById('rChartLeg');
   const tag = document.getElementById('rChartTag');
   const tit = document.getElementById('rChartTit');
+  const tagYm = `${ref.getFullYear()}.${String(ref.getMonth()+1).padStart(2,'0')}`;
 
   if (k === 'all') {
     tit.textContent = '위반 유형별 분포';
-    tag.textContent = now.getFullYear() + '년';
+    tag.textContent = tagYm;
     const cnt = TYPES.map(t => d.filter(r => r.type === t && r.status !== '모니터링').reduce((s,r) => s + r.count, 0));
     const tot = cnt.reduce((a,b) => a + b, 0);
     let legHtml = TYPES.map((t,i) => `<span><span class="ld" style="background:${TC[i]}"></span>${t} ${tot ? Math.round(cnt[i]/tot*100) : 0}%</span>`).join('');
@@ -545,12 +594,12 @@ function renderPager(c, curr, total) {
   c.innerHTML = html;
 }
 
-function gotoPage(p) { recentPage = p; renderRecent(getFR(curFilter)); }
+function gotoPage(p) { recentPage = p; renderRecent(getFRM(curFilter)); }
 
 function setRecentStatus(btn, st) {
   document.querySelectorAll('.rs-btn').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
   recentStatus = st;
   recentPage = 0;
-  renderRecent(getFR(curFilter));
+  renderRecent(getFRM(curFilter));
 }
