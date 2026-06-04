@@ -32,6 +32,16 @@
 .inp-filter-rst { font-size: 11px; padding: 5px 10px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; margin-left: auto; }
 .inp-filter-rst:hover { border-color: #1e3a8a; color: #1e3a8a; }
 
+/* ── 다중 선택 / 다중·전체 삭제 ─────────────────────── */
+.inp-bulk-bar { display: flex; align-items: center; gap: 10px; padding: 2px 0 10px; }
+.inp-bulk-cnt { font-size: 11px; color: #64748b; font-weight: 600; }
+.inp-bulk-del { font-size: 11px; padding: 5px 12px; border-radius: 6px; border: 1px solid #fecaca; background: #fff; color: #dc2626; cursor: pointer; font-weight: 600; transition: all 0.15s; }
+.inp-bulk-del:hover:not(:disabled) { background: #dc2626; color: #fff; border-color: #dc2626; }
+.inp-bulk-del:disabled { opacity: 0.5; cursor: default; }
+.chk-col { width: 34px; text-align: center; }
+.chk-cell { text-align: center; }
+.inp-chk, #inpChkAll { width: 15px; height: 15px; cursor: pointer; accent-color: #1e3a8a; }
+
 /* ── Status select / note input (테이블 안) ────────── */
 .st-sel { font-size: 11px; padding: 3px 6px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #334155; cursor: pointer; outline: none; }
 .st-sel:focus { border-color: #1e3a8a; }

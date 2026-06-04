@@ -161,22 +161,29 @@ function resetInpFilters() {
   renderInputTable();
 }
 
-function renderInputTable() {
-  refreshInpFilterOpts();
-  const tb  = document.getElementById('inputTbody');
-  const cnt = document.getElementById('inpFilterCnt');
+// 현재 영역(curType) + 필터(상세유형/브랜드)에 맞는 레코드 목록 — 렌더와 전체선택이 공유
+function filteredInputRecords() {
   let fl = records.filter(r => r.type === curType);
-  const total = fl.length;
   if (inpSub !== 'all') {
     if (inpSub === '-') fl = fl.filter(r => !r.subtype || r.subtype === '-');
     else                fl = fl.filter(r => r.subtype === inpSub);
   }
   if (inpBrand !== 'all') fl = fl.filter(r => r.brand === inpBrand);
+  return fl;
+}
+
+function renderInputTable() {
+  refreshInpFilterOpts();
+  const tb  = document.getElementById('inputTbody');
+  const cnt = document.getElementById('inpFilterCnt');
+  const total = records.filter(r => r.type === curType).length;
+  const fl = filteredInputRecords();
   if (cnt) cnt.textContent = (inpSub === 'all' && inpBrand === 'all')
     ? `총 ${total}건`
     : `${fl.length}건 / 총 ${total}건`;
   if (!fl.length) {
-    tb.innerHTML = '<tr><td colspan="9"><div class="empty">조건에 해당하는 데이터가 없습니다</div></td></tr>';
+    tb.innerHTML = '<tr><td colspan="10"><div class="empty">조건에 해당하는 데이터가 없습니다</div></td></tr>';
+    updInpBulkUI();
     return;
   }
   tb.innerHTML = fl.map(r => {
@@ -191,6 +198,7 @@ function renderInputTable() {
          </select>`;
     const over = isSlaOver(r);
     return `<tr${over ? ' class="sla-over"' : ''}>
+    <td class="chk-cell"><input type="checkbox" class="inp-chk"${inpSelected.has(rid) ? ' checked' : ''} onchange="toggleInpSel(${rid},this.checked)"></td>
     <td><input type="date" class="st-sel date-sel" value="${esc(r.date)}" onchange="updDate(${rid},this.value)">${over ? ` <span class="sla-badge" title="${daysSince(r.date)}일 경과">${daysSince(r.date)}일</span>` : ''}</td>
     <td>${esc(r.type)}</td>
     <td>${subCell}</td>
@@ -226,6 +234,63 @@ function renderInputTable() {
     <td><button class="del-btn" onclick="delRecord(${rid})">✕</button></td>
   </tr>`;
   }).join('');
+  updInpBulkUI();
+}
+
+// ── 다중 선택 / 다중·전체 삭제 ─────────────────────────
+function toggleInpSel(id, checked) {
+  const rid = Number(id) || 0;
+  if (checked) inpSelected.add(rid); else inpSelected.delete(rid);
+  updInpBulkUI();
+}
+
+// 헤더 체크박스 — 현재 필터에 보이는 행 전체를 선택/해제
+function toggleInpSelAll(checked) {
+  filteredInputRecords().forEach(r => {
+    const rid = Number(r.id) || 0;
+    if (checked) inpSelected.add(rid); else inpSelected.delete(rid);
+  });
+  renderInputTable();
+}
+
+// 선택 개수 표시·삭제 버튼 활성화·헤더 체크박스 상태(전체/일부)를 갱신
+function updInpBulkUI() {
+  const fl = filteredInputRecords();
+  const selInView = fl.reduce((n, r) => n + (inpSelected.has(Number(r.id) || 0) ? 1 : 0), 0);
+  const cnt = document.getElementById('inpBulkCnt');
+  const btn = document.getElementById('inpBulkDelBtn');
+  const all = document.getElementById('inpChkAll');
+  if (cnt) cnt.textContent = `${selInView}건 선택됨`;
+  if (btn) btn.disabled = selInView === 0;
+  if (all) {
+    all.checked = fl.length > 0 && selInView === fl.length;
+    all.indeterminate = selInView > 0 && selInView < fl.length;
+  }
+}
+
+async function bulkDelSelected() {
+  // 현재 필터에 보이는 선택 항목만 삭제 대상으로 (다른 영역의 잔여 선택 제외)
+  const ids = filteredInputRecords()
+    .map(r => Number(r.id) || 0)
+    .filter(rid => rid && inpSelected.has(rid));
+  if (!ids.length) { toast('선택된 항목이 없습니다.'); return; }
+  if (!confirm(`선택한 ${ids.length}건을 삭제합니다.\n이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?`)) return;
+
+  const btn = document.getElementById('inpBulkDelBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '삭제 중...'; }
+
+  const ok = await sbDelMany('records', ids);
+
+  if (btn) btn.textContent = '선택 삭제';
+  if (!ok) {
+    if (btn) btn.disabled = false;
+    toast('삭제 중 오류가 발생했습니다.');
+    return;
+  }
+  ids.forEach(id => inpSelected.delete(id));
+  await loadData();
+  renderInputTable();
+  toast(`${ids.length}건이 삭제되었습니다.`);
 }
 
 // ── 엑셀 일괄 업로드 ──────────────────────────────────

@@ -53,7 +53,8 @@ function setInputType(btn, type) {
     stSel.innerHTML = STATS.map(s => `<option value="${s}">${statLbl(s, type)}</option>`).join('');
     stSel.value = cur;
   }
-  // 영역 전환 시 데이터 목록 필터는 '전체'로 초기화
+  // 영역 전환 시 데이터 목록 필터는 '전체'로 초기화, 다중 선택도 해제
   inpSub = 'all'; inpBrand = 'all';
+  inpSelected.clear();
   renderInputTable();
 }
