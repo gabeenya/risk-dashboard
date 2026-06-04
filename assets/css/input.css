@@ -65,6 +65,9 @@
 .xl-file-name { font-size: 12px; color: #64748b; flex: 1; min-width: 120px; }
 .xl-hint { margin-top: 10px; font-size: 11.5px; color: #64748b; line-height: 1.55; }
 .xl-hint b { color: #1e3a8a; font-weight: 600; }
+.xl-hint-warn { color: #b45309; }
+.xl-up-safe { margin-top: 12px; background: #fffbeb; border-color: #fcd34d; }
+.xl-safe-tag { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; background: #f59e0b; color: #fff; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
 
 .xl-preview { margin-top: 1rem; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
 .xl-preview.hide { display: none; }
