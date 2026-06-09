@@ -3,6 +3,7 @@ let records     = [];
 let users       = [];
 let lChart, rChart, bChart;
 let curFilter   = 'all';
+let curBrand    = 'all';    // 대시보드 브랜드 필터: 'all' | <brand>
 let curType     = '불법파견';
 let user        = null;
 let deleted     = null;

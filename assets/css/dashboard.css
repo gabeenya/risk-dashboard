@@ -12,6 +12,26 @@
 .month-now-btn.on { background: #1e3a8a; color: #fff; border-color: #1e3a8a; cursor: default; box-shadow: 0 1px 3px rgba(30,58,138,0.3); }
 .month-bar-note { font-size: 12px; color: #94a3b8; margin-left: 4px; padding-right: 6px; }
 
+/* 메인 대시보드 — 영역/브랜드 필터 드롭다운 (슬림 & 와이드) */
+.dash-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 1.3rem; }
+.dash-fl { display: inline-flex; align-items: center; gap: 8px; flex: 1 1 240px; max-width: 360px; }
+.dash-fl-lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #94a3b8; white-space: nowrap; }
+.dash-sel {
+  flex: 1 1 auto; min-width: 0;
+  height: 36px;
+  font-size: 13px; font-weight: 600;
+  padding: 0 36px 0 13px;
+  border-radius: 8px; border: 1px solid #dbe1ec;
+  background-color: #fff; color: #1e3a8a;
+  cursor: pointer; outline: none; font-family: inherit;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat; background-position: right 11px center; background-size: 13px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.dash-sel:hover { border-color: #1e3a8a; }
+.dash-sel:focus { border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1); }
+
 /* ── Filter bar ───────────────────────────────────── */
 .filter-bar { display: flex; gap: 4px; margin-bottom: 1.4rem; align-items: center; background: #fff; padding: 5px; border-radius: 10px; border: 1px solid #eaecf0; flex-wrap: wrap; }
 .fb { font-size: 13px; padding: 6px 18px; border-radius: 6px; border: none; background: transparent; color: #64748b; cursor: pointer; font-weight: 500; transition: all 0.15s; }

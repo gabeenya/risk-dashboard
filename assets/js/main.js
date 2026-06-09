@@ -10,7 +10,7 @@ async function init() {
 
   // 폼 기본값은 로그인과 무관하게 미리 세팅해도 무해 (admin이 들어와야만 보이는 영역)
   document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
-  setInputType(document.querySelector('.tt.on'), '불법파견');
+  setInputType(null, '불법파견');
   initAIStyle();
 
   // 새로고침 시 세션 복원(로그인 후 3시간 이내) — 유효한 세션이 없으면 로그인 화면

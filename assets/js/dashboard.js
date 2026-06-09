@@ -21,8 +21,40 @@ async function loadData() {
   if (isAdmin()) renderInputTable();
 }
 
-// 필터 적용된 records
-function getFR(k) { return k === 'all' ? records : records.filter(r => r.type === k); }
+// 필터 적용된 records — 영역(k) + 브랜드(curBrand) 동시 적용
+function getFR(k) {
+  let d = (k === 'all') ? records : records.filter(r => r.type === k);
+  if (curBrand && curBrand !== 'all') d = d.filter(r => r.brand === curBrand);
+  return d;
+}
+
+// 대시보드 브랜드 필터 변경
+function setDashBrand(v) {
+  curBrand = v || 'all';
+  recentPage = 0;
+  renderDash(curFilter);
+}
+
+// 브랜드 드롭다운 옵션 채우기 (권한 반영: admin=전체, 그 외=접근 브랜드)
+function populateDashBrandSel() {
+  const sel = document.getElementById('dashBrandSel');
+  if (!sel) return;
+  const bs = isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b));
+  if (!bs.includes(curBrand)) curBrand = 'all';
+  sel.innerHTML = '<option value="all">전체 브랜드</option>' +
+    bs.map(b => `<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  sel.value = curBrand;
+}
+
+// 영역 셀렉트 / 사이드바 영역 항목을 현재 curFilter에 맞춰 동기화
+function syncAreaControls() {
+  document.querySelectorAll('.side-areas .fb').forEach(b => {
+    const m = b.getAttribute('onclick') || '';
+    b.classList.toggle('on', m.includes(`'${curFilter}'`));
+  });
+  const sel = document.getElementById('dashAreaSel');
+  if (sel) sel.value = curFilter;
+}
 
 // ── 기준 월 ──────────────────────────────────────────
 // 당월 문자열(YYYY-MM)
@@ -195,8 +227,20 @@ function updateAlertFilterDots(typesInAlert) {
   });
 }
 
+// 사이드바 '리스크 영역 현황' — 영역별 누적 건수(count 합계) 배지 갱신
+function renderSideAreaCounts() {
+  document.querySelectorAll('.area-count').forEach(el => {
+    const t = el.getAttribute('data-type');
+    const sum = records.reduce((n, r) => n + (r.type === t ? (Number(r.count) || 0) : 0), 0);
+    el.textContent = sum.toLocaleString();
+  });
+}
+
 function renderDash(k) {
   syncDashMonthUI();
+  renderSideAreaCounts();
+  populateDashBrandSel();
+  syncAreaControls();
   const d   = getFR(k);
   const ref = refDate();
   const yr  = ref.getFullYear();

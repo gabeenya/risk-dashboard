@@ -659,6 +659,19 @@ function buildFixedSlide(pres, ctx) {
 }
 
 // ── 메인 진입점 ──────────────────────────────────────
+// 사이드바 '보고서 생성' → 기준 월 선택 모달
+function openReportModal() {
+  if (!user) { showLogin(); return; }
+  if (!isAdmin()) { toast('권한이 없습니다.'); return; }
+  closeSidebar();
+  const m = document.getElementById('reportModal');
+  if (m) m.classList.remove('hide');
+}
+function closeReportModal() {
+  const m = document.getElementById('reportModal');
+  if (m) m.classList.add('hide');
+}
+
 async function generatePPT() {
   if (!user) { showLogin(); return; }
   if (!isAdmin()) { toast('권한이 없습니다.'); return; }
@@ -722,6 +735,7 @@ async function generatePPT() {
     const fn = '외식BG_리스크_' + coverYr + '년_' + monthName + '월_리스크관리현황.pptx';
     await pres.writeFile({ fileName: fn });
     toast('✅ 보고서 저장 완료!');
+    closeReportModal();
   } catch(e) {
     toast('❌ 생성 오류: ' + e.message);
     console.error(e);

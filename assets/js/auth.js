@@ -169,6 +169,7 @@ function showDashboard() {
   document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
   document.getElementById('page-dashboard').classList.add('on');
   document.getElementById('tabDashboard').classList.add('on');
+  setTopbarTitle('dashboard');
 }
 
 async function doLogin() {
@@ -251,27 +252,31 @@ function requireAdmin(msg) {
   return false;
 }
 
-// 현재 user에 따라 헤더 우측 영역 / 탭 / 보고서 버튼 표시 토글
-// 비로그인 시: 헤더 우측 전체 숨김 (로고만 노출)
+// 현재 user에 따라 사이드바(사용자 칩·탭) / 상단바 표시 토글
+// 비로그인 시: .app 에 'logged-out' 부여 → 사이드바·상단바 숨기고 로그인 화면만 노출
 function applyUser() {
-  const hdr = document.getElementById('hdRight');
+  const app = document.querySelector('.app');
   const c = document.getElementById('userChip');
   const inputTab = document.getElementById('tabInput');
   const adminTab = document.getElementById('adminTabBtn');
   const pptBtn   = document.getElementById('pptHeaderBtn');
 
   if (user) {
-    if (hdr) hdr.style.display = '';
+    if (app) app.classList.remove('logged-out');
     c.classList.add('show');
-    document.getElementById('userChipName').textContent =
-      user.name + (isAdmin() ? '' : ` · ${userBrands().join(', ') || '브랜드 미지정'}`);
+    const av = document.getElementById('userChipAvatar');
+    const nm = document.getElementById('userChipName');
+    const mt = document.getElementById('userChipMeta');
+    if (av) av.textContent = (user.name || '?').trim().charAt(0) || 'U';
+    if (nm) nm.textContent = user.name;
+    if (mt) mt.textContent = isAdmin() ? '관리자' : (userBrands().join(', ') || '브랜드 미지정');
     // 입력 탭 / 보고서 버튼은 비-admin에게도 노출 — 클릭 시 nav.js·ppt.js에서 권한 토스트로 차단
     // 관리자 탭은 OWNER_IDS에 등록된 최상위 관리자에게만 노출 (다른 admin은 접근 불가)
     inputTab.style.display = '';
     pptBtn.style.display   = '';
     adminTab.style.display = isOwner() ? '' : 'none';
   } else {
-    if (hdr) hdr.style.display = 'none';
+    if (app) app.classList.add('logged-out');
     c.classList.remove('show');
   }
 }

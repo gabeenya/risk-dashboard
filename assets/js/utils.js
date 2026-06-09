@@ -64,8 +64,9 @@ function goHome() {
   document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
   document.getElementById('page-dashboard').classList.add('on');
   document.getElementById('tabDashboard').classList.add('on');
-  document.querySelectorAll('.fb').forEach(b => b.classList.remove('on'));
-  document.querySelector('.fb').classList.add('on');
   curFilter = 'all';
+  curBrand = 'all';   // 영역·브랜드 필터 동기화는 renderDash 내 syncAreaControls/populateDashBrandSel가 처리
+  setTopbarTitle('dashboard');
+  closeSidebar();
   loadData();
 }
