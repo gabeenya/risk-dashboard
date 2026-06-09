@@ -53,6 +53,21 @@ const sbDel = async (t, id) => {
   window.__sbLastErr = '';
   return true;
 };
+// 다중 수정 — id=in.(...) 한 번에 같은 값으로 PATCH. URL 길이 한계 때문에 200개씩 끊어 보낸다.
+const sbUpdMany = async (t, ids, d) => {
+  const CHUNK = 200;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const slice = ids.slice(i, i + CHUNK);
+    const r = await fetch(`${SB_URL}/rest/v1/${t}?id=in.(${slice.join(',')})`, {
+      method: 'PATCH',
+      headers: { ...H, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(d)
+    });
+    if (!r.ok) { const msg = await r.text(); console.error('[sbUpdMany]', t, r.status, msg); window.__sbLastErr = msg; return false; }
+  }
+  window.__sbLastErr = '';
+  return true;
+};
 // 다중 삭제 — id=in.(...) 한 번에. URL 길이 한계 때문에 200개씩 끊어 보낸다.
 const sbDelMany = async (t, ids) => {
   const CHUNK = 200;

@@ -17,32 +17,32 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260604b';</script>
+<script>window.__ASSET_V = '20260609b';</script>
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260604b">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260604b">
-<link rel="stylesheet" href="assets/css/input.css?v=20260604b">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260604b">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260604b">
+<link rel="stylesheet" href="assets/css/base.css?v=20260609b">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260609b">
+<link rel="stylesheet" href="assets/css/input.css?v=20260609b">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260609b">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260609b">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260604b"     defer></script>
-<script src="assets/js/constants.js?v=20260604b"  defer></script>
-<script src="assets/js/state.js?v=20260604b"      defer></script>
-<script src="assets/js/utils.js?v=20260604b"      defer></script>
-<script src="assets/js/auth.js?v=20260604b"       defer></script>
-<script src="assets/js/nav.js?v=20260604b"        defer></script>
-<script src="assets/js/dashboard.js?v=20260604b"  defer></script>
-<script src="assets/js/input.js?v=20260604b"      defer></script>
-<script src="assets/js/admin.js?v=20260604b"      defer></script>
-<script src="assets/js/ai.js?v=20260604b"         defer></script>
-<script src="assets/js/ppt.js?v=20260604b"        defer></script>
-<script src="assets/js/main.js?v=20260604b"       defer></script>
+<script src="assets/js/config.js?v=20260609b"     defer></script>
+<script src="assets/js/constants.js?v=20260609b"  defer></script>
+<script src="assets/js/state.js?v=20260609b"      defer></script>
+<script src="assets/js/utils.js?v=20260609b"      defer></script>
+<script src="assets/js/auth.js?v=20260609b"       defer></script>
+<script src="assets/js/nav.js?v=20260609b"        defer></script>
+<script src="assets/js/dashboard.js?v=20260609b"  defer></script>
+<script src="assets/js/input.js?v=20260609b"      defer></script>
+<script src="assets/js/admin.js?v=20260609b"      defer></script>
+<script src="assets/js/ai.js?v=20260609b"         defer></script>
+<script src="assets/js/ppt.js?v=20260609b"        defer></script>
+<script src="assets/js/main.js?v=20260609b"       defer></script>
 </head>
 <body>
 
@@ -284,7 +284,7 @@
           </div>
           <p class="xl-hint">양식의 <b>데이터</b> 시트만 채워서 업로드하세요. 첫 행(헤더)은 그대로 두고 두 번째 행부터 입력합니다. 같은 양식으로 모든 영역(가맹/불법파견/...) 데이터를 한 번에 올릴 수 있습니다.</p>
         </div>
-        <div class="xl-up xl-up-safe">
+        <div class="xl-up xl-up-safe" id="xlSafeBlock" style="display:none">
           <div class="xl-up-row">
             <span class="xl-safe-tag">🦺 안전 전용</span>
             <label class="xl-file-lbl" for="safe-file">📂 안전 점검표 업로드 (.xlsx)
@@ -357,11 +357,20 @@
               <option value="all">전체</option>
             </select>
           </label>
+          <label class="inp-filter-lbl">상태
+            <select id="inpStatFilter" class="inp-filter-sel" onchange="setInpStatFilter(this.value)">
+              <option value="all">전체</option>
+            </select>
+          </label>
           <span class="inp-filter-cnt" id="inpFilterCnt"></span>
           <button class="inp-filter-rst" onclick="resetInpFilters()">필터 초기화</button>
         </div>
         <div class="inp-bulk-bar">
           <span class="inp-bulk-cnt" id="inpBulkCnt">0건 선택됨</span>
+          <span class="inp-bulk-stat">
+            <select class="inp-bulk-sel" id="inpBulkStatSel"></select>
+            <button class="inp-bulk-stat-btn" id="inpBulkStatBtn" onclick="bulkUpdStatusSelected()" disabled>선택 상태 변경</button>
+          </span>
           <button class="inp-bulk-del" id="inpBulkDelBtn" onclick="bulkDelSelected()" disabled>선택 삭제</button>
         </div>
         <div class="recs">

@@ -148,16 +148,28 @@ function refreshInpFilterOpts() {
     .join('');
   if (inpBrand !== 'all' && !orderedBrands.includes(inpBrand)) inpBrand = 'all';
   brn.value = inpBrand;
+  // 상태: 현재 영역(curType)의 표시 라벨로 옵션 구성 (클레임은 접수/처리중/처리완료)
+  const stt = document.getElementById('inpStatFilter');
+  if (stt) {
+    stt.innerHTML = ['<option value="all">전체</option>']
+      .concat(STATS.map(s => `<option value="${esc(s)}">${esc(statLbl(s, curType))}</option>`))
+      .join('');
+    if (inpStat !== 'all' && !STATS.includes(inpStat)) inpStat = 'all';
+    stt.value = inpStat;
+  }
 }
 
 function setInpSubFilter(v)   { inpSub = v;   renderInputTable(); }
 function setInpBrandFilter(v) { inpBrand = v; renderInputTable(); }
+function setInpStatFilter(v)  { inpStat = v;  renderInputTable(); }
 function resetInpFilters() {
-  inpSub = 'all'; inpBrand = 'all';
+  inpSub = 'all'; inpBrand = 'all'; inpStat = 'all';
   const sub = document.getElementById('inpSubFilter');
   const brn = document.getElementById('inpBrandFilter');
+  const stt = document.getElementById('inpStatFilter');
   if (sub) sub.value = 'all';
   if (brn) brn.value = 'all';
+  if (stt) stt.value = 'all';
   renderInputTable();
 }
 
@@ -169,6 +181,7 @@ function filteredInputRecords() {
     else                fl = fl.filter(r => r.subtype === inpSub);
   }
   if (inpBrand !== 'all') fl = fl.filter(r => r.brand === inpBrand);
+  if (inpStat !== 'all')  fl = fl.filter(r => r.status === inpStat);
   return fl;
 }
 
@@ -178,7 +191,7 @@ function renderInputTable() {
   const cnt = document.getElementById('inpFilterCnt');
   const total = records.filter(r => r.type === curType).length;
   const fl = filteredInputRecords();
-  if (cnt) cnt.textContent = (inpSub === 'all' && inpBrand === 'all')
+  if (cnt) cnt.textContent = (inpSub === 'all' && inpBrand === 'all' && inpStat === 'all')
     ? `총 ${total}건`
     : `${fl.length}건 / 총 ${total}건`;
   if (!fl.length) {
@@ -262,6 +275,15 @@ function updInpBulkUI() {
   const all = document.getElementById('inpChkAll');
   if (cnt) cnt.textContent = `${selInView}건 선택됨`;
   if (btn) btn.disabled = selInView === 0;
+  // 일괄 상태 변경 — 현재 영역(curType)의 표시 라벨로 선택지 갱신(선택값 보존), 버튼 활성화
+  const stBtn = document.getElementById('inpBulkStatBtn');
+  const stSel = document.getElementById('inpBulkStatSel');
+  if (stSel) {
+    const cur = stSel.value || STATS[0];
+    stSel.innerHTML = STATS.map(s => `<option value="${esc(s)}">${esc(statLbl(s, curType))}</option>`).join('');
+    stSel.value = STATS.includes(cur) ? cur : STATS[0];
+  }
+  if (stBtn) stBtn.disabled = selInView === 0;
   if (all) {
     all.checked = fl.length > 0 && selInView === fl.length;
     all.indeterminate = selInView > 0 && selInView < fl.length;
@@ -291,6 +313,33 @@ async function bulkDelSelected() {
   await loadData();
   renderInputTable();
   toast(`${ids.length}건이 삭제되었습니다.`);
+}
+
+// 선택한 항목(현재 필터에 보이는 건)의 상태를 일괄 변경
+async function bulkUpdStatusSelected() {
+  const sel = document.getElementById('inpBulkStatSel');
+  const status = sel ? sel.value : '';
+  if (!STATS.includes(status)) { toast('상태 값이 올바르지 않습니다.'); return; }
+  // 현재 필터에 보이는 선택 항목만 대상으로 (다른 영역의 잔여 선택 제외)
+  const ids = filteredInputRecords()
+    .map(r => Number(r.id) || 0)
+    .filter(rid => rid && inpSelected.has(rid));
+  if (!ids.length) { toast('선택된 항목이 없습니다.'); return; }
+
+  const btn = document.getElementById('inpBulkStatBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '변경 중...'; }
+
+  const ok = await sbUpdMany('records', ids, { status });
+
+  if (btn) btn.textContent = '선택 상태 변경';
+  if (!ok) {
+    if (btn) btn.disabled = false;
+    toast('상태 변경 중 오류가 발생했습니다.');
+    return;
+  }
+  await loadData();
+  renderInputTable();
+  toast(`${ids.length}건 → "${statLbl(status, curType)}"`);
 }
 
 // ── 엑셀 일괄 업로드 ──────────────────────────────────

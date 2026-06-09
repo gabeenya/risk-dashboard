@@ -38,6 +38,9 @@ function setInputType(btn, type) {
   document.getElementById('f-type').value = type;
   document.getElementById('areaBadge').textContent = type;
   document.getElementById('listBadge').textContent = type;
+  // 안전 전용 일괄 업로드 폼은 '안전' 영역에서만 노출
+  const safeBlock = document.getElementById('xlSafeBlock');
+  if (safeBlock) safeBlock.style.display = (type === '안전') ? '' : 'none';
 
   const sel = document.getElementById('f-subtype');
   const s = SUB[type];
@@ -54,7 +57,7 @@ function setInputType(btn, type) {
     stSel.value = cur;
   }
   // 영역 전환 시 데이터 목록 필터는 '전체'로 초기화, 다중 선택도 해제
-  inpSub = 'all'; inpBrand = 'all';
+  inpSub = 'all'; inpBrand = 'all'; inpStat = 'all';
   inpSelected.clear();
   renderInputTable();
 }
