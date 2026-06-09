@@ -4,6 +4,99 @@ async function loadUsers() {
   catch(e) { users = []; }
 }
 
+// ── 세션 유지 / 자동 로그아웃 ─────────────────────────
+// 새로고침해도 로그인이 유지됩니다(localStorage). 단, 보안을 위해 로그인 후 3시간이
+// 지나면 자동 로그아웃되며, 만료 5분 전 팝업으로 경고합니다.
+//  · '세션 연장' → 3시간 재설정 / 무응답 → 만료 시 자동 로그아웃
+//  · 비밀번호는 저장하지 않고 사용자 id와 만료시각(exp)만 보관합니다.
+const SESSION_KEY  = 'risk_session';
+const SESSION_MS   = 3 * 60 * 60 * 1000;   // 세션 유효 시간: 3시간
+const SESS_WARN_MS = 5 * 60 * 1000;        // 만료 5분 전 경고
+let sessTimer  = null;   // 만료/경고 점검 인터벌
+let sessWarned = false;  // 경고 모달 노출 여부(중복 방지)
+
+function saveSession() {
+  if (!user) return;
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify({ id: user.id, exp: Date.now() + SESSION_MS })); }
+  catch (e) {}
+}
+function clearSession() {
+  try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+}
+function readSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
+  catch (e) { return null; }
+}
+
+// init()에서 호출 — 유효한 세션이 있으면 자동 로그인 후 대시보드로 진입
+async function restoreSession() {
+  const s = readSession();
+  if (!s || !s.id || !s.exp || Date.now() >= s.exp) { clearSession(); return false; }
+  const u = users.find(x => x.id === s.id);
+  if (!u || u.status === 'pending') { clearSession(); return false; }
+  user = u;
+  applyUser();
+  showDashboard();
+  startSessionTimer();
+  await loadData();
+  renderInputPg();
+  return true;
+}
+
+function startSessionTimer() {
+  stopSessionTimer();
+  sessWarned = false;
+  sessTimer = setInterval(checkSession, 1000); // 1초마다 점검(만료 카운트다운 표시용)
+}
+function stopSessionTimer() {
+  if (sessTimer) { clearInterval(sessTimer); sessTimer = null; }
+  hideSessionWarn();
+}
+function checkSession() {
+  const s = readSession();
+  if (!s || !s.exp) return;
+  const left = s.exp - Date.now();
+  if (left <= 0) { autoLogout(); return; }
+  if (left <= SESS_WARN_MS && !sessWarned) showSessionWarn();
+  if (sessWarned) updateSessionWarnCountdown(left);
+}
+
+function autoLogout() {
+  stopSessionTimer();
+  clearSession();
+  user = null;
+  records = [];
+  applyUser();
+  renderInputPg();
+  showLogin();
+  toast('보안을 위해 자동 로그아웃되었습니다. 다시 로그인해 주세요.');
+}
+
+// 만료 경고에서 '세션 연장' — 3시간 재설정
+function extendSession() {
+  if (!user) return;
+  saveSession();
+  sessWarned = false;
+  hideSessionWarn();
+  toast('세션이 연장되었습니다. (3시간)');
+}
+
+function showSessionWarn() {
+  sessWarned = true;
+  const m = document.getElementById('sessionWarnModal');
+  if (m) m.classList.remove('hide');
+}
+function hideSessionWarn() {
+  const m = document.getElementById('sessionWarnModal');
+  if (m) m.classList.add('hide');
+}
+function updateSessionWarnCountdown(leftMs) {
+  const el = document.getElementById('sessWarnCount');
+  if (!el) return;
+  const sec = Math.max(0, Math.floor(leftMs / 1000));
+  el.textContent = `${Math.floor(sec / 60)}분 ${String(sec % 60).padStart(2, '0')}초`;
+}
+
 // 비로그인 시: 헤더 우측은 숨기고 #page-login만 단독으로 보임
 function showLogin() {
   document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
@@ -94,6 +187,8 @@ async function doLogin() {
   err('loginErr', '');
   applyUser();
   showDashboard();
+  saveSession();
+  startSessionTimer();
   toast(`${u.name}님, 환영합니다!`);
   await loadData();
   renderInputPg();
@@ -132,6 +227,8 @@ async function doChangePw() {
 }
 
 function logout() {
+  stopSessionTimer();
+  clearSession();
   user = null;
   records = [];   // 다른 사용자 데이터가 잔상으로 남지 않도록
   applyUser();

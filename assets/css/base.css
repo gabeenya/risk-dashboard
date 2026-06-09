@@ -12,11 +12,13 @@ body {
 header {
   background: #fff;
   border-bottom: 1px solid #eaecf0;
-  padding: 0 2rem;
+  padding: 10px 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 76px;
+  flex-wrap: wrap;          /* 폭이 좁아지면 우측 묶음이 잘리지 않고 아랫줄로 내려감 */
+  row-gap: 8px;
+  min-height: 76px;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -36,7 +38,7 @@ header {
 .logo-main { font-size: 17px; font-weight: 600; color: #0f172a; letter-spacing: -0.5px; white-space: nowrap; }
 .logo-sub { font-size: 11px; color: #94a3b8; letter-spacing: 0.8px; text-transform: uppercase; }
 
-.hd-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.hd-right { display: flex; align-items: center; gap: 10px; flex: 1 1 auto; flex-wrap: wrap; justify-content: flex-end; row-gap: 8px; min-width: 0; }
 .yr-badge { font-size: 13px; background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; border-radius: 20px; padding: 5px 13px; font-weight: 500; white-space: nowrap; }
 .sy-badge { font-size: 13px; padding: 5px 13px; border-radius: 20px; background: #f0fdf4; color: #15803d; white-space: nowrap; border: 1px solid #bbf7d0; font-weight: 500; }
 
@@ -51,7 +53,7 @@ header {
 .lo-btn:hover { color: #1e3a8a; }
 
 .ppt-btn { font-size: 14px; padding: 8px 16px; border-radius: 7px; border: 1px solid #dbeafe; background: #eff6ff; color: #1e40af; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
-.ppt-month { font-size: 13px; padding: 7px 8px; border-radius: 7px; border: 1px solid #dbeafe; background: #fff; color: #1e40af; cursor: pointer; flex-shrink: 0; }
+.ppt-month { font-size: 13px; padding: 7px 8px; border-radius: 7px; border: 1px solid #dbeafe; background: #fff; color: #1e40af; cursor: pointer; flex-shrink: 0; font-family: inherit; }
 .ppt-btn:hover { background: #1e3a8a; color: #fff; border-color: #1e3a8a; }
 .ppt-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .ppt-btn.hidden { display: none; }
@@ -178,6 +180,79 @@ tr:hover td { background: #f8fafc; }
 .fsec-tit { font-size: 13px; font-weight: 600; color: #0f172a; margin-bottom: 1.1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 10px; }
 .fsec-tit-note { font-size: 11px; color: #94a3b8; font-weight: 400; margin-left: 4px; }
 .a-badge { font-size: 11px; background: #eff6ff; color: #1e40af; border-radius: 20px; padding: 2px 12px; font-weight: 500; border: 1px solid #dbeafe; }
+
+/* ──────────────────────────────────────────────────────
+   Professional polish — 전반적인 깊이감/타이포/인터랙션 정돈
+   (기존 규칙 위에 얹는 보강 레이어. 반응형 미디어쿼리보다 앞에 두어
+    모바일 축소 규칙이 정상적으로 덮어쓰도록 함)
+   ────────────────────────────────────────────────────── */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background: #f5f6fa;
+}
+
+/* 헤더 — 스크롤 시 살짝 떠 보이도록 반투명+블러+그림자 */
+header {
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: saturate(180%) blur(10px);
+  -webkit-backdrop-filter: saturate(180%) blur(10px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+/* 카드/폼 섹션 — 평면 테두리 대신 은은한 다층 그림자로 깊이감 */
+.card, .fsec {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 20px rgba(15, 23, 42, 0.035);
+}
+
+/* 대시보드 카드 — 호버 시 살짝 부각 */
+.charts-row > .card, .btm-row > .card, #heatmapCard {
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.charts-row > .card:hover, .btm-row > .card:hover, #heatmapCard:hover {
+  border-color: #dbe2ef;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05), 0 10px 28px rgba(15, 23, 42, 0.07);
+}
+
+/* KPI 카드 — 호버 리프트 + 상단 그라데이션 악센트 */
+.kpi {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.kpi::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1e3a8a, #3b66c4);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.09);
+}
+.kpi:hover::after { opacity: 1; }
+.kpi.dim::after { background: linear-gradient(90deg, #94a3b8, #cbd5e1); }
+
+/* 버튼 — 주요 버튼에 입체감 부여 */
+.btn-pri, .btn-full { box-shadow: 0 1px 2px rgba(30, 58, 138, 0.25); transition: background 0.15s, box-shadow 0.15s, transform 0.1s; }
+.btn-pri:hover:not(:disabled), .btn-full:hover { box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3); }
+.btn-pri:active:not(:disabled), .btn-full:active { transform: translateY(1px); }
+.btn-pri:disabled { box-shadow: none; }
+
+/* 네비 탭 활성 / 페이지 제목 — 또렷한 위계 */
+.tb.on { box-shadow: 0 1px 4px rgba(30, 58, 138, 0.32); }
+.pg-title { font-size: 21px; letter-spacing: -0.4px; }
+
+/* 필터바 — 떠 있는 컨트롤 패널 느낌 */
+.filter-bar { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+
+/* 로그인 카드 — 더 깊은 그림자로 포커스 유도 */
+.login-card { box-shadow: 0 12px 40px rgba(15, 23, 42, 0.09); }
 
 /* ──────────────────────────────────────────────────────
    Responsive — 모바일/태블릿 최적화
