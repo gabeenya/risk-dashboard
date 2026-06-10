@@ -177,6 +177,10 @@ header.topbar {
 .app.logged-out .sidebar,
 .app.logged-out .topbar { display: none; }
 
+/* 비로그인 상태에서는 로그인 페이지 외 어떤 보호 페이지도 노출 금지.
+   세션 복원/전환 도중 대시보드 등이 순간적으로 비치는 것을 원천 차단. */
+.app.logged-out .pg:not(#page-login) { display: none !important; }
+
 /* ── Main / page switching ────────────────────────── */
 main { max-width: 1680px; margin: 0 auto; padding: 1.75rem 2.25rem; width: 100%; }
 .pg { display: none; }

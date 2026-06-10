@@ -5,8 +5,9 @@ async function loadUsers() {
 }
 
 // ── 세션 유지 / 자동 로그아웃 ─────────────────────────
-// 새로고침해도 로그인이 유지됩니다(localStorage). 단, 보안을 위해 로그인 후 3시간이
-// 지나면 자동 로그아웃되며, 만료 5분 전 팝업으로 경고합니다.
+// 세션은 sessionStorage에 보관합니다 → 창(탭)을 닫으면 세션이 사라져 자동 로그아웃되고,
+// 같은 탭에서의 새로고침은 로그인이 유지됩니다. 창이 열려 있는 동안에도 보안을 위해
+// 로그인 후 3시간이 지나면 자동 로그아웃되며, 만료 5분 전 팝업으로 경고합니다.
 //  · '세션 연장' → 3시간 재설정 / 무응답 → 만료 시 자동 로그아웃
 //  · 비밀번호는 저장하지 않고 사용자 id와 만료시각(exp)만 보관합니다.
 const SESSION_KEY  = 'risk_session';
@@ -17,14 +18,14 @@ let sessWarned = false;  // 경고 모달 노출 여부(중복 방지)
 
 function saveSession() {
   if (!user) return;
-  try { localStorage.setItem(SESSION_KEY, JSON.stringify({ id: user.id, exp: Date.now() + SESSION_MS })); }
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ id: user.id, exp: Date.now() + SESSION_MS })); }
   catch (e) {}
 }
 function clearSession() {
-  try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+  try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
 }
 function readSession() {
-  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
+  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null'); }
   catch (e) { return null; }
 }
 
