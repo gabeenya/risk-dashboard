@@ -1,5 +1,5 @@
 // ── 상단바 타이틀 / 모바일 사이드바 드로어 ──────────────
-const TAB_TITLES = { dashboard: '대시보드', input: '데이터 입력', ai: 'AI 분석', admin: '관리자' };
+const TAB_TITLES = { dashboard: '대시보드', input: '데이터 입력', ai: 'AI 분석', help: '사용 설명서', admin: '관리자' };
 function setTopbarTitle(pg) {
   const el = document.getElementById('topbarBadge');
   if (el && TAB_TITLES[pg]) el.textContent = TAB_TITLES[pg];

@@ -262,10 +262,10 @@ function renderDash(k) {
   const vio = dY.filter(isVio).reduce((s, r) => s + r.count, 0);
   const mTot = dm.reduce((s, r) => s + monCnt(r), 0);
   const mVio = dm.filter(isVio).reduce((s, r) => s + r.count, 0);
-  const done = dm.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
+  const done = dY.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);   // 기준월까지 누적 완료
   const act  = dm.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);
   const slaOver = dm.filter(isSlaOver).reduce((s, r) => s + r.count, 0);
-  const dr  = mVio ? (done / mVio * 100).toFixed(1) : 0;
+  const dr  = vio ? (done / vio * 100).toFixed(1) : 0;   // 누적 완료율 = 누적 완료 / 누적 위반
   const vr  = tot  ? (vio  / tot  * 100).toFixed(1) : 0;
   const mvr = mTot ? (mVio / mTot * 100).toFixed(1) : 0;
 
@@ -289,7 +289,7 @@ function renderDash(k) {
   document.getElementById('kpi2r').textContent = mTot ? `${lblRate} ${mvr}%` : '-';
   document.getElementById('kpi2s').textContent = `${yr}년 ${mo}월 기준`;
   document.getElementById('kpi3').textContent  = dr + '%';
-  document.getElementById('kpi3s').textContent = `${isClm ? '처리완료' : '완료'} ${done.toLocaleString()} / ${lblVio} ${mVio.toLocaleString()}건`;
+  document.getElementById('kpi3s').textContent = `${isClm ? '처리완료' : '완료'} ${done.toLocaleString()} / ${lblVio} ${vio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
   document.getElementById('kpi4').textContent  = act.toLocaleString();
   const k4s = document.getElementById('kpi4s');
   if (slaOver > 0) {
