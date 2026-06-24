@@ -89,12 +89,13 @@ function setInputType(btn, type) {
   } else {
     sel.innerHTML = '<option value="">선택하세요</option>' + s.map(x => `<option>${x}</option>`).join('');
   }
-  // 상태 select: 영역별 표시 라벨(클레임은 접수/처리중/처리완료) 적용, 저장값은 STATS 그대로
+  // 상태 select: 영역별 표시 라벨 적용, 징계는 모니터링 옵션 제거
   const stSel = document.getElementById('f-status');
   if (stSel) {
-    const cur = stSel.value || '모니터링';
-    stSel.innerHTML = STATS.map(s => `<option value="${s}">${statLbl(s, type)}</option>`).join('');
-    stSel.value = cur;
+    const availStats = type === '징계' ? STATS.filter(s => s !== '모니터링') : STATS;
+    const cur = stSel.value || availStats[0];
+    stSel.innerHTML = availStats.map(s => `<option value="${s}">${statLbl(s, type)}</option>`).join('');
+    stSel.value = availStats.includes(cur) ? cur : availStats[0];
   }
   // 영역 전환 시 데이터 목록 필터는 '전체'로 초기화, 다중 선택도 해제
   inpSub = 'all'; inpBrand = 'all'; inpStat = 'all';

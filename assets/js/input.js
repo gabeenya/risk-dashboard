@@ -120,7 +120,7 @@ function resetForm() {
   document.getElementById('f-brand').value   = '';
   document.getElementById('f-subtype').value = '';
   document.getElementById('f-count').value   = 1;
-  document.getElementById('f-status').value  = '모니터링';
+  document.getElementById('f-status').value  = curType === '징계' ? '위반(처리중)' : '모니터링';
   document.getElementById('f-note').value    = '';
 }
 
@@ -151,10 +151,11 @@ function refreshInpFilterOpts() {
   // 상태: 현재 영역(curType)의 표시 라벨로 옵션 구성 (클레임은 접수/처리중/처리완료)
   const stt = document.getElementById('inpStatFilter');
   if (stt) {
+    const availSt = curType === '징계' ? STATS.filter(s => s !== '모니터링') : STATS;
     stt.innerHTML = ['<option value="all">전체</option>']
-      .concat(STATS.map(s => `<option value="${esc(s)}">${esc(statLbl(s, curType))}</option>`))
+      .concat(availSt.map(s => `<option value="${esc(s)}">${esc(statLbl(s, curType))}</option>`))
       .join('');
-    if (inpStat !== 'all' && !STATS.includes(inpStat)) inpStat = 'all';
+    if (inpStat !== 'all' && !availSt.includes(inpStat)) inpStat = 'all';
     stt.value = inpStat;
   }
 }
@@ -231,7 +232,7 @@ function renderInputTable() {
     </td>
     <td>
       <select class="st-sel" onchange="updStatus(${rid},this.value)">
-        ${STATS.map(s => `<option value="${esc(s)}"${r.status===s?' selected':''}>${esc(statLbl(s, r.type))}</option>`).join('')}
+        ${(r.type === '징계' ? STATS.filter(s => s !== '모니터링') : STATS).map(s => `<option value="${esc(s)}"${r.status===s?' selected':''}>${esc(statLbl(s, r.type))}</option>`).join('')}
       </select>
     </td>
     <td>
@@ -279,9 +280,10 @@ function updInpBulkUI() {
   const stBtn = document.getElementById('inpBulkStatBtn');
   const stSel = document.getElementById('inpBulkStatSel');
   if (stSel) {
-    const cur = stSel.value || STATS[0];
-    stSel.innerHTML = STATS.map(s => `<option value="${esc(s)}">${esc(statLbl(s, curType))}</option>`).join('');
-    stSel.value = STATS.includes(cur) ? cur : STATS[0];
+    const availSt = curType === '징계' ? STATS.filter(s => s !== '모니터링') : STATS;
+    const cur = stSel.value || availSt[0];
+    stSel.innerHTML = availSt.map(s => `<option value="${esc(s)}">${esc(statLbl(s, curType))}</option>`).join('');
+    stSel.value = availSt.includes(cur) ? cur : availSt[0];
   }
   if (stBtn) stBtn.disabled = selInView === 0;
   if (all) {

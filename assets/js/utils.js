@@ -20,11 +20,13 @@ function sc(s) {
 }
 
 // 영역별 상태 표시 라벨. DB에는 STATS(모니터링/위반(처리중)/완료)로 저장하되,
-// '클레임' 영역만 UI에서 접수/처리중/처리완료로 보여줌. 집계/필터/PPT 로직은 변환 없이 동일하게 동작.
+// 클레임: 접수/처리중/처리완료, 징계: 적발/조치완료로 표시. 집계/필터/PPT 로직은 변환 없이 동일하게 동작.
 const __STAT_CS_LBL = { '모니터링':'접수', '위반(처리중)':'처리중', '완료':'처리완료' };
+const __STAT_JG_LBL = { '위반(처리중)':'적발', '완료':'조치완료' };
 function statLbl(status, type) {
-  if (type !== '클레임') return status;
-  return __STAT_CS_LBL[status] || status;
+  if (type === '클레임') return __STAT_CS_LBL[status] || status;
+  if (type === '징계')   return __STAT_JG_LBL[status]  || status;
+  return status;
 }
 
 // 동기화 배지 문구/색 갱신
