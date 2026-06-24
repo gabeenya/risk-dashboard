@@ -12,17 +12,12 @@ async function addRecord() {
   const brand  = document.getElementById('f-brand').value;
   const count  = parseInt(document.getElementById('f-count').value) || 0;
   const status = document.getElementById('f-status').value || '모니터링';
-  // 징계: 성명+양형+비고를 '_jg:{성명}|{양형}|{비고}' 형식으로 저장
-  // 부실채권 미입금·2개월초과 미입금: 금액+비고를 '_amt:숫자|비고' 형식으로 저장
-  let note = document.getElementById('f-note').value;
-  if (type === '징계') {
-    const jgName = document.getElementById('f-jg-name')?.value || '';
-    const jgSent = document.getElementById('f-jg-sent')?.value || '';
-    note = `_jg:${jgName}|${jgSent}|${note}`;
-  } else if (type === '부실채권' && BC_AMT_SUBS.includes(sub)) {
-    const amt = parseInt(document.getElementById('f-amount')?.value) || 0;
-    note = `_amt:${amt}|${note}`;
-  }
+  const note   = document.getElementById('f-note').value;
+  // 정식 컬럼으로 저장 (마이그레이션 완료 후)
+  const jg_name   = type === '징계'   ? (document.getElementById('f-jg-name')?.value  || '') : null;
+  const jg_sent   = type === '징계'   ? (document.getElementById('f-jg-sent')?.value  || '') : null;
+  const bc_amount = (type === '부실채권' && BC_AMT_SUBS.includes(sub))
+    ? (parseInt(document.getElementById('f-amount')?.value) || null) : null;
   if (!date || !brand || count < 1) { toast('필수 항목을 모두 입력해 주세요.'); return; }
 
   const btn = document.getElementById('submitBtn');
@@ -34,6 +29,7 @@ async function addRecord() {
     id: Date.now(), date, type,
     subtype: sub || '-', brand,
     status, count, note,
+    jg_name, jg_sent, bc_amount,
     author: user.name
   });
   await loadData();
@@ -266,15 +262,32 @@ function renderInputTable() {
       </select>
     </td>
     <td>${(()=>{
-      const _jg = parseJgRecord(r);
-      if (_jg !== null) {
-        const _parts = [_jg.name, _jg.sent, _jg.note].filter(Boolean).map(esc);
-        return `<span class="jg-info-cell">${_parts.join(' · ') || '-'}</span>`;
+      // 징계 — 정식 컬럼 우선, 구 note 인코딩 하위 호환
+      if (r.type === '징계') {
+        let _name, _sent, _noteText;
+        if (r.jg_name != null || r.jg_sent != null) {
+          _name = r.jg_name || ''; _sent = r.jg_sent || ''; _noteText = r.note || '';
+        } else {
+          const _jg = parseJgRecord(r);
+          if (_jg) { _name = _jg.name; _sent = _jg.sent; _noteText = _jg.note; }
+        }
+        if (_name != null) {
+          const _parts = [_name, _sent, _noteText].filter(Boolean).map(esc);
+          return `<span class="jg-info-cell">${_parts.join(' · ') || '-'}</span>`;
+        }
       }
-      const _bcAmt = parseBcAmt(r);
-      if (_bcAmt !== null) {
-        const _bcNote = parseBcNote(r);
-        return `<span class="bc-amt-cell">${_bcAmt.toLocaleString()}원${_bcNote ? ' · ' + esc(_bcNote) : ''}</span>`;
+      // 부실채권 금액 — 정식 컬럼 우선, 구 note 인코딩 하위 호환
+      if (r.type === '부실채권' && BC_AMT_SUBS.includes(r.subtype)) {
+        let _amt, _noteText;
+        if (r.bc_amount != null) {
+          _amt = Number(r.bc_amount); _noteText = r.note || '';
+        } else {
+          const _old = parseBcAmt(r);
+          if (_old !== null) { _amt = _old; _noteText = parseBcNote(r); }
+        }
+        if (_amt != null) {
+          return `<span class="bc-amt-cell">${_amt.toLocaleString()}원${_noteText ? ' · ' + esc(_noteText) : ''}</span>`;
+        }
       }
       return `<div class="note-wrap">
         <input type="text" class="note-inp" id="note-inp-${rid}"

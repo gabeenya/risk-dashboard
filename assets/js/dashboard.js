@@ -319,9 +319,11 @@ function renderDash(k) {
   } else if (isBc) {
     // 부실채권 뷰 — KPI3: 회수금액
     const bcRecovery = dY.filter(r =>
-      r.type === '부실채권' && r.status === '완료' && BC_AMT_SUBS.includes(r.subtype) &&
-      r.note && r.note.startsWith('_amt:')
-    ).reduce((s, r) => s + (Number(r.note.slice(5)) || 0), 0);
+      r.type === '부실채권' && r.status === '완료' && BC_AMT_SUBS.includes(r.subtype)
+    ).reduce((s, r) => {
+      if (r.bc_amount != null) return s + (Number(r.bc_amount) || 0);
+      const old = parseBcAmt(r); return s + (old || 0);
+    }, 0);
 
     document.getElementById('kpi1Str').textContent = '연 누적 부실채권 발생 건수';
     document.getElementById('kpi1').textContent    = tot.toLocaleString();
