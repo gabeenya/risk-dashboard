@@ -12,9 +12,14 @@ async function addRecord() {
   const brand  = document.getElementById('f-brand').value;
   const count  = parseInt(document.getElementById('f-count').value) || 0;
   const status = document.getElementById('f-status').value || '모니터링';
+  // 징계: 성명+양형+비고를 '_jg:{성명}|{양형}|{비고}' 형식으로 저장
   // 부실채권 미입금·2개월초과 미입금: 금액+비고를 '_amt:숫자|비고' 형식으로 저장
   let note = document.getElementById('f-note').value;
-  if (type === '부실채권' && BC_AMT_SUBS.includes(sub)) {
+  if (type === '징계') {
+    const jgName = document.getElementById('f-jg-name')?.value || '';
+    const jgSent = document.getElementById('f-jg-sent')?.value || '';
+    note = `_jg:${jgName}|${jgSent}|${note}`;
+  } else if (type === '부실채권' && BC_AMT_SUBS.includes(sub)) {
     const amt = parseInt(document.getElementById('f-amount')?.value) || 0;
     note = `_amt:${amt}|${note}`;
   }
@@ -127,11 +132,15 @@ function resetForm() {
   document.getElementById('f-count').value   = 1;
   document.getElementById('f-status').value  = (curType === '징계' || curType === '부실채권') ? '위반(처리중)' : '모니터링';
   document.getElementById('f-note').value    = '';
-  // 금액 필드 초기화 및 숨김 (비고는 항상 유지)
+  // 금액·징계 필드 초기화 (비고는 항상 유지)
   const amtW = document.getElementById('f-amount-wrap');
   const amtI = document.getElementById('f-amount');
   if (amtI) amtI.value = '';
   if (amtW) amtW.style.display = 'none';
+  const jgNI = document.getElementById('f-jg-name');
+  const jgSI = document.getElementById('f-jg-sent');
+  if (jgNI) jgNI.value = '';
+  if (jgSI) jgSI.value = '';
 }
 
 // 부실채권 금액 입력란 표시/숨김 — 상세유형 변경 시 호출
@@ -257,6 +266,11 @@ function renderInputTable() {
       </select>
     </td>
     <td>${(()=>{
+      const _jg = parseJgRecord(r);
+      if (_jg !== null) {
+        const _parts = [_jg.name, _jg.sent, _jg.note].filter(Boolean).map(esc);
+        return `<span class="jg-info-cell">${_parts.join(' · ') || '-'}</span>`;
+      }
       const _bcAmt = parseBcAmt(r);
       if (_bcAmt !== null) {
         const _bcNote = parseBcNote(r);

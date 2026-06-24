@@ -120,6 +120,8 @@
 
 /* 부실채권 금액 셀 */
 .bc-amt-cell { font-size: 11px; color: #1e3a8a; font-weight: 600; white-space: nowrap; }
+/* 징계 정보 셀 */
+.jg-info-cell { font-size: 11px; color: #334155; }
 
 /* ── 모바일 대응 ──────────────────────────────────── */
 @media (max-width: 768px) {

@@ -92,10 +92,20 @@ function setInputType(btn, type) {
   // 부실채권: 상세유형 변경 시 금액 입력란 토글
   sel.setAttribute('onchange', type === '부실채권' ? 'checkBcAmtField()' : '');
   // 영역 전환 시 금액 입력란 숨김 초기화
-  const _amtW = document.getElementById('f-amount-wrap');
-  const _amtI = document.getElementById('f-amount');
+  const _amtW   = document.getElementById('f-amount-wrap');
+  const _amtI   = document.getElementById('f-amount');
+  const _jgNW   = document.getElementById('f-jg-name-wrap');
+  const _jgSW   = document.getElementById('f-jg-sent-wrap');
+  const _jgNI   = document.getElementById('f-jg-name');
+  const _jgSI   = document.getElementById('f-jg-sent');
   if (_amtW) _amtW.style.display = 'none';
   if (_amtI) _amtI.value = '';
+  // 징계 전용 필드 표시/숨김
+  const _showJg = type === '징계';
+  if (_jgNW) _jgNW.style.display = _showJg ? '' : 'none';
+  if (_jgSW) _jgSW.style.display = _showJg ? '' : 'none';
+  if (!_showJg && _jgNI) _jgNI.value = '';
+  if (!_showJg && _jgSI) _jgSI.value = '';
   // 상태 select: 영역별 표시 라벨 적용, 징계는 모니터링 옵션 제거
   const stSel = document.getElementById('f-status');
   if (stSel) {

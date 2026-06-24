@@ -62,6 +62,14 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => __ESC_MAP[c]);
 }
 
+// 징계 성명·양형 레코드 파서 — note 필드에 '_jg:{성명}|{양형}|{비고}' 형식으로 임시 저장
+function parseJgRecord(r) {
+  if (r.type !== '징계') return null;
+  if (!r.note || !r.note.startsWith('_jg:')) return null;
+  const parts = r.note.slice(4).split('|');
+  return { name: parts[0] || '', sent: parts[1] || '', note: parts[2] || '' };
+}
+
 // 부실채권 금액 입력 대상 상세유형
 const BC_AMT_SUBS = ['미입금', '2개월 초과 미입금'];
 
