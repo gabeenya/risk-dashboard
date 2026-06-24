@@ -118,6 +118,9 @@
 .xl-badge-ok { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
 .xl-badge-err { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; max-width: 260px; white-space: normal; line-height: 1.4; }
 
+/* 부실채권 금액 셀 */
+.bc-amt-cell { font-size: 11px; color: #1e3a8a; font-weight: 600; white-space: nowrap; }
+
 /* ── 모바일 대응 ──────────────────────────────────── */
 @media (max-width: 768px) {
   /* 영역 탭 — 가로 스크롤 한 줄 유지 */

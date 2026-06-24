@@ -89,10 +89,17 @@ function setInputType(btn, type) {
   } else {
     sel.innerHTML = '<option value="">선택하세요</option>' + s.map(x => `<option>${x}</option>`).join('');
   }
+  // 부실채권: 상세유형 변경 시 금액 입력란 토글
+  sel.setAttribute('onchange', type === '부실채권' ? 'checkBcAmtField()' : '');
+  // 영역 전환 시 금액 입력란 숨김 초기화
+  const _amtW = document.getElementById('f-amount-wrap');
+  const _amtI = document.getElementById('f-amount');
+  if (_amtW) _amtW.style.display = 'none';
+  if (_amtI) _amtI.value = '';
   // 상태 select: 영역별 표시 라벨 적용, 징계는 모니터링 옵션 제거
   const stSel = document.getElementById('f-status');
   if (stSel) {
-    const availStats = type === '징계' ? STATS.filter(s => s !== '모니터링') : STATS;
+    const availStats = (type === '징계' || type === '부실채권') ? STATS.filter(s => s !== '모니터링') : STATS;
     const cur = stSel.value || availStats[0];
     stSel.innerHTML = availStats.map(s => `<option value="${s}">${statLbl(s, type)}</option>`).join('');
     stSel.value = availStats.includes(cur) ? cur : availStats[0];

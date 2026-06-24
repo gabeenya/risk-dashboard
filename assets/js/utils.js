@@ -23,9 +23,11 @@ function sc(s) {
 // 클레임: 접수/처리중/처리완료, 징계: 적발/조치완료로 표시. 집계/필터/PPT 로직은 변환 없이 동일하게 동작.
 const __STAT_CS_LBL = { '모니터링':'접수', '위반(처리중)':'처리중', '완료':'처리완료' };
 const __STAT_JG_LBL = { '위반(처리중)':'적발', '완료':'조치완료' };
+const __STAT_BC_LBL = { '위반(처리중)':'발생', '완료':'해결' };
 function statLbl(status, type) {
-  if (type === '클레임') return __STAT_CS_LBL[status] || status;
-  if (type === '징계')   return __STAT_JG_LBL[status]  || status;
+  if (type === '클레임')  return __STAT_CS_LBL[status] || status;
+  if (type === '징계')    return __STAT_JG_LBL[status]  || status;
+  if (type === '부실채권') return __STAT_BC_LBL[status] || status;
   return status;
 }
 
@@ -58,6 +60,25 @@ function err(id, m) {
 const __ESC_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => __ESC_MAP[c]);
+}
+
+// 부실채권 금액 입력 대상 상세유형
+const BC_AMT_SUBS = ['미입금', '2개월 초과 미입금'];
+
+// 부실채권 금액 레코드 파서 — note 필드에 '_amt:{숫자}' 형식으로 임시 저장
+function parseBcAmt(r) {
+  if (r.type !== '부실채권' || !BC_AMT_SUBS.includes(r.subtype)) return null;
+  if (!r.note || !r.note.startsWith('_amt:')) return null;
+  const pipeIdx = r.note.indexOf('|');
+  const numStr  = pipeIdx >= 0 ? r.note.slice(5, pipeIdx) : r.note.slice(5);
+  const v = Number(numStr);
+  return isNaN(v) ? null : v;
+}
+// 부실채권 금액 레코드의 비고 텍스트 추출
+function parseBcNote(r) {
+  if (!r.note || !r.note.startsWith('_amt:')) return r.note || '';
+  const pipeIdx = r.note.indexOf('|');
+  return pipeIdx >= 0 ? r.note.slice(pipeIdx + 1) : '';
 }
 
 // 로고 클릭 → 대시보드 + 전체 필터로 복귀

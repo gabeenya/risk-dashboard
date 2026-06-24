@@ -12,7 +12,12 @@ async function addRecord() {
   const brand  = document.getElementById('f-brand').value;
   const count  = parseInt(document.getElementById('f-count').value) || 0;
   const status = document.getElementById('f-status').value || '모니터링';
-  const note   = document.getElementById('f-note').value;
+  // 부실채권 미입금·2개월초과 미입금: 금액+비고를 '_amt:숫자|비고' 형식으로 저장
+  let note = document.getElementById('f-note').value;
+  if (type === '부실채권' && BC_AMT_SUBS.includes(sub)) {
+    const amt = parseInt(document.getElementById('f-amount')?.value) || 0;
+    note = `_amt:${amt}|${note}`;
+  }
   if (!date || !brand || count < 1) { toast('필수 항목을 모두 입력해 주세요.'); return; }
 
   const btn = document.getElementById('submitBtn');
@@ -120,8 +125,24 @@ function resetForm() {
   document.getElementById('f-brand').value   = '';
   document.getElementById('f-subtype').value = '';
   document.getElementById('f-count').value   = 1;
-  document.getElementById('f-status').value  = curType === '징계' ? '위반(처리중)' : '모니터링';
+  document.getElementById('f-status').value  = (curType === '징계' || curType === '부실채권') ? '위반(처리중)' : '모니터링';
   document.getElementById('f-note').value    = '';
+  // 금액 필드 초기화 및 숨김 (비고는 항상 유지)
+  const amtW = document.getElementById('f-amount-wrap');
+  const amtI = document.getElementById('f-amount');
+  if (amtI) amtI.value = '';
+  if (amtW) amtW.style.display = 'none';
+}
+
+// 부실채권 금액 입력란 표시/숨김 — 상세유형 변경 시 호출
+function checkBcAmtField() {
+  const sub  = document.getElementById('f-subtype')?.value || '';
+  const amtW = document.getElementById('f-amount-wrap');
+  const amtI = document.getElementById('f-amount');
+  if (!amtW) return;
+  const show = curType === '부실채권' && BC_AMT_SUBS.includes(sub);
+  amtW.style.display = show ? '' : 'none';
+  if (!show && amtI) amtI.value = '';
 }
 
 // 데이터 목록 — 상세유형/브랜드 필터 옵션을 현재 영역(curType)에 맞춰 갱신
@@ -151,7 +172,7 @@ function refreshInpFilterOpts() {
   // 상태: 현재 영역(curType)의 표시 라벨로 옵션 구성 (클레임은 접수/처리중/처리완료)
   const stt = document.getElementById('inpStatFilter');
   if (stt) {
-    const availSt = curType === '징계' ? STATS.filter(s => s !== '모니터링') : STATS;
+    const availSt = (curType === '징계' || curType === '부실채권') ? STATS.filter(s => s !== '모니터링') : STATS;
     stt.innerHTML = ['<option value="all">전체</option>']
       .concat(availSt.map(s => `<option value="${esc(s)}">${esc(statLbl(s, curType))}</option>`))
       .join('');
@@ -232,18 +253,23 @@ function renderInputTable() {
     </td>
     <td>
       <select class="st-sel" onchange="updStatus(${rid},this.value)">
-        ${(r.type === '징계' ? STATS.filter(s => s !== '모니터링') : STATS).map(s => `<option value="${esc(s)}"${r.status===s?' selected':''}>${esc(statLbl(s, r.type))}</option>`).join('')}
+        ${((r.type === '징계' || r.type === '부실채권') ? STATS.filter(s => s !== '모니터링') : STATS).map(s => `<option value="${esc(s)}"${r.status===s?' selected':''}>${esc(statLbl(s, r.type))}</option>`).join('')}
       </select>
     </td>
-    <td>
-      <div class="note-wrap">
+    <td>${(()=>{
+      const _bcAmt = parseBcAmt(r);
+      if (_bcAmt !== null) {
+        const _bcNote = parseBcNote(r);
+        return `<span class="bc-amt-cell">${_bcAmt.toLocaleString()}원${_bcNote ? ' · ' + esc(_bcNote) : ''}</span>`;
+      }
+      return `<div class="note-wrap">
         <input type="text" class="note-inp" id="note-inp-${rid}"
           value="${esc(r.note||'')}" placeholder="-"
           onkeydown="if(event.key==='Enter'){const b=document.getElementById('note-btn-${rid}');updNote(${rid},this.value,b)}">
         <button class="note-save-btn" id="note-btn-${rid}"
           onclick="updNote(${rid},document.getElementById('note-inp-${rid}').value,this)">저장</button>
-      </div>
-    </td>
+      </div>`;
+    })()}</td>
     <td class="cell-muted">${esc(r.author||'-')}</td>
     <td><button class="del-btn" onclick="delRecord(${rid})">✕</button></td>
   </tr>`;
@@ -280,7 +306,7 @@ function updInpBulkUI() {
   const stBtn = document.getElementById('inpBulkStatBtn');
   const stSel = document.getElementById('inpBulkStatSel');
   if (stSel) {
-    const availSt = curType === '징계' ? STATS.filter(s => s !== '모니터링') : STATS;
+    const availSt = (curType === '징계' || curType === '부실채권') ? STATS.filter(s => s !== '모니터링') : STATS;
     const cur = stSel.value || availSt[0];
     stSel.innerHTML = availSt.map(s => `<option value="${esc(s)}">${esc(statLbl(s, curType))}</option>`).join('');
     stSel.value = availSt.includes(cur) ? cur : availSt[0];

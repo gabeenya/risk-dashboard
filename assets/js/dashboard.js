@@ -258,10 +258,11 @@ function renderDash(k) {
   });
 
   // 누적(연 누적) — dY / 당월·처리·현재 — dm
-  // 징계는 모니터링 개념이 없어 위반율 집계에서 제외 (전체 필터 시 분자·분모 모두 제외)
-  const excJng = r => r.type !== '징계';
-  const dYb = k === '징계' ? dY : dY.filter(excJng);
-  const dmb  = k === '징계' ? dm : dm.filter(excJng);
+  // 징계·부실채권은 모니터링 개념이 없어 위반율 집계에서 제외 (전체 필터 시 분자·분모 모두 제외)
+  const NO_MON = ['징계', '부실채권'];
+  const excNoMon = r => !NO_MON.includes(r.type);
+  const dYb = NO_MON.includes(k) ? dY : dY.filter(excNoMon);
+  const dmb  = NO_MON.includes(k) ? dm : dm.filter(excNoMon);
   const tot  = dYb.reduce((s, r) => s + monCnt(r), 0);
   const vio  = dYb.filter(isVio).reduce((s, r) => s + r.count, 0);
   const mTot = dmb.reduce((s, r) => s + monCnt(r), 0);
@@ -273,25 +274,28 @@ function renderDash(k) {
   const vr  = tot  ? (vio  / tot  * 100).toFixed(1) : 0;
   const mvr = mTot ? (mVio / mTot * 100).toFixed(1) : 0;
 
-  // 영역별 KPI 라벨: 클레임(접수/처리중/처리완료), 징계(적발/조치완료)
+  // 영역별 KPI 라벨: 클레임(접수/처리중/처리완료), 징계(적발/조치완료), 부실채권(발생/해결)
   const isClm  = k === '클레임';
   const isJng  = k === '징계';
-  const lblMon = isClm ? '접수'  : isJng ? '전체'  : '모니터링';
-  const lblVio = isClm ? '처리'  : isJng ? '적발'  : '위반';
-  const lblIng = isClm ? '처리중': isJng ? '적발'  : '위반(처리중)';
-  const lblRate= isClm ? '처리율': isJng ? '조치완료율' : '위반율';
+  const isBc   = k === '부실채권';
+  const isNoMon = isJng || isBc;
+  const lblMon = isClm ? '접수'  : isNoMon ? '전체'    : '모니터링';
+  const lblVio = isClm ? '처리'  : isJng   ? '적발'    : isBc ? '발생'  : '위반';
+  const lblIng = isClm ? '처리중': isJng   ? '적발'    : isBc ? '발생'  : '위반(처리중)';
+  const lblRate= isClm ? '처리율': isJng   ? '조치완료율' : isBc ? '해결율' : '위반율';
 
   // KPI 카드 라벨/서브 동적 갱신
-  document.getElementById('kpi3Str').textContent = isClm ? '처리완료율' : isJng ? '조치완료율' : '완료율';
-  document.getElementById('kpi3').textContent    = dr + '%';
+  // kpi3Str/kpi3: 부실채권은 아래 isBc 블록에서 '회수금액'으로 덮어씀
+  document.getElementById('kpi3Str').textContent = isClm ? '처리완료율' : isJng ? '조치완료율' : isBc ? '회수금액' : '완료율';
+  document.getElementById('kpi3').textContent    = isBc ? '-' : dr + '%';
 
   const k3s    = document.getElementById('kpi3s');
-  const doneLbl = isClm ? '처리완료' : isJng ? '조치완료' : '완료';
+  const doneLbl = isClm ? '처리완료' : isJng ? '조치완료' : isBc ? '해결' : '완료';
   const k4Lbl  = document.getElementById('kpi4Lbl');
   const k4s    = document.getElementById('kpi4s');
 
   if (isJng) {
-    // 징계 뷰: 연 누적 건수 / 당월 건수 / 조치완료율 / 현재 적발 현황
+    // 징계 뷰
     document.getElementById('kpi1Str').textContent = '연 누적 징계 건수';
     document.getElementById('kpi1').textContent    = tot.toLocaleString();
     document.getElementById('kpi1r').textContent   = done ? `조치완료 ${done.toLocaleString()}건` : '-';
@@ -302,7 +306,7 @@ function renderDash(k) {
     document.getElementById('kpi2r').textContent   = act ? `적발 ${act.toLocaleString()}건` : '-';
     document.getElementById('kpi2s').textContent   = `${yr}년 ${mo}월 기준`;
 
-    k3s.textContent = `${doneLbl} ${done.toLocaleString()} / 적발 ${vio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
+    k3s.textContent = `조치완료 ${done.toLocaleString()} / 적발 ${vio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
 
     if (k4Lbl) k4Lbl.textContent = '현재';
     document.getElementById('kpi4Str').textContent = '현재 적발 현황';
@@ -311,6 +315,35 @@ function renderDash(k) {
       k4s.innerHTML = `적발 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()" onclick="toggleSlaPopup(this, event)">${SLA_DAYS}일 초과 ${slaOver.toLocaleString()}건</span>`;
     } else {
       k4s.textContent = '적발 상태 건수';
+    }
+  } else if (isBc) {
+    // 부실채권 뷰 — KPI3: 회수금액
+    const bcRecovery = dY.filter(r =>
+      r.type === '부실채권' && r.status === '완료' && BC_AMT_SUBS.includes(r.subtype) &&
+      r.note && r.note.startsWith('_amt:')
+    ).reduce((s, r) => s + (Number(r.note.slice(5)) || 0), 0);
+
+    document.getElementById('kpi1Str').textContent = '연 누적 부실채권 발생 건수';
+    document.getElementById('kpi1').textContent    = tot.toLocaleString();
+    document.getElementById('kpi1r').textContent   = done ? `해결 ${done.toLocaleString()}건` : '-';
+    document.getElementById('kpi1s').textContent   = `${yr}년 ${mo}월까지 누적`;
+
+    document.getElementById('kpi2Str').textContent = '당월 부실채권 발생 건수';
+    document.getElementById('kpi2').textContent    = mTot.toLocaleString();
+    document.getElementById('kpi2r').textContent   = act ? `발생 ${act.toLocaleString()}건` : '-';
+    document.getElementById('kpi2s').textContent   = `${yr}년 ${mo}월 기준`;
+
+    document.getElementById('kpi3Str').textContent = '회수금액';
+    document.getElementById('kpi3').textContent    = bcRecovery.toLocaleString() + '원';
+    k3s.textContent = `미입금·2개월초과 중 해결 건 금액 합산 · ${yr}년 ${mo}월까지 누적`;
+
+    if (k4Lbl) k4Lbl.textContent = '현재';
+    document.getElementById('kpi4Str').textContent = '현재 발생 현황';
+    document.getElementById('kpi4').textContent    = act.toLocaleString();
+    if (slaOver > 0) {
+      k4s.innerHTML = `발생 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()" onclick="toggleSlaPopup(this, event)">${SLA_DAYS}일 초과 ${slaOver.toLocaleString()}건</span>`;
+    } else {
+      k4s.textContent = '발생 상태 건수';
     }
   } else {
     // 일반 뷰
@@ -337,9 +370,9 @@ function renderDash(k) {
       const jngCur = dm.filter(r => r.type === '징계').reduce((s, r) => s + r.count, 0);
       const jngAcc = dY.filter(r => r.type === '징계').reduce((s, r) => s + r.count, 0);
       if (k4Lbl) k4Lbl.textContent = '징계';
-      document.getElementById('kpi4Str').textContent = '당월 징계 건수';
-      document.getElementById('kpi4').textContent    = jngCur.toLocaleString();
-      k4s.textContent = `연누적 ${jngAcc.toLocaleString()}건`;
+      document.getElementById('kpi4Str').textContent = '누적 징계 건수';
+      document.getElementById('kpi4').textContent    = jngAcc.toLocaleString();
+      k4s.textContent = `당월 ${jngCur.toLocaleString()}건`;
     } else {
       if (k4Lbl) k4Lbl.textContent = '현재';
       document.getElementById('kpi4Str').textContent = isClm ? '처리중 건수' : '조치중 건수';
@@ -366,11 +399,11 @@ function renderDash(k) {
 
   // 최근 모니터링 카드 제목/상태 버튼 라벨
   const recTit = document.getElementById('recentCardTit');
-  if (recTit) recTit.textContent = isClm ? '최근 접수 현황' : isJng ? '최근 징계 현황' : '최근 모니터링 현황';
+  if (recTit) recTit.textContent = isClm ? '최근 접수 현황' : isJng ? '최근 징계 현황' : isBc ? '최근 부실채권 현황' : '최근 모니터링 현황';
   const rb = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-  rb('rsBtnMon',  isClm ? '접수'    : isJng ? '전체'    : '모니터링');
-  rb('rsBtnIng',  isClm ? '처리중'  : isJng ? '적발'    : '위반(처리중)');
-  rb('rsBtnDone', isClm ? '처리완료': isJng ? '조치완료' : '완료');
+  rb('rsBtnMon',  isClm ? '접수'    : isJng ? '전체'    : isBc ? '전체'    : '모니터링');
+  rb('rsBtnIng',  isClm ? '처리중'  : isJng ? '적발'    : isBc ? '발생'    : '위반(처리중)');
+  rb('rsBtnDone', isClm ? '처리완료': isJng ? '조치완료' : isBc ? '해결'    : '완료');
 
   renderLine(d, ref);
   renderRight(dm, k, ref);
