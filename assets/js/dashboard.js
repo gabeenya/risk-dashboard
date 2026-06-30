@@ -558,15 +558,31 @@ function renderDash(k) {
 
   const board = document.getElementById('gradeBoard');
   if (board) {
-    const isMain = (k === 'all') && (curBrand === 'all');
-    board.style.display = isMain ? '' : 'none';
-    if (isMain) renderLeaderboard();
+    if (curBrand !== 'all') {
+      board.style.display = 'none';
+    } else {
+      let visibleAreas;
+      if (k !== 'all') {
+        visibleAreas = GRADE_AREAS.includes(k) ? [k] : [];
+      } else if (curDashCat && curDashCat !== 'all') {
+        visibleAreas = (CAT_TYPES[curDashCat] || []).filter(t => GRADE_AREAS.includes(t));
+      } else {
+        visibleAreas = GRADE_AREAS;
+      }
+      const showOverall = (k === 'all') && (!curDashCat || curDashCat === 'all');
+      if (!visibleAreas.length) {
+        board.style.display = 'none';
+      } else {
+        board.style.display = '';
+        renderLeaderboard(visibleAreas, showOverall);
+      }
+    }
   }
 }
 
 // ── 브랜드 리스크 등급 순위판 ──────────────────────
 const GRADE_AREAS   = ['불법파견','표시광고','가맹','IP','노무','영업비밀','부실채권'];
-const GRADE_SCORE   = { A:3, B:2, C:1, D:0 };
+const GRADE_SCORE   = { A:10, B:8, C:5, D:3, F:0 };
 const RANK_EXCLUDE  = new Set(['광주ck','기흥ck','주안ck','CX팀','상권','본부']);
 
 // 등급 + 위반 건수를 함께 반환
@@ -593,7 +609,9 @@ function calcGradeDetail(type, brand, ym) {
 // 하위 호환 (다른 곳에서 사용 가능)
 function calcGrade(type, brand, ym) { return calcGradeDetail(type, brand, ym).grade; }
 
-function renderLeaderboard() {
+function renderLeaderboard(visibleAreas, showOverall) {
+  visibleAreas = visibleAreas || GRADE_AREAS;
+  if (showOverall === undefined) showOverall = true;
   const board = document.getElementById('gradeBoard');
   if (!board) return;
 
@@ -606,6 +624,16 @@ function renderLeaderboard() {
   const ymEl = document.getElementById('gradeYm');
   if (ymEl) ymEl.textContent = lbl;
 
+  // 헤더 동적 갱신
+  const headTr = document.getElementById('gradeHead');
+  if (headTr) {
+    headTr.innerHTML =
+      `<th class="gt-rank">순위</th>` +
+      `<th class="gt-brand">브랜드</th>` +
+      (showOverall ? `<th class="gt-overall">종합등급</th><th class="gt-sep"></th>` : '') +
+      visibleAreas.map(t => `<th class="gt-area">${esc(t)}</th>`).join('');
+  }
+
   const brands = (isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b)))
     .filter(b => !RANK_EXCLUDE.has(b));
 
@@ -615,28 +643,31 @@ function renderLeaderboard() {
     GRADE_AREAS.forEach(type => {
       const d = calcGradeDetail(type, brand, ym);
       details[type] = d;
-      total += GRADE_SCORE[d.grade];
+      total += GRADE_SCORE[d.grade] ?? 0;
     });
-    return { brand, details, total };
+    const avg = total / GRADE_AREAS.length;
+    const overallGrade = avg >= 9 ? 'A' : avg >= 7 ? 'B' : avg >= 4 ? 'C' : avg >= 1 ? 'D' : 'F';
+    return { brand, details, total, overallGrade };
   }).sort((a, b) => b.total - a.total || a.brand.localeCompare(b.brand));
 
   const tbody = document.getElementById('gradeRows');
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  ranked.forEach(({ brand, details }, idx) => {
+  ranked.forEach(({ brand, details, overallGrade }, idx) => {
     const rank = idx + 1;
     const pc   = rank === 1 ? 'p1' : rank === 2 ? 'p2' : rank === 3 ? 'p3' : '';
     const tr   = document.createElement('tr');
     tr.innerHTML =
       `<td><span class="gp ${pc}">${rank}</span></td>` +
       `<td class="gt-brand">${esc(brand)}</td>` +
-      GRADE_AREAS.map(t =>
-        `<td><div class="gc-cell"><span class="gc ${details[t].grade}">${details[t].grade}</span>` +
-        `<span class="gc-cnt">${details[t].cnt}/<span class="gc-mon">${details[t].mon}</span></span></div></td>`
+      (showOverall ? `<td class="gt-overall"><span class="gc ${overallGrade}">${overallGrade}</span></td><td class="gt-sep"></td>` : '') +
+      visibleAreas.map(t =>
+        `<td class="gt-area"><div class="gc-cell"><span class="gc ${details[t].grade}">${details[t].grade}</span>` +
+        `<span class="gc-cnt">${details[t].cnt}/<span class="gc-mon">${details[t].cnt + details[t].mon}</span></span></div></td>`
       ).join('');
     tbody.appendChild(tr);
-    setTimeout(() => tr.classList.add('gb-in'), 40 + idx * 150);
+    setTimeout(() => tr.classList.add('gb-in'), 40 + idx * 500);
   });
 
   renderJngSection(ym, lbl);
@@ -688,9 +719,9 @@ function renderJngSection(ym, lbl) {
 
 // ── 리더보드 연속 부상 애니메이션 ───────────────────
 let _rankScanTimer = null;
-const _RISE_ROW_MS  = 150;   // 행 간 딜레이
-const _RISE_ANIM_MS = 1000;  // CSS animation 시간과 동기화
-const _RISE_PAUSE   = 700;   // 마지막 행 후 잠깐 대기
+const _RISE_ROW_MS  = 500;   // 행 간 딜레이
+const _RISE_ANIM_MS = 2200;  // CSS animation 시간과 동기화
+const _RISE_PAUSE   = 600;   // 마지막 행 후 잠깐 대기
 
 function scheduleRankAnim() {
   if (_rankScanTimer) clearTimeout(_rankScanTimer);

@@ -17,36 +17,36 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260630s';</script>
+<script>window.__ASSET_V = '20260701m';</script>
 
 <!-- 웹폰트: Pretendard (한글 UI 표준 폰트) -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260630s">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260630s">
-<link rel="stylesheet" href="assets/css/input.css?v=20260630s">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260630s">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260630s">
-<link rel="stylesheet" href="assets/css/help.css?v=20260630s">
+<link rel="stylesheet" href="assets/css/base.css?v=20260701m">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260701m">
+<link rel="stylesheet" href="assets/css/input.css?v=20260701m">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260701m">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260701m">
+<link rel="stylesheet" href="assets/css/help.css?v=20260701m">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260630s"     defer></script>
-<script src="assets/js/constants.js?v=20260630s"  defer></script>
-<script src="assets/js/state.js?v=20260630s"      defer></script>
-<script src="assets/js/utils.js?v=20260630s"      defer></script>
-<script src="assets/js/auth.js?v=20260630s"       defer></script>
-<script src="assets/js/nav.js?v=20260630s"        defer></script>
-<script src="assets/js/dashboard.js?v=20260630s"  defer></script>
-<script src="assets/js/input.js?v=20260630s"      defer></script>
-<script src="assets/js/admin.js?v=20260630s"      defer></script>
-<script src="assets/js/ai.js?v=20260630s"         defer></script>
-<script src="assets/js/ppt.js?v=20260630s"        defer></script>
-<script src="assets/js/main.js?v=20260630s"       defer></script>
+<script src="assets/js/config.js?v=20260701m"     defer></script>
+<script src="assets/js/constants.js?v=20260701m"  defer></script>
+<script src="assets/js/state.js?v=20260701m"      defer></script>
+<script src="assets/js/utils.js?v=20260701m"      defer></script>
+<script src="assets/js/auth.js?v=20260701m"       defer></script>
+<script src="assets/js/nav.js?v=20260701m"        defer></script>
+<script src="assets/js/dashboard.js?v=20260701m"  defer></script>
+<script src="assets/js/input.js?v=20260701m"      defer></script>
+<script src="assets/js/admin.js?v=20260701m"      defer></script>
+<script src="assets/js/ai.js?v=20260701m"         defer></script>
+<script src="assets/js/ppt.js?v=20260701m"        defer></script>
+<script src="assets/js/main.js?v=20260701m"       defer></script>
 </head>
 <body>
 
@@ -55,7 +55,7 @@
   <!-- ── 좌측 사이드바 ──────────────────────────────── -->
   <aside class="sidebar" id="sidebar">
     <a class="side-logo" onclick="goHome()">
-      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260630s" alt="Elandeats" />
+      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260701m" alt="Elandeats" />
     </a>
     <div class="side-scroll">
       <p class="side-sec">메뉴</p>
@@ -105,7 +105,7 @@
         <h1 class="topbar-title">외식BG 리스크 관리 시스템</h1>
         <span class="topbar-sub">Risk Monitoring &amp; Analytics Platform</span>
       </div>
-      <span class="topbar-badge" id="topbarBadge">대시보드</span>
+      <span class="topbar-badge" id="topbarBadge" style="display:none">대시보드</span>
       <div class="topbar-right">
         <span class="sy-badge" id="syncBadge">불러오는 중...</span>
         <span class="yr-badge">2026년 기준</span>
@@ -231,23 +231,12 @@
         <span class="gc B" style="animation:none">B</span><span>양호</span>
         <span class="gc C" style="animation:none">C</span><span>주의</span>
         <span class="gc D" style="animation:none">D</span><span>위험</span>
-        <span class="grade-note">매월 기준 · 평가 7개 영역 (등급 + 위반 건수)</span>
+        <span class="gc F" style="animation:none">F</span><span>불량</span>
+        <span class="grade-note">매월 기준 · 평가 7개 영역 (등급 + 위반/전체 건수)</span>
       </div>
       <div class="grade-tbl-wrap">
         <table class="grade-tbl">
-          <thead>
-            <tr>
-              <th class="gt-rank">순위</th>
-              <th class="gt-brand">브랜드</th>
-              <th>불법파견</th>
-              <th>표시광고</th>
-              <th>가맹</th>
-              <th>IP</th>
-              <th>노무</th>
-              <th>영업비밀</th>
-              <th>부실채권</th>
-            </tr>
-          </thead>
+          <thead><tr id="gradeHead"></tr></thead>
           <tbody id="gradeRows"></tbody>
         </table>
       </div>
