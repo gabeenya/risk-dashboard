@@ -15,3 +15,5 @@ let inpSub      = 'all';    // 데이터 입력 목록 — 상세유형 필터: 
 let inpBrand    = 'all';    // 데이터 입력 목록 — 브랜드 필터: 'all' | <brand>
 let inpStat     = 'all';    // 데이터 입력 목록 — 상태 필터: 'all' | <status>
 let inpSelected = new Set(); // 데이터 입력 목록 — 다중 선택된 레코드 id 집합 (다중/전체 삭제용)
+let curDashCat  = 'all';    // 대시보드 분류 필터: 'all' | 카테고리명
+let curInputCat = 'all';    // 데이터 입력 분류 필터: 'all' | 카테고리명

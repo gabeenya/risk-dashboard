@@ -17,36 +17,36 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260624k';</script>
+<script>window.__ASSET_V = '20260630h';</script>
 
 <!-- 웹폰트: Pretendard (한글 UI 표준 폰트) -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 
 <!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260624k">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260624k">
-<link rel="stylesheet" href="assets/css/input.css?v=20260624k">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260624k">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260624k">
-<link rel="stylesheet" href="assets/css/help.css?v=20260624k">
+<link rel="stylesheet" href="assets/css/base.css?v=20260630h">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260630h">
+<link rel="stylesheet" href="assets/css/input.css?v=20260630h">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260630h">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260630h">
+<link rel="stylesheet" href="assets/css/help.css?v=20260630h">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
            → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260624k"     defer></script>
-<script src="assets/js/constants.js?v=20260624k"  defer></script>
-<script src="assets/js/state.js?v=20260624k"      defer></script>
-<script src="assets/js/utils.js?v=20260624k"      defer></script>
-<script src="assets/js/auth.js?v=20260624k"       defer></script>
-<script src="assets/js/nav.js?v=20260624k"        defer></script>
-<script src="assets/js/dashboard.js?v=20260624k"  defer></script>
-<script src="assets/js/input.js?v=20260624k"      defer></script>
-<script src="assets/js/admin.js?v=20260624k"      defer></script>
-<script src="assets/js/ai.js?v=20260624k"         defer></script>
-<script src="assets/js/ppt.js?v=20260624k"        defer></script>
-<script src="assets/js/main.js?v=20260624k"       defer></script>
+<script src="assets/js/config.js?v=20260630h"     defer></script>
+<script src="assets/js/constants.js?v=20260630h"  defer></script>
+<script src="assets/js/state.js?v=20260630h"      defer></script>
+<script src="assets/js/utils.js?v=20260630h"      defer></script>
+<script src="assets/js/auth.js?v=20260630h"       defer></script>
+<script src="assets/js/nav.js?v=20260630h"        defer></script>
+<script src="assets/js/dashboard.js?v=20260630h"  defer></script>
+<script src="assets/js/input.js?v=20260630h"      defer></script>
+<script src="assets/js/admin.js?v=20260630h"      defer></script>
+<script src="assets/js/ai.js?v=20260630h"         defer></script>
+<script src="assets/js/ppt.js?v=20260630h"        defer></script>
+<script src="assets/js/main.js?v=20260630h"       defer></script>
 </head>
 <body>
 
@@ -55,7 +55,7 @@
   <!-- ── 좌측 사이드바 ──────────────────────────────── -->
   <aside class="sidebar" id="sidebar">
     <a class="side-logo" onclick="goHome()">
-      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260624k" alt="Elandeats" />
+      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260630h" alt="Elandeats" />
     </a>
     <div class="side-scroll">
       <p class="side-sec">메뉴</p>
@@ -101,7 +101,7 @@
     <!-- 상단바 -->
     <header class="topbar" id="topbar">
       <button class="side-toggle" id="sideToggle" onclick="toggleSidebar()" aria-label="메뉴">☰</button>
-      <div class="topbar-brand">
+      <div class="topbar-brand" onclick="goHome()" style="cursor:pointer">
         <h1 class="topbar-title">외식BG 리스크 관리 시스템</h1>
         <span class="topbar-sub">Risk Monitoring &amp; Analytics Platform</span>
       </div>
@@ -189,7 +189,15 @@
       </div>
     </div>
     <div class="dash-filters">
-      <label class="dash-fl"><span class="dash-fl-lbl">영역</span>
+      <label class="dash-fl"><span class="dash-fl-lbl">분류</span>
+        <select id="dashCatSel" class="dash-sel" onchange="setDashCat(this.value)">
+          <option value="all">전체 분류</option>
+          <option value="컴플라이언스">컴플라이언스</option>
+          <option value="부정/부실 제거">부정/부실 제거</option>
+          <option value="매장 운영 관리">매장 운영 관리</option>
+        </select>
+      </label>
+      <label class="dash-fl"><span class="dash-fl-lbl">리스크 영역</span>
         <select id="dashAreaSel" class="dash-sel" onchange="setFilter(null, this.value)">
           <option value="all">전체 영역</option>
           <option value="불법파견">불법파견</option>
@@ -304,6 +312,13 @@
       <p class="pg-title">데이터 입력</p>
       <p class="pg-sub">리스크 영역을 선택한 뒤 데이터를 입력하세요.</p>
       <div class="input-type-bar">
+        <label class="input-type-lbl" for="inputCatSel">분류</label>
+        <select class="input-type-sel" id="inputCatSel" onchange="setInputCat(this.value)">
+          <option value="all">전체</option>
+          <option value="컴플라이언스">컴플라이언스</option>
+          <option value="부정/부실 제거">부정/부실 제거</option>
+          <option value="매장 운영 관리">매장 운영 관리</option>
+        </select>
         <label class="input-type-lbl" for="inputTypeSel">리스크 영역</label>
         <select class="input-type-sel" id="inputTypeSel" onchange="setInputType(null, this.value)">
           <option value="불법파견">불법파견</option>

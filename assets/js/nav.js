@@ -42,6 +42,15 @@ function switchTab(pg, btn) {
   }
 }
 
+// 대시보드 분류 필터 — 분류 드롭다운 변경 시 호출
+function setDashCat(val) {
+  curDashCat = val || 'all';
+  const allowed = curDashCat === 'all' ? TYPES : (CAT_TYPES[curDashCat] || TYPES);
+  if (curFilter !== 'all' && !allowed.includes(curFilter)) curFilter = 'all';
+  recentPage = 0;
+  renderDash(curFilter);
+}
+
 // 대시보드 영역 필터 — 사이드바 '리스크 영역 현황' 항목 / 대시보드 영역 드롭다운 공용
 // (btn 인자는 레거시 호환용으로 무시하고, key 기준으로 동기화한다)
 function setFilter(btn, key) {
@@ -49,6 +58,12 @@ function setFilter(btn, key) {
     toast('권한이 없습니다.');
     if (typeof syncAreaControls === 'function') syncAreaControls();  // 드롭다운 선택값 원복
     return;
+  }
+  // 사이드바 등으로 현재 분류 밖의 영역이 선택되면 분류 필터 초기화
+  if (key !== 'all' && curDashCat !== 'all' && !(CAT_TYPES[curDashCat]||[]).includes(key)) {
+    curDashCat = 'all';
+    const catSel = document.getElementById('dashCatSel');
+    if (catSel) catSel.value = 'all';
   }
   // 다른 페이지에서 영역을 고르면 대시보드로 전환
   const dashEl = document.getElementById('page-dashboard');
@@ -63,6 +78,20 @@ function setFilter(btn, key) {
   recentPage = 0;
   closeSidebar();
   renderDash(key);   // renderDash 내부에서 syncAreaControls()로 사이드바·드롭다운 활성화 동기화
+}
+
+// 데이터 입력 분류 필터 — 분류 드롭다운 변경 시 호출
+function setInputCat(val) {
+  curInputCat = val || 'all';
+  const allowed = curInputCat === 'all' ? TYPES : (CAT_TYPES[curInputCat] || TYPES);
+  const sel = document.getElementById('inputTypeSel');
+  if (!sel) return;
+  sel.innerHTML = allowed.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  if (!allowed.includes(curType)) {
+    setInputType(null, allowed[0]);
+  } else {
+    sel.value = curType;
+  }
 }
 
 // 데이터 입력 페이지 영역 탭

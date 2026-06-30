@@ -1,3 +1,64 @@
+// ── KPI 숫자 카운트업 애니메이션 ────────────────────
+let _kpiRepeat = null;
+
+function _kpiAnim(el, target, suffix, isFloat) {
+  const dur = 900;
+  const t0  = performance.now();
+  const fmt = v => isFloat ? v.toFixed(1) : Math.round(v).toLocaleString();
+  function tick(now) {
+    const p    = Math.min((now - t0) / dur, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(target * ease) + suffix;
+    if (p < 1) requestAnimationFrame(tick);
+    else el.textContent = fmt(target) + suffix;
+  }
+  requestAnimationFrame(tick);
+}
+
+function runKpiCountUp() {
+  ['kpi1','kpi2','kpi3','kpi4'].forEach((id, i) => {
+    const el  = document.getElementById(id);
+    if (!el) return;
+    const raw = el.textContent.trim();
+    if (!raw || raw === '-') return;
+
+    setTimeout(() => {
+      // "X / Y" 형식 (위반 / 모니터링) — 양쪽 모두 카운트업
+      const si = raw.indexOf(' / ');
+      if (si !== -1) {
+        const lStr = raw.slice(0, si);
+        const rStr = raw.slice(si + 3);
+        const tL = parseFloat(lStr.replace(/,/g, ''));
+        const tR = parseFloat(rStr.replace(/,/g, ''));
+        if (!isNaN(tL) && !isNaN(tR)) {
+          const fmtL = v => Math.round(v).toLocaleString();
+          const hasDecR = rStr.includes('.');
+          const fmtR = v => hasDecR
+            ? (Math.round(v * 10) / 10).toLocaleString(undefined, {minimumFractionDigits:1, maximumFractionDigits:1})
+            : Math.round(v).toLocaleString();
+          const dur = 900, t0 = performance.now();
+          const tick = now => {
+            const p = Math.min((now - t0) / dur, 1);
+            const e = 1 - Math.pow(1 - p, 3);
+            el.textContent = fmtL(tL * e) + ' / ' + fmtR(tR * e);
+            if (p < 1) requestAnimationFrame(tick);
+            else el.textContent = fmtL(tL) + ' / ' + fmtR(tR);
+          };
+          requestAnimationFrame(tick);
+          return;
+        }
+      }
+      // 단일 숫자 (정수·소수·%·원 등)
+      const m = raw.match(/^([\d,]+(?:\.\d+)?)/);
+      if (!m) return;
+      const target  = parseFloat(m[1].replace(/,/g, ''));
+      const suffix  = raw.slice(m[0].length);
+      const isFloat = m[1].includes('.') || suffix.startsWith('%');
+      _kpiAnim(el, target, suffix, isFloat);
+    }, i * 100);
+  });
+}
+
 // ── 대시보드 ─────────────────────────────────────────
 async function loadData() {
   if (!user) { records = []; return; }   // 비로그인 시 데이터 자체를 비움
@@ -21,9 +82,13 @@ async function loadData() {
   if (isAdmin()) renderInputTable();
 }
 
-// 필터 적용된 records — 영역(k) + 브랜드(curBrand) 동시 적용
+// 필터 적용된 records — 영역(k) + 분류(curDashCat) + 브랜드(curBrand) 동시 적용
 function getFR(k) {
   let d = (k === 'all') ? records : records.filter(r => r.type === k);
+  if (k === 'all' && curDashCat && curDashCat !== 'all') {
+    const catT = CAT_TYPES[curDashCat] || [];
+    d = d.filter(r => catT.includes(r.type));
+  }
   if (curBrand && curBrand !== 'all') d = d.filter(r => r.brand === curBrand);
   return d;
 }
@@ -46,14 +111,20 @@ function populateDashBrandSel() {
   sel.value = curBrand;
 }
 
-// 영역 셀렉트 / 사이드바 영역 항목을 현재 curFilter에 맞춰 동기화
+// 영역 셀렉트 / 사이드바 영역 항목을 현재 curFilter·curDashCat에 맞춰 동기화
 function syncAreaControls() {
   document.querySelectorAll('.side-areas .fb').forEach(b => {
     const m = b.getAttribute('onclick') || '';
     b.classList.toggle('on', m.includes(`'${curFilter}'`));
   });
   const sel = document.getElementById('dashAreaSel');
-  if (sel) sel.value = curFilter;
+  if (!sel) return;
+  const allowed = (curDashCat && curDashCat !== 'all') ? (CAT_TYPES[curDashCat] || TYPES) : TYPES;
+  sel.innerHTML = '<option value="all">전체 영역</option>' +
+    allowed.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  sel.value = curFilter;
+  const catSel = document.getElementById('dashCatSel');
+  if (catSel && catSel.value !== curDashCat) catSel.value = curDashCat;
 }
 
 // ── 기준 월 ──────────────────────────────────────────
@@ -261,8 +332,11 @@ function renderDash(k) {
   // 징계·부실채권은 모니터링 개념이 없어 위반율 집계에서 제외 (전체 필터 시 분자·분모 모두 제외)
   const NO_MON = ['징계', '부실채권'];
   const excNoMon = r => !NO_MON.includes(r.type);
-  const dYb = NO_MON.includes(k) ? dY : dY.filter(excNoMon);
-  const dmb  = NO_MON.includes(k) ? dm : dm.filter(excNoMon);
+  // 분류 전체 뷰에서 해당 분류의 모든 영역이 NO_MON이면 excNoMon 필터를 건너뜀 (부정/부실 제거 분류)
+  const catAllNoMon = k === 'all' && curDashCat !== 'all' &&
+    (CAT_TYPES[curDashCat] || []).every(t => NO_MON.includes(t));
+  const dYb = (NO_MON.includes(k) || catAllNoMon) ? dY : dY.filter(excNoMon);
+  const dmb  = (NO_MON.includes(k) || catAllNoMon) ? dm : dm.filter(excNoMon);
   const tot  = dYb.reduce((s, r) => s + monCnt(r), 0);
   const vio  = dYb.filter(isVio).reduce((s, r) => s + r.count, 0);
   const mTot = dmb.reduce((s, r) => s + monCnt(r), 0);
@@ -275,14 +349,16 @@ function renderDash(k) {
   const mvr = mTot ? (mVio / mTot * 100).toFixed(1) : 0;
 
   // 영역별 KPI 라벨: 클레임(접수/처리중/처리완료), 징계(적발/조치완료), 부실채권(발생/해결)
-  const isClm  = k === '클레임';
-  const isJng  = k === '징계';
-  const isBc   = k === '부실채권';
-  const isNoMon = isJng || isBc;
-  const lblMon = isClm ? '접수'  : isNoMon ? '전체'    : '모니터링';
-  const lblVio = isClm ? '처리'  : isJng   ? '적발'    : isBc ? '발생'  : '위반';
-  const lblIng = isClm ? '처리중': isJng   ? '적발'    : isBc ? '발생'  : '위반(처리중)';
-  const lblRate= isClm ? '처리율': isJng   ? '조치완료율' : isBc ? '해결율' : '위반율';
+  // catAllNoMon: 부정/부실 제거 분류 전체 뷰 (징계+부실채권 합산)
+  const isClm      = k === '클레임';
+  const isJng      = k === '징계';
+  const isBc       = k === '부실채권';
+  const isCatNoMon = catAllNoMon;
+  const isNoMon    = isJng || isBc || isCatNoMon;
+  const lblMon  = isClm ? '접수'   : isNoMon ? '전체'       : '모니터링';
+  const lblVio  = isClm ? '처리'   : isJng   ? '적발'       : isBc ? '발생' : isCatNoMon ? '처리(완료)' : '위반';
+  const lblIng  = isClm ? '처리중' : isJng   ? '적발'       : isBc ? '발생' : isCatNoMon ? '조치중'     : '위반(처리중)';
+  const lblRate = isClm ? '처리율' : isJng   ? '조치완료율' : isBc ? '해결율' : isCatNoMon ? '완료율'   : '위반율';
 
   // KPI 카드 라벨/서브 동적 갱신
   // kpi3Str/kpi3: 부실채권은 아래 isBc 블록에서 '회수금액'으로 덮어씀
@@ -347,6 +423,39 @@ function renderDash(k) {
     } else {
       k4s.textContent = '발생 상태 건수';
     }
+  } else if (isCatNoMon) {
+    // 부정/부실 제거 분류 전체 뷰 — 징계+부실채권 합산
+    // KPI1: 연 누적 건수 (합산)
+    document.getElementById('kpi1Str').textContent = '연 누적 건수';
+    document.getElementById('kpi1').textContent    = tot.toLocaleString();
+    document.getElementById('kpi1r').textContent   = done ? `완료 ${done.toLocaleString()}건` : '-';
+    document.getElementById('kpi1s').textContent   = `${yr}년 ${mo}월까지 누적`;
+
+    // KPI2: 당월 발생 건수 (합산)
+    document.getElementById('kpi2Str').textContent = '당월 발생 건수';
+    document.getElementById('kpi2').textContent    = mTot.toLocaleString();
+    document.getElementById('kpi2r').textContent   = act ? `조치중 ${act.toLocaleString()}건` : '-';
+    document.getElementById('kpi2s').textContent   = `${yr}년 ${mo}월 기준`;
+
+    // KPI3: 부실채권 누적 회수 금액
+    const bcRecovery = dY.filter(r =>
+      r.type === '부실채권' && r.status === '완료' && BC_AMT_SUBS.includes(r.subtype)
+    ).reduce((s, r) => {
+      if (r.bc_amount != null) return s + (Number(r.bc_amount) || 0);
+      const old = parseBcAmt(r); return s + (old || 0);
+    }, 0);
+    document.getElementById('kpi3Str').textContent = '누적 회수 금액';
+    document.getElementById('kpi3').textContent    = bcRecovery.toLocaleString() + '원';
+    k3s.textContent = `미입금·2개월초과 해결 건 합산 · ${yr}년 ${mo}월까지 누적`;
+
+    // KPI4: 징계 조치완료율
+    const jngVio  = dY.filter(r => r.type === '징계' && isVio(r)).reduce((s,r) => s+r.count, 0);
+    const jngDone = dY.filter(r => r.type === '징계' && r.status === '완료').reduce((s,r) => s+r.count, 0);
+    const jngRate = jngVio ? (jngDone / jngVio * 100).toFixed(1) : 0;
+    if (k4Lbl) k4Lbl.textContent = '징계';
+    document.getElementById('kpi4Str').textContent = '징계 조치완료율';
+    document.getElementById('kpi4').textContent    = jngRate + '%';
+    k4s.textContent = `조치완료 ${jngDone.toLocaleString()} / 적발 ${jngVio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
   } else {
     // 일반 뷰
     document.getElementById('kpi1Str').textContent = `${lblVio} / ${lblMon}`;
@@ -367,8 +476,8 @@ function renderDash(k) {
       k3s.textContent = `${doneLbl} ${done.toLocaleString()} / ${lblVio} ${vio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
     }
 
-    // KPI4: 전체 뷰 → 징계 건수 카드 / 그 외 → 조치중 건수 카드
-    if (k === 'all') {
+    // KPI4: 분류 없이 전체 영역 뷰일 때만 징계 건수 카드 / 그 외(분류 선택 포함)는 조치중 카드
+    if (k === 'all' && curDashCat === 'all') {
       const jngCur = dm.filter(r => r.type === '징계').reduce((s, r) => s + r.count, 0);
       const jngAcc = dY.filter(r => r.type === '징계').reduce((s, r) => s + r.count, 0);
       if (k4Lbl) k4Lbl.textContent = '징계';
@@ -401,11 +510,11 @@ function renderDash(k) {
 
   // 최근 모니터링 카드 제목/상태 버튼 라벨
   const recTit = document.getElementById('recentCardTit');
-  if (recTit) recTit.textContent = isClm ? '최근 접수 현황' : isJng ? '최근 징계 현황' : isBc ? '최근 부실채권 현황' : '최근 모니터링 현황';
+  if (recTit) recTit.textContent = isClm ? '최근 접수 현황' : isJng ? '최근 징계 현황' : isBc ? '최근 부실채권 현황' : isCatNoMon ? '최근 현황' : '최근 모니터링 현황';
   const rb = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-  rb('rsBtnMon',  isClm ? '접수'    : isJng ? '전체'    : isBc ? '전체'    : '모니터링');
-  rb('rsBtnIng',  isClm ? '처리중'  : isJng ? '적발'    : isBc ? '발생'    : '위반(처리중)');
-  rb('rsBtnDone', isClm ? '처리완료': isJng ? '조치완료' : isBc ? '해결'    : '완료');
+  rb('rsBtnMon',  isClm ? '접수'    : isNoMon ? '전체'    : '모니터링');
+  rb('rsBtnIng',  isClm ? '처리중'  : isJng   ? '적발'    : isBc ? '발생' : isCatNoMon ? '조치중' : '위반(처리중)');
+  rb('rsBtnDone', isClm ? '처리완료': isJng   ? '조치완료' : isBc ? '해결' : isCatNoMon ? '완료'  : '완료');
 
   renderLine(d, ref);
   renderRight(dm, k, ref);
@@ -430,6 +539,11 @@ function renderDash(k) {
   if (rNote) rNote.style.display = showNote;
   if (bNote) bNote.style.display = showNote;
   if (lNote) lNote.style.display = (k === '영업비밀') ? '' : 'none';
+
+  // KPI 카운트업: 렌더 직후 + 8초 주기 반복
+  clearInterval(_kpiRepeat);
+  runKpiCountUp();
+  _kpiRepeat = setInterval(runKpiCountUp, 8000);
 }
 
 // ── 브랜드/영역별 위험도 리더보드 ──────────────────
