@@ -1,17 +1,21 @@
 // ── KPI 숫자 카운트업 애니메이션 ────────────────────
 let _kpiRepeat = null;
+const _kpiTok  = {};   // 카드별 취소 토큰 — 새 애니메이션 시작 시 구 rAF 루프 종료
 
-function _kpiAnim(el, target, suffix, isFloat) {
-  const dur = 900;
-  const t0  = performance.now();
-  const fmt = v => isFloat ? v.toFixed(1) : Math.round(v).toLocaleString();
-  function tick(now) {
-    const p    = Math.min((now - t0) / dur, 1);
-    const ease = 1 - Math.pow(1 - p, 3);
-    el.textContent = fmt(target * ease) + suffix;
+function _kpiAnim(id, el, target, suffix, isFloat) {
+  const tok = Symbol();
+  _kpiTok[id] = tok;
+  const dur = 900, t0 = performance.now();
+  const safe = v => Math.max(0, v);   // 음수 방어
+  const fmt  = v => isFloat ? safe(v).toFixed(1) : Math.round(safe(v)).toLocaleString();
+  const tick = now => {
+    if (_kpiTok[id] !== tok) return;  // 더 새로운 애니메이션이 시작됐으면 중단
+    const p = Math.min((now - t0) / dur, 1);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(target * e) + suffix;
     if (p < 1) requestAnimationFrame(tick);
     else el.textContent = fmt(target) + suffix;
-  }
+  };
   requestAnimationFrame(tick);
 }
 
@@ -30,31 +34,38 @@ function runKpiCountUp() {
         const rStr = raw.slice(si + 3);
         const tL = parseFloat(lStr.replace(/,/g, ''));
         const tR = parseFloat(rStr.replace(/,/g, ''));
-        if (!isNaN(tL) && !isNaN(tR)) {
-          const fmtL = v => Math.round(v).toLocaleString();
-          const hasDecR = rStr.includes('.');
-          const fmtR = v => hasDecR
-            ? (Math.round(v * 10) / 10).toLocaleString(undefined, {minimumFractionDigits:1, maximumFractionDigits:1})
-            : Math.round(v).toLocaleString();
-          const dur = 900, t0 = performance.now();
-          const tick = now => {
-            const p = Math.min((now - t0) / dur, 1);
-            const e = 1 - Math.pow(1 - p, 3);
-            el.textContent = fmtL(tL * e) + ' / ' + fmtR(tR * e);
-            if (p < 1) requestAnimationFrame(tick);
-            else el.textContent = fmtL(tL) + ' / ' + fmtR(tR);
-          };
-          requestAnimationFrame(tick);
-          return;
-        }
+        // 음수 데이터거나 파싱 실패 → 애니메이션 없이 원본 표시
+        if (isNaN(tL) || isNaN(tR) || tL < 0 || tR < 0) return;
+        const tok = Symbol();
+        _kpiTok[id] = tok;
+        const fmtL = v => Math.round(Math.max(0, v)).toLocaleString();
+        const hasDecR = rStr.includes('.');
+        const fmtR = v => {
+          const n = Math.max(0, v);
+          return hasDecR
+            ? (Math.round(n * 10) / 10).toLocaleString(undefined, {minimumFractionDigits:1, maximumFractionDigits:1})
+            : Math.round(n).toLocaleString();
+        };
+        const dur = 900, t0 = performance.now();
+        const tick = now => {
+          if (_kpiTok[id] !== tok) return;
+          const p = Math.min((now - t0) / dur, 1);
+          const e = 1 - Math.pow(1 - p, 3);
+          el.textContent = fmtL(tL * e) + ' / ' + fmtR(tR * e);
+          if (p < 1) requestAnimationFrame(tick);
+          else el.textContent = fmtL(tL) + ' / ' + fmtR(tR);
+        };
+        requestAnimationFrame(tick);
+        return;
       }
       // 단일 숫자 (정수·소수·%·원 등)
       const m = raw.match(/^([\d,]+(?:\.\d+)?)/);
       if (!m) return;
       const target  = parseFloat(m[1].replace(/,/g, ''));
+      if (target < 0) return;  // 음수 데이터 → 원본 유지
       const suffix  = raw.slice(m[0].length);
       const isFloat = m[1].includes('.') || suffix.startsWith('%');
-      _kpiAnim(el, target, suffix, isFloat);
+      _kpiAnim(id, el, target, suffix, isFloat);
     }, i * 100);
   });
 }
