@@ -140,6 +140,73 @@
 .fb { position: relative; }
 .fb.has-alert::after { content: ''; position: absolute; top: 3px; right: 5px; width: 6px; height: 6px; background: #e8845a; border-radius: 50%; box-shadow: 0 0 0 2px #fff; }
 
+/* ── 브랜드 리스크 등급 순위판 ─────────────────────── */
+.grade-board { margin-bottom:1.2rem; }
+.grade-legend { display:flex; align-items:center; gap:6px; margin-bottom:0.9rem; font-size:11px; color:#64748b; flex-wrap:wrap; }
+.grade-note { margin-left:auto; font-size:10px; color:#94a3b8; }
+
+/* 등급 칩 */
+.gc { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:5px; font-size:12px; font-weight:800; flex-shrink:0; }
+.gc.A { background:#bbf7d0; color:#15803d; border:1.5px solid #86efac; }
+.gc.B { background:#bfdbfe; color:#1d4ed8; border:1.5px solid #93c5fd; }
+.gc.C { background:#fef08a; color:#92400e; border:1.5px solid #fde047; }
+.gc.D { background:#fca5a5; color:#991b1b; border:1.5px solid #f87171; }
+@keyframes gc-d-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0)} 55%{box-shadow:0 0 0 3px rgba(239,68,68,0.3)} }
+.gc.D { animation:gc-d-pulse 1.6s ease-in-out infinite; }
+.gc-cell { display:flex; align-items:center; gap:4px; }
+.gc { flex-shrink:0; }
+.gc-cnt { font-size:11px; color:#64748b; font-weight:600; white-space:nowrap; }
+.gc-mon { color:#94a3b8; font-weight:500; }
+
+/* LIVE 배지 */
+.live-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#dc2626; background:#fee2e2; border:1px solid #fca5a5; border-radius:4px; padding:2px 7px; letter-spacing:0.4px; margin-left:6px; vertical-align:middle; }
+@keyframes live-dot-blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.live-dot { width:6px; height:6px; border-radius:50%; background:#dc2626; display:inline-block; animation:live-dot-blink 1.1s ease-in-out infinite; }
+
+/* 순위 테이블 */
+.grade-tbl-wrap { overflow-x:auto; margin-bottom:0.8rem; scrollbar-width:none; }
+.grade-tbl-wrap::-webkit-scrollbar { display:none; }
+.grade-tbl { width:100%; border-collapse:collapse; font-size:12px; table-layout:fixed; }
+.grade-tbl thead th { padding:5px 8px; font-size:10px; font-weight:700; color:#94a3b8; letter-spacing:0.5px; text-transform:uppercase; border-bottom:2px solid #f1f5f9; text-align:left; white-space:nowrap; }
+.grade-tbl th.gt-rank  { width:34px; text-align:center; }
+.grade-tbl th.gt-brand { width:100px; text-align:left; }
+.grade-tbl .gt-brand { text-align:left; font-weight:600; color:#0f172a; font-size:12px; white-space:nowrap; }
+@keyframes gb-rise {
+  from { opacity:0; transform:translateY(26px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.grade-tbl tbody tr { border-bottom:1px solid #f8fafc; opacity:0; }
+.grade-tbl tbody tr.gb-in { animation:gb-rise 1.0s cubic-bezier(0.22,1,0.36,1) forwards; }
+.grade-tbl tbody tr:last-child { border-bottom:none; }
+.grade-tbl tbody tr:hover { background:#f8fafc; }
+.grade-tbl td { padding:5px 8px; text-align:left; vertical-align:middle; }
+.grade-tbl td:first-child { text-align:center; }
+
+/* 순위 배지 */
+.gp { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; font-size:11px; font-weight:700; background:#f1f5f9; color:#64748b; }
+@keyframes gold-glow { 0%,100%{box-shadow:0 2px 6px rgba(245,158,11,0.4)} 50%{box-shadow:0 0 0 4px rgba(245,158,11,0.2),0 2px 8px rgba(245,158,11,0.6)} }
+.gp.p1 { background:#f59e0b; color:#fff; animation:gold-glow 2.2s ease-in-out infinite; }
+.gp.p2 { background:#94a3b8; color:#fff; }
+.gp.p3 { background:#b87333; color:#fff; }
+
+/* 점수 바 */
+.score-wrap { display:flex; align-items:center; gap:5px; }
+.score-num { font-size:13px; font-weight:700; color:#1e3a8a; min-width:16px; }
+.score-max { font-size:10px; color:#94a3b8; }
+.score-bar { flex:1; height:5px; background:#f1f5f9; border-radius:3px; min-width:50px; }
+.score-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,#1e3a8a,#60a5fa); transition:width 0.9s cubic-bezier(0.22,1,0.36,1); width:0; }
+
+/* 징계 패널 */
+.jng-panel { padding-top:0.9rem; border-top:1px solid #f1f5f9; }
+.jng-panel-hd { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#0f172a; margin-bottom:0.6rem; }
+.jng-cards { display:flex; flex-wrap:wrap; gap:8px; }
+.jng-card { background:#fef2f2; border:1px solid #fecaca; border-left:3px solid #dc2626; border-radius:8px; padding:8px 12px; font-size:12px; min-width:140px; opacity:0; transform:translateY(6px); transition:opacity 0.3s ease, transform 0.3s ease; }
+.jng-card.jc-in { opacity:1; transform:translateY(0); }
+.jng-card-brand { font-size:10px; color:#94a3b8; font-weight:600; letter-spacing:0.5px; margin-bottom:3px; }
+.jng-card-name { font-weight:700; color:#0f172a; }
+.jng-card-sent { color:#dc2626; font-size:11px; margin-top:2px; }
+.jng-empty { font-size:12px; color:#94a3b8; }
+
 /* ── SLA 14일 초과 강조 ───────────────────────────── */
 .sla-alert { color: #dc2626; font-weight: 600; }
 .sla-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; font-size: 10px; font-weight: 600; color: #fff; background: #dc2626; border-radius: 4px; vertical-align: middle; }

@@ -555,6 +555,176 @@ function renderDash(k) {
   clearInterval(_kpiRepeat);
   runKpiCountUp();
   _kpiRepeat = setInterval(runKpiCountUp, 8000);
+
+  const board = document.getElementById('gradeBoard');
+  if (board) {
+    const isMain = (k === 'all') && (curBrand === 'all');
+    board.style.display = isMain ? '' : 'none';
+    if (isMain) renderLeaderboard();
+  }
+}
+
+// ── 브랜드 리스크 등급 순위판 ──────────────────────
+const GRADE_AREAS   = ['불법파견','표시광고','가맹','IP','노무','영업비밀','부실채권'];
+const GRADE_SCORE   = { A:3, B:2, C:1, D:0 };
+const RANK_EXCLUDE  = new Set(['광주ck','기흥ck','주안ck','CX팀','상권','본부']);
+
+// 등급 + 위반 건수를 함께 반환
+function calcGradeDetail(type, brand, ym) {
+  const recs = records.filter(r => r.brand === brand && r.type === type && r.date.startsWith(ym));
+  if (type === '부실채권') {
+    const over2 = recs.filter(r => {
+      if (r.subtype !== '2개월 초과 미입금') return false;
+      const amt = r.bc_amount != null ? Number(r.bc_amount) : (parseBcAmt(r) ?? Infinity);
+      return amt <= 100000000;
+    });
+    if (over2.length) return { grade:'D', cnt: over2.reduce((s,r) => s+r.count, 0), mon: 0 };
+    const cnt = recs.filter(r => r.subtype === '미입금').reduce((s, r) => s + r.count, 0);
+    const mon = recs.filter(r => r.status === '모니터링').reduce((s, r) => s + r.count, 0);
+    const grade = cnt <= 3 ? 'A' : cnt <= 5 ? 'B' : cnt <= 10 ? 'C' : 'D';
+    return { grade, cnt, mon };
+  }
+  const mon = recs.filter(r => r.status === '모니터링').reduce((s, r) => s + r.count, 0);
+  const cnt = recs.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
+  const grade = cnt <= 3 ? 'A' : cnt <= 6 ? 'B' : cnt <= 9 ? 'C' : 'D';
+  return { grade, cnt, mon };
+}
+
+// 하위 호환 (다른 곳에서 사용 가능)
+function calcGrade(type, brand, ym) { return calcGradeDetail(type, brand, ym).grade; }
+
+function renderLeaderboard() {
+  const board = document.getElementById('gradeBoard');
+  if (!board) return;
+
+  const rd  = refDate();
+  const yr  = rd.getFullYear();
+  const mo  = rd.getMonth() + 1;
+  const ym  = `${yr}-${String(mo).padStart(2,'0')}`;
+  const lbl = `${yr}년 ${mo}월 기준`;
+
+  const ymEl = document.getElementById('gradeYm');
+  if (ymEl) ymEl.textContent = lbl;
+
+  const brands = (isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b)))
+    .filter(b => !RANK_EXCLUDE.has(b));
+
+  const ranked = brands.map(brand => {
+    const details = {};
+    let total = 0;
+    GRADE_AREAS.forEach(type => {
+      const d = calcGradeDetail(type, brand, ym);
+      details[type] = d;
+      total += GRADE_SCORE[d.grade];
+    });
+    return { brand, details, total };
+  }).sort((a, b) => b.total - a.total || a.brand.localeCompare(b.brand));
+
+  const tbody = document.getElementById('gradeRows');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  ranked.forEach(({ brand, details }, idx) => {
+    const rank = idx + 1;
+    const pc   = rank === 1 ? 'p1' : rank === 2 ? 'p2' : rank === 3 ? 'p3' : '';
+    const tr   = document.createElement('tr');
+    tr.innerHTML =
+      `<td><span class="gp ${pc}">${rank}</span></td>` +
+      `<td class="gt-brand">${esc(brand)}</td>` +
+      GRADE_AREAS.map(t =>
+        `<td><div class="gc-cell"><span class="gc ${details[t].grade}">${details[t].grade}</span>` +
+        `<span class="gc-cnt">${details[t].cnt}/<span class="gc-mon">${details[t].mon}</span></span></div></td>`
+      ).join('');
+    tbody.appendChild(tr);
+    setTimeout(() => tr.classList.add('gb-in'), 40 + idx * 150);
+  });
+
+  renderJngSection(ym, lbl);
+  scheduleRankAnim();
+}
+
+function renderJngSection(ym, lbl) {
+  const jngYm = document.getElementById('jngYm');
+  if (jngYm) jngYm.textContent = lbl;
+
+  const brands  = isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b));
+  const jngRecs = records.filter(r =>
+    r.type === '징계' && r.date.startsWith(ym) && brands.includes(r.brand)
+  );
+
+  const wrap = document.getElementById('jngCards');
+  if (!wrap) return;
+
+  if (!jngRecs.length) {
+    wrap.innerHTML = '<span class="jng-empty">해당 월 징계 현황 없음</span>';
+    return;
+  }
+
+  const cards = jngRecs.map(r => {
+    let name = r.jg_name || '', sent = r.jg_sent || '';
+    if (!name && !sent) {
+      const p = parseJgRecord(r);
+      if (p) { name = p.name; sent = p.sent; }
+    }
+    if (!name && !sent) return '';
+    return `<div class="jng-card">` +
+      `<div class="jng-card-brand">${esc(r.brand)}</div>` +
+      `<div class="jng-card-name">${esc(name) || '-'}</div>` +
+      `<div class="jng-card-sent">${esc(sent) || '-'}</div>` +
+      `</div>`;
+  }).filter(Boolean);
+
+  if (!cards.length) {
+    wrap.innerHTML = '<span class="jng-empty">성명·양형 정보가 입력되지 않은 건만 있습니다</span>';
+    return;
+  }
+  wrap.innerHTML = cards.join('');
+  setTimeout(() => {
+    wrap.querySelectorAll('.jng-card').forEach((el, i) =>
+      setTimeout(() => el.classList.add('jc-in'), i * 60)
+    );
+  }, 80);
+}
+
+// ── 리더보드 연속 부상 애니메이션 ───────────────────
+let _rankScanTimer = null;
+const _RISE_ROW_MS  = 150;   // 행 간 딜레이
+const _RISE_ANIM_MS = 1000;  // CSS animation 시간과 동기화
+const _RISE_PAUSE   = 700;   // 마지막 행 후 잠깐 대기
+
+function scheduleRankAnim() {
+  if (_rankScanTimer) clearTimeout(_rankScanTimer);
+
+  const board = document.getElementById('gradeBoard');
+  if (board) {
+    board.onmouseenter = () => { board._rankPaused = true; };
+    board.onmouseleave = () => { board._rankPaused = false; };
+  }
+
+  const runRise = () => {
+    if (board && board._rankPaused) {
+      _rankScanTimer = setTimeout(runRise, 300);
+      return;
+    }
+    const rows = Array.from(document.querySelectorAll('.grade-tbl tbody tr'));
+    if (!rows.length) { _rankScanTimer = setTimeout(runRise, 2000); return; }
+
+    rows.forEach((r, i) => {
+      setTimeout(() => {
+        r.classList.remove('gb-in');
+        void r.offsetWidth;
+        r.classList.add('gb-in');
+      }, i * _RISE_ROW_MS);
+    });
+
+    // 마지막 행 완료 시점 계산 → 짧게 쉬고 바로 재실행
+    const nextIn = (rows.length - 1) * _RISE_ROW_MS + _RISE_ANIM_MS + _RISE_PAUSE;
+    _rankScanTimer = setTimeout(runRise, nextIn);
+  };
+
+  // 첫 실행은 초기 진입 애니메이션 끝난 후 시작
+  const initRows = document.querySelectorAll('.grade-tbl tbody tr').length;
+  _rankScanTimer = setTimeout(runRise, 40 + initRows * _RISE_ROW_MS + _RISE_ANIM_MS + 800);
 }
 
 // ── 브랜드/영역별 위험도 리더보드 ──────────────────
