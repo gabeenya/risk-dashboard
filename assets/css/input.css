@@ -124,8 +124,9 @@
 .jg-info-cell { font-size: 11px; color: #334155; }
 
 /* 외부노출 체크박스 */
-.exposed-chk-lbl { display: flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px; color: #0f172a; font-weight: 400; text-transform: none; letter-spacing: 0; }
-.exposed-chk-lbl input[type="checkbox"] { width: 15px; height: 15px; accent-color: #dc2626; cursor: pointer; }
+.exposed-chk-lbl { display: flex; align-items: center; gap: 9px; cursor: pointer; font-size: 13px; color: #0f172a; font-weight: 400; text-transform: none; letter-spacing: 0; padding: 9px 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; transition: border-color 0.15s; box-sizing: border-box; line-height: 1; }
+.exposed-chk-lbl:hover { border-color: #1e3a8a; }
+.exposed-chk-lbl input[type="checkbox"] { width: 14px; height: 14px; accent-color: #dc2626; cursor: pointer; flex-shrink: 0; }
 /* 목록 테이블 — 외부노출 뱃지 */
 .exposed-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; white-space: nowrap; margin-bottom: 3px; }
 
