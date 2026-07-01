@@ -113,6 +113,12 @@
 .ai-md.theme-terminal th { background: #1f2937; color: #fbbf24; }
 .ai-md.theme-terminal hr { border: none; border-top: 1px dashed #374151; margin: 0.8rem 0; }
 
+/* ── 태블릿 대응 (769~1024px) ─────────────────────── */
+@media (max-width: 1024px) {
+  .ai-ctx-inp { width: auto; flex: 1 1 200px; min-width: 0; }
+  .ai-ctrls { flex-wrap: wrap; gap: 8px; }
+}
+
 /* ── 모바일 대응 ──────────────────────────────────── */
 @media (max-width: 768px) {
   .ai-hd { flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -128,6 +134,15 @@
   .ai-md { font-size: 12px; }
 }
 @media (max-width: 500px) {
+  /* 컨트롤 세로 스택 */
+  .ai-ctrls { flex-direction: column; align-items: stretch; gap: 8px; }
+  .ai-ctx-inp { width: 100%; flex: none; height: 40px; }
+  .ai-style-sel { width: 100%; height: 40px; font-size: 12px; }
+  .ai-run-btn { width: 100%; height: 40px; justify-content: center; }
+  /* 분석 항목 그리드 */
+  .ai-opt-grid { grid-template-columns: 1fr 1fr; }
+  .ai-brand-grid { grid-template-columns: 1fr 1fr; }
+  /* 마크다운 테마 */
   .ai-md.theme-notion h1 { font-size: 18px; }
   .ai-md.theme-notion h2 { font-size: 16px; }
   .ai-md.theme-notion h3 { font-size: 14px; }

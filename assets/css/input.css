@@ -15,10 +15,10 @@
 
 /* ── Form grid ────────────────────────────────────── */
 .fgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.fgroup { display: flex; flex-direction: column; gap: 6px; }
+.fgroup { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .fgroup.full { grid-column: 1 / -1; }
 .fgroup label { font-size: 10px; color: #94a3b8; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
-.fgroup input, .fgroup select { padding: 9px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: #0f172a; background: #fff; outline: none; transition: border 0.15s; }
+.fgroup input, .fgroup select { width: 100%; min-width: 0; padding: 9px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: #0f172a; background: #fff; outline: none; transition: border 0.15s; }
 .fgroup input:focus, .fgroup select:focus { border-color: #1e3a8a; }
 .fgroup select:disabled { background: #f8fafc; color: #94a3b8; }
 .fgroup input[readonly] { background: #f8fafc; color: #94a3b8; }
@@ -138,6 +138,10 @@
   .type-tabs::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
   .tt { font-size: 12px; padding: 6px 14px; flex-shrink: 0; white-space: nowrap; }
 
+  /* 분류·영역 선택 바 */
+  .input-type-bar { flex-wrap: wrap; padding: 10px 12px; gap: 8px; }
+  .input-type-sel { flex: 1 1 calc(50% - 60px); min-width: 120px; }
+
   /* 폼 입력 */
   .fgrid { gap: 10px; }
   .fgroup label { font-size: 9px; }
@@ -155,6 +159,9 @@
   .xl-pv-tbl { font-size: 10.5px; }
   .xl-pv-tbl th, .xl-pv-tbl td { padding: 6px 8px; }
 
+  /* 데이터 목록 — 가로 스크롤 강제 (열이 많아 width:100% 압축 방지) */
+  #page-input .recs table { min-width: 700px; }
+
   /* 데이터 목록 — 인라인 컨트롤 */
   .sub-sel, .brand-sel { max-width: 120px; font-size: 10px; padding: 2px 5px; }
   .date-sel { max-width: 110px; font-size: 10px; padding: 2px 4px; }
@@ -162,6 +169,13 @@
   .note-inp { font-size: 10px; padding: 4px 26px 4px 6px; }
   .note-save-btn { font-size: 8px; padding: 2px 4px; }
   .st-sel { font-size: 10px; padding: 2px 5px; }
+
+  /* 필터 바 */
+  .inp-filter-sel { min-width: 90px; }
+
+  /* 일괄 처리 바 */
+  .inp-bulk-bar { flex-wrap: wrap; gap: 6px; }
+  .inp-bulk-stat { flex: 1 1 auto; }
 }
 @media (max-width: 600px) {
   .tt { font-size: 11px; padding: 5px 12px; }
@@ -169,6 +183,14 @@
   /* 데이터 목록 — 모바일에선 작성자 컬럼 숨김 (입력 페이지 한정) */
   #page-input #inputTbody td:nth-last-child(2),
   #page-input .recs thead th:nth-last-child(2) { display: none; }
+  /* 영역 선택 바 — 각 선택을 한 행으로 */
+  .input-type-bar { flex-direction: column; align-items: stretch; }
+  .input-type-sel { flex: none; width: 100%; }
+  /* 폼 그리드 — 1열 전환 */
+  .fgrid { grid-template-columns: 1fr; }
+  /* 필터 바 — 2열 정렬 */
+  .inp-filter-bar { gap: 6px; }
+  .inp-filter-sel { min-width: 80px; font-size: 11px; }
 }
 @media (max-width: 420px) {
   .tt { font-size: 10.5px; padding: 4px 10px; }
@@ -179,4 +201,8 @@
   /* 데이터 목록 — 더 좁게 */
   .sub-sel { max-width: 100px; }
   .brand-sel { max-width: 80px; }
+  /* 일괄 처리 바 — 세로 스택 */
+  .inp-bulk-bar { flex-direction: column; align-items: stretch; }
+  .inp-bulk-stat { flex-direction: column; gap: 4px; }
+  .inp-bulk-sel, .inp-bulk-stat-btn, .inp-bulk-del { width: 100%; box-sizing: border-box; text-align: center; }
 }
