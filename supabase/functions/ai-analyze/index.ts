@@ -43,11 +43,25 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 2000,
+        stream: true,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
-    const data = await r.json();
-    return json(data, r.status);
+
+    if (!r.ok || !r.body) {
+      const errData = await r.json().catch(() => ({ error: 'unknown error' }));
+      return json(errData, r.status);
+    }
+
+    // Anthropic SSE 스트림을 클라이언트로 그대로 중계
+    return new Response(r.body, {
+      headers: {
+        ...CORS,
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'X-Accel-Buffering': 'no',
+      },
+    });
   } catch (e) {
     return json({ error: String(e) }, 502);
   }

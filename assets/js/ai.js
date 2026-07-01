@@ -110,12 +110,12 @@ async function runAI() {
 
   console.log('[AI] prompt 길이:', prompt.length, 'chars');
 
-  // 60초 타임아웃 설정 (Anthropic은 보통 5-30초)
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 60000);
+  const theme = localStorage.getItem('aiStyle') || 'notion';
+  const ctrl  = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 120000);
 
   try {
-    console.log('[AI] fetch 시작:', SB_URL + '/functions/v1/ai-analyze');
+    console.log('[AI] fetch 시작 (스트리밍)');
     const res = await fetch(`${SB_URL}/functions/v1/ai-analyze`, {
       method: 'POST',
       headers: {
@@ -128,43 +128,82 @@ async function runAI() {
     });
     console.log('[AI] HTTP 응답:', res.status, res.statusText);
 
-    const rawText = await res.text();
-    console.log('[AI] 응답 본문 (첫 200자):', rawText.slice(0, 200));
-
-    let data;
-    try { data = JSON.parse(rawText); }
-    catch { throw new Error(`JSON 파싱 실패 (HTTP ${res.status}): ${rawText.slice(0,100)}`); }
-
     if (!res.ok) {
-      const msg = (typeof data.error === 'string') ? data.error : (data.error?.message || JSON.stringify(data.error));
+      const errText = await res.text();
+      let errData;
+      try { errData = JSON.parse(errText); } catch { errData = { error: errText }; }
+      const msg = (typeof errData.error === 'string') ? errData.error : (errData.error?.message || errText.slice(0, 100));
       throw new Error(`서버 오류 (HTTP ${res.status}): ${msg}`);
     }
-    if (data.type === 'error') {
-      throw new Error(`Anthropic API 오류: ${data.error?.message || JSON.stringify(data.error)}`);
-    }
-    if (!data.content || !Array.isArray(data.content) || !data.content[0]?.text) {
-      throw new Error('응답에 분석 텍스트 없음. 응답 키: ' + Object.keys(data).join(','));
+
+    // 스트리밍 결과 영역 준비 — 스피너 숨기고 즉시 표시
+    document.getElementById('aiResult').innerHTML =
+      `<div class="ai-result-body"><div class="ai-md theme-${theme}" id="aiStreamContent"></div></div>` +
+      `<div class="ai-result-foot" id="aiResultFoot" style="display:none">` +
+      `<p class="ai-meta">분석 기준: ${now.toLocaleDateString('ko-KR')}</p>` +
+      `<button class="ai-copy-btn" onclick="copyAI()">복사</button></div>`;
+    document.getElementById('aiLoad').style.display  = 'none';
+    document.getElementById('aiResult').style.display = 'block';
+
+    const contentEl = document.getElementById('aiStreamContent');
+    const reader    = res.body.getReader();
+    const decoder   = new TextDecoder();
+    let buffer  = '';
+    let rawText = '';
+    let renderPending = false;
+
+    const flushRender = () => {
+      renderPending = false;
+      const html = (typeof marked !== 'undefined' && marked.parse)
+        ? marked.parse(rawText)
+        : rawText.replace(/\n/g, '<br>');
+      contentEl.innerHTML = html;
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const dataStr = line.slice(6).trim();
+        if (!dataStr || dataStr === '[DONE]') continue;
+        try {
+          const evt = JSON.parse(dataStr);
+          if (evt.type === 'error') throw new Error(evt.error?.message || JSON.stringify(evt.error));
+          if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+            rawText += evt.delta.text;
+            if (!renderPending) {
+              renderPending = true;
+              setTimeout(flushRender, 40);
+            }
+          }
+        } catch(parseErr) {
+          if (parseErr instanceof SyntaxError) continue;
+          throw parseErr;
+        }
+      }
     }
 
-    const text  = data.content[0].text;
-    console.log('[AI] 분석 텍스트 길이:', text.length, 'chars');
-    const theme = localStorage.getItem('aiStyle') || 'notion';
-    const html  = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(text) : text.replace(/\n/g, '<br>');
-    document.getElementById('aiResult').innerHTML =
-      `<div class="ai-result-body"><div class="ai-md theme-${theme}">${html}</div></div>` +
-      `<div class="ai-result-foot"><p class="ai-meta">분석 기준: ${now.toLocaleDateString('ko-KR')}</p>` +
-      `<button class="ai-copy-btn" onclick="copyAI()">복사</button></div>`;
-    document.getElementById('aiResult').style.display = 'block';
-    console.log('[AI] 완료');
+    // 최종 렌더링
+    flushRender();
+    document.getElementById('aiResultFoot').style.display = '';
+    console.log('[AI] 스트리밍 완료, 텍스트 길이:', rawText.length);
   } catch(e) {
     console.error('[AI 분석] 오류 발생:', e);
-    const msg = e.name === 'AbortError' ? '60초 내에 응답 없음 (네트워크 또는 서버 지연)' : ((e && e.message) || String(e));
+    const msg = e.name === 'AbortError'
+      ? '120초 내에 응답 없음 (네트워크 또는 서버 지연)'
+      : ((e && e.message) || String(e));
     document.getElementById('aiResult').innerHTML =
       `<div class="ai-error"><strong>분석 오류</strong><br><small>${msg}</small><br><small style="color:#94a3b8">F12 → Console 탭에서 [AI] 로그 확인</small></div>`;
     document.getElementById('aiResult').style.display = 'block';
   } finally {
     clearTimeout(timer);
-    document.getElementById('aiLoad').style.display = 'none';
+    document.getElementById('aiLoad').style.display  = 'none';
     document.getElementById('aiBtn').disabled = false;
   }
 }
