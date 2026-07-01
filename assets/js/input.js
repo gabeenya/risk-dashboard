@@ -18,6 +18,8 @@ async function addRecord() {
   const jg_sent   = type === '징계'   ? (document.getElementById('f-jg-sent')?.value  || '') : null;
   const bc_amount = (type === '부실채권' && BC_AMT_SUBS.includes(sub))
     ? (parseInt(document.getElementById('f-amount')?.value) || null) : null;
+  const _expTypes = [...(CAT_TYPES['컴플라이언스'] || []), ...(CAT_TYPES['매장 운영 관리'] || [])];
+  const exposed   = _expTypes.includes(type) ? (document.getElementById('f-exposed')?.checked || false) : false;
   if (!date || !brand || count < 1) { toast('필수 항목을 모두 입력해 주세요.'); return; }
 
   const btn = document.getElementById('submitBtn');
@@ -29,7 +31,7 @@ async function addRecord() {
     id: Date.now(), date, type,
     subtype: sub || '-', brand,
     status, count, note,
-    jg_name, jg_sent, bc_amount,
+    jg_name, jg_sent, bc_amount, exposed,
     author: user.name
   });
   await loadData();
@@ -128,6 +130,8 @@ function resetForm() {
   document.getElementById('f-count').value   = 1;
   document.getElementById('f-status').value  = (curType === '징계' || curType === '부실채권') ? '위반(처리중)' : '모니터링';
   document.getElementById('f-note').value    = '';
+  const expCb = document.getElementById('f-exposed');
+  if (expCb) expCb.checked = false;
   // 금액·징계 필드 초기화 (비고는 항상 유지)
   const amtW = document.getElementById('f-amount-wrap');
   const amtI = document.getElementById('f-amount');
@@ -289,7 +293,9 @@ function renderInputTable() {
           return `<span class="bc-amt-cell">${_amt.toLocaleString()}원${_noteText ? ' · ' + esc(_noteText) : ''}</span>`;
         }
       }
-      return `<div class="note-wrap">
+      const _expShow = [...(CAT_TYPES['컴플라이언스']||[]),...(CAT_TYPES['매장 운영 관리']||[])].includes(r.type);
+      const _expBadge = (_expShow && r.exposed) ? '<span class="exposed-badge">외부노출</span><br>' : '';
+      return `${_expBadge}<div class="note-wrap">
         <input type="text" class="note-inp" id="note-inp-${rid}"
           value="${esc(r.note||'')}" placeholder="-"
           onkeydown="if(event.key==='Enter'){const b=document.getElementById('note-btn-${rid}');updNote(${rid},this.value,b)}">

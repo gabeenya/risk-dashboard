@@ -123,6 +123,12 @@
 /* 징계 정보 셀 */
 .jg-info-cell { font-size: 11px; color: #334155; }
 
+/* 외부노출 체크박스 */
+.exposed-chk-lbl { display: flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px; color: #0f172a; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.exposed-chk-lbl input[type="checkbox"] { width: 15px; height: 15px; accent-color: #dc2626; cursor: pointer; }
+/* 목록 테이블 — 외부노출 뱃지 */
+.exposed-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; white-space: nowrap; margin-bottom: 3px; }
+
 /* ── 모바일 대응 ──────────────────────────────────── */
 @media (max-width: 768px) {
   /* 영역 탭 — 가로 스크롤 한 줄 유지 */

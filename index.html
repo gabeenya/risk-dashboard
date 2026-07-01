@@ -23,30 +23,30 @@
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 
 <!-- ?��???(?�이지�?분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260701ac">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260701ac">
-<link rel="stylesheet" href="assets/css/input.css?v=20260701ac">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260701ac">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260701ac">
-<link rel="stylesheet" href="assets/css/help.css?v=20260701ac">
+<link rel="stylesheet" href="assets/css/base.css?v=20260701ad">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260701ad">
+<link rel="stylesheet" href="assets/css/input.css?v=20260701ad">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260701ad">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260701ad">
+<link rel="stylesheet" href="assets/css/help.css?v=20260701ad">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
                   → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260701ac"     defer></script>
-<script src="assets/js/constants.js?v=20260701ac"  defer></script>
-<script src="assets/js/state.js?v=20260701ac"      defer></script>
-<script src="assets/js/utils.js?v=20260701ac"      defer></script>
-<script src="assets/js/auth.js?v=20260701ac"       defer></script>
-<script src="assets/js/nav.js?v=20260701ac"        defer></script>
-<script src="assets/js/dashboard.js?v=20260701ac"  defer></script>
-<script src="assets/js/input.js?v=20260701ac"      defer></script>
-<script src="assets/js/admin.js?v=20260701ac"      defer></script>
-<script src="assets/js/ai.js?v=20260701ac"         defer></script>
-<script src="assets/js/ppt.js?v=20260701ac"        defer></script>
-<script src="assets/js/main.js?v=20260701ac"       defer></script>
+<script src="assets/js/config.js?v=20260701ad"     defer></script>
+<script src="assets/js/constants.js?v=20260701ad"  defer></script>
+<script src="assets/js/state.js?v=20260701ad"      defer></script>
+<script src="assets/js/utils.js?v=20260701ad"      defer></script>
+<script src="assets/js/auth.js?v=20260701ad"       defer></script>
+<script src="assets/js/nav.js?v=20260701ad"        defer></script>
+<script src="assets/js/dashboard.js?v=20260701ad"  defer></script>
+<script src="assets/js/input.js?v=20260701ad"      defer></script>
+<script src="assets/js/admin.js?v=20260701ad"      defer></script>
+<script src="assets/js/ai.js?v=20260701ad"         defer></script>
+<script src="assets/js/ppt.js?v=20260701ad"        defer></script>
+<script src="assets/js/main.js?v=20260701ad"       defer></script>
 </head>
 <body>
 
@@ -55,7 +55,7 @@
   <!-- ?�?� 좌측 ?�이?�바 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
   <aside class="sidebar" id="sidebar">
     <a class="side-logo" onclick="goHome()">
-      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260701ac" alt="Elandeats" />
+      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260701ad" alt="Elandeats" />
     </a>
     <div class="side-scroll">
       <p class="side-sec">메뉴</p>
@@ -431,6 +431,10 @@
           <div class="fgroup" id="f-jg-sent-wrap" style="display:none"><label>양형</label><input type="text" id="f-jg-sent" placeholder="예: 경고, 감봉 1개월"></div>
           <div class="fgroup" id="f-amount-wrap" style="display:none"><label>금액</label><input type="number" id="f-amount" min="0" step="1000" placeholder="금액 입력 (원)"></div>
           <div class="fgroup" id="f-note-wrap"><label>비고 (선택)</label><input type="text" id="f-note" placeholder="메모 입력"></div>
+          <div class="fgroup f-exposed-wrap" id="f-exposed-wrap" style="display:none">
+            <label>외부노출 여부</label>
+            <label class="exposed-chk-lbl"><input type="checkbox" id="f-exposed"> 외부 노출됨</label>
+          </div>
         </div>
         <div class="f-acts">
           <button class="btn-pri" id="submitBtn" onclick="addRecord()">입력하기</button>
