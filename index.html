@@ -6,7 +6,7 @@
 <title>ELAND EATS RO</title>
 <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="%231e3a8a"/><text x="16" y="23" font-family="Georgia,serif" font-size="22" font-weight="700" fill="%23ffffff" text-anchor="middle">E</text></svg>'>
 
-<!-- 외부 라이브러리 -->
+<!-- ?��? ?�이브러�?-->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
@@ -14,48 +14,48 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 
 <!--
-  배포 캐시 버스터: 코드 수정 후 배포할 때 ?v= 값을 새로 갱신하세요.
+  배포 캐시 버스터: 코드 수정 후 배포할 때마다 v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260701m';</script>
+<script>window.__ASSET_V = '20260701z';</script>
 
-<!-- 웹폰트: Pretendard (한글 UI 표준 폰트) -->
+<!-- ?�폰?? Pretendard (?��? UI ?��? ?�트) -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 
-<!-- 스타일 (페이지별 분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260701m">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260701m">
-<link rel="stylesheet" href="assets/css/input.css?v=20260701m">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260701m">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260701m">
-<link rel="stylesheet" href="assets/css/help.css?v=20260701m">
+<!-- ?��???(?�이지�?분리) -->
+<link rel="stylesheet" href="assets/css/base.css?v=20260701aa">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260701aa">
+<link rel="stylesheet" href="assets/css/input.css?v=20260701aa">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260701aa">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260701aa">
+<link rel="stylesheet" href="assets/css/help.css?v=20260701aa">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
-           → dashboard → input → admin → ai → ppt → main
+                  → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260701m"     defer></script>
-<script src="assets/js/constants.js?v=20260701m"  defer></script>
-<script src="assets/js/state.js?v=20260701m"      defer></script>
-<script src="assets/js/utils.js?v=20260701m"      defer></script>
-<script src="assets/js/auth.js?v=20260701m"       defer></script>
-<script src="assets/js/nav.js?v=20260701m"        defer></script>
-<script src="assets/js/dashboard.js?v=20260701m"  defer></script>
-<script src="assets/js/input.js?v=20260701m"      defer></script>
-<script src="assets/js/admin.js?v=20260701m"      defer></script>
-<script src="assets/js/ai.js?v=20260701m"         defer></script>
-<script src="assets/js/ppt.js?v=20260701m"        defer></script>
-<script src="assets/js/main.js?v=20260701m"       defer></script>
+<script src="assets/js/config.js?v=20260701aa"     defer></script>
+<script src="assets/js/constants.js?v=20260701aa"  defer></script>
+<script src="assets/js/state.js?v=20260701aa"      defer></script>
+<script src="assets/js/utils.js?v=20260701aa"      defer></script>
+<script src="assets/js/auth.js?v=20260701aa"       defer></script>
+<script src="assets/js/nav.js?v=20260701aa"        defer></script>
+<script src="assets/js/dashboard.js?v=20260701aa"  defer></script>
+<script src="assets/js/input.js?v=20260701aa"      defer></script>
+<script src="assets/js/admin.js?v=20260701aa"      defer></script>
+<script src="assets/js/ai.js?v=20260701aa"         defer></script>
+<script src="assets/js/ppt.js?v=20260701aa"        defer></script>
+<script src="assets/js/main.js?v=20260701aa"       defer></script>
 </head>
 <body>
 
 <div class="app logged-out">
 
-  <!-- ── 좌측 사이드바 ──────────────────────────────── -->
+  <!-- ?�?� 좌측 ?�이?�바 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
   <aside class="sidebar" id="sidebar">
     <a class="side-logo" onclick="goHome()">
-      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260701m" alt="Elandeats" />
+      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260701aa" alt="Elandeats" />
     </a>
     <div class="side-scroll">
       <p class="side-sec">메뉴</p>
@@ -95,10 +95,10 @@
     </div>
   </aside>
 
-  <!-- ── 본문 영역 ─────────────────────────────────── -->
+  <!-- ?�?� 본문 ?�역 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
   <div class="app-main">
 
-    <!-- 상단바 -->
+    <!-- ?�단�?-->
     <header class="topbar" id="topbar">
       <button class="side-toggle" id="sideToggle" onclick="toggleSidebar()" aria-label="메뉴">☰</button>
       <div class="topbar-brand" onclick="goHome()" style="cursor:pointer">
@@ -115,9 +115,9 @@
 
 <main>
 
-  <!-- ── 로그인 페이지 (비로그인 시 단독 표시) ─────────── -->
+  <!-- ?�?� 로그???�이지 (비로그인 ???�독 ?�시) ?�?�?�?�?�?�?�?�?�?�?� -->
   <div id="page-login" class="pg on">
-    <!-- 로그인 카드 -->
+    <!-- 로그??카드 -->
     <div class="login-card" id="loginCard">
       <div class="login-brand">
         <div class="login-logo">E</div>
@@ -142,7 +142,7 @@
       </p>
     </div>
 
-    <!-- 가입 신청 카드 -->
+    <!-- 가???�청 카드 -->
     <div class="login-card login-card-wide hide" id="signupCard">
       <div class="login-brand">
         <div class="login-logo">E</div>
@@ -177,7 +177,7 @@
     </div>
   </div>
 
-  <!-- ── 대시보드 ────────────────────────────────────── -->
+  <!-- ?�?� ?�?�보???�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
   <div id="page-dashboard" class="pg">
     <div class="dash-top">
       <p class="sec-label">Overview · 외식 BG 리스크 적발 및 처리 분석</p>
@@ -220,10 +220,10 @@
       </label>
     </div>
     <div class="alert-bar" id="alertBar" style="display:none"></div>
-    <!-- ── 브랜드 리스크 등급 순위판 ── -->
+    <!-- ?�?� 브랜??리스???�급 ?�위???�?� -->
     <div class="grade-board card" id="gradeBoard">
       <div class="card-hd">
-        <span class="card-tit">브랜드 리스크 등급 순위<span class="live-badge"><span class="live-dot"></span>LIVE</span></span>
+        <span class="card-tit">브랜드 리스크 등급 순위<span class="live-badge"><span class="live-dot"></span>LIVE</span><button class="grade-info-btn" onmouseenter="showGradeInfo(this)" onmouseleave="hideGradeInfo()" onclick="showGradeInfo(this)">?</button></span>
         <span class="card-tag" id="gradeYm"></span>
       </div>
       <div class="grade-legend">
@@ -232,7 +232,7 @@
         <span class="gc C" style="animation:none">C</span><span>주의</span>
         <span class="gc D" style="animation:none">D</span><span>위험</span>
         <span class="gc F" style="animation:none">F</span><span>불량</span>
-        <span class="grade-note">매월 기준 · 평가 7개 영역 (등급 + 위반/전체 건수)</span>
+        <span class="grade-note">매월 기준 · 최소 7개 영역 (등급 + 위반/전체 건수)</span>
       </div>
       <div class="grade-tbl-wrap">
         <table class="grade-tbl">
@@ -265,25 +265,25 @@
           <span><span class="ld" style="background:#8fa8c8"></span><span id="lineLegMon">모니터링</span></span>
           <span><span class="ld" style="background:#e8845a"></span><span id="lineLegVio">위반</span></span>
         </div>
-        <p class="chart-note" id="lineChartNote" style="display:none">※ 영업비밀 '모니터링 건수'의 경우 10:1 환산 반영 / '위반 건수'의 경우 1:1 정상값 반영.<br><span class="chart-note-ex">(ex. 실제 모니터링 건수가 1,540건, 위반 건수가 3건인 경우 그래프 내 각 154건, 3건으로 반영)</span></p>
+        <p class="chart-note" id="lineChartNote" style="display:none">※ 영업비밀 '모니터링 건수'의 경우 10:1 환산 반영 / '위반 건수'의 경우 1:1 정상값 반영.<br><span class="chart-note-ex">(ex. 실제 모니터링 건수가 1,540개, 위반 건수가 3건인 경우 그래프에는 154개, 3건으로 반영)</span></p>
       </div>
       <div class="card">
-        <div class="card-hd"><span class="card-tit" id="rChartTit">위반 유형별 분포</span><span class="card-tag" id="rChartTag">-</span></div>
+        <div class="card-hd"><span class="card-tit" id="rChartTit">위반 유형별 분포</span><div class="card-hd-right"><span class="card-tag" id="rChartTag">-</span><select class="chart-mode-sel" id="modeRight" onchange="setChartMode('right',this.value)"><option value="acc">누적</option><option value="mon">당월</option></select></div></div>
         <div id="rChartLeg" class="leg"></div>
         <div class="chart-box chart-box-right"><canvas id="rightChart"></canvas></div>
-        <p class="chart-note" id="rChartNote" style="display:none">※ 영업비밀 '모니터링 건수'의 경우 10:1 환산 반영 / '위반 건수'의 경우 1:1 정상값 반영.<br><span class="chart-note-ex">(ex. 실제 모니터링 건수가 1,540건, 위반 건수가 3건인 경우 그래프 내 각 154건, 3건으로 반영)</span></p>
+        <p class="chart-note" id="rChartNote" style="display:none">※ 영업비밀 '모니터링 건수'의 경우 10:1 환산 반영 / '위반 건수'의 경우 1:1 정상값 반영.<br><span class="chart-note-ex">(ex. 실제 모니터링 건수가 1,540개, 위반 건수가 3건인 경우 그래프에는 154개, 3건으로 반영)</span></p>
       </div>
     </div>
 
     <div class="btm-row">
       <div class="card" id="barChartCard">
-        <div class="card-hd"><span class="card-tit">브랜드별 현황</span><span class="card-tag">전체 브랜드</span></div>
+        <div class="card-hd"><span class="card-tit">브랜드별 현황</span><div class="card-hd-right"><span class="card-tag">전체 브랜드</span><select class="chart-mode-sel" id="modeBar" onchange="setChartMode('bar',this.value)"><option value="acc">누적</option><option value="mon">당월</option></select></div></div>
         <div class="leg leg-bar">
-          <span><span class="ld" style="background:#8fa8c8"></span><span id="barLegMon">총 모니터링 건수</span></span>
+          <span><span class="ld" style="background:#8fa8c8"></span><span id="barLegMon">누적 모니터링 건수</span></span>
           <span><span class="ld" style="background:#e8845a"></span><span id="barLegVio">위반</span></span>
         </div>
         <div class="chart-box chart-box-bar"><canvas id="barChart"></canvas></div>
-        <p class="chart-note" id="barChartNote" style="display:none">※ 영업비밀 '모니터링 건수'의 경우 10:1 환산 반영 / '위반 건수'의 경우 1:1 정상값 반영.<br><span class="chart-note-ex">(ex. 실제 모니터링 건수가 1,540건, 위반 건수가 3건인 경우 그래프 내 각 154건, 3건으로 반영)</span></p>
+        <p class="chart-note" id="barChartNote" style="display:none">※ 영업비밀 '모니터링 건수'의 경우 10:1 환산 반영 / '위반 건수'의 경우 1:1 정상값 반영.<br><span class="chart-note-ex">(ex. 실제 모니터링 건수가 1,540개, 위반 건수가 3건인 경우 그래프에는 154개, 3건으로 반영)</span></p>
       </div>
       <div class="card">
         <div class="card-hd">
@@ -297,7 +297,7 @@
         </div>
         <div class="recs">
           <table>
-            <thead><tr><th>날짜</th><th>유형</th><th>상세</th><th>브랜드</th><th>상태</th><th>비고</th></tr></thead>
+            <thead><tr><th>날짜</th><th>유형</th><th>상세</th><th>브랜드</th><th>상태</th><th>비고</th><th>작성자</th></tr></thead>
             <tbody id="recentTbody"></tbody>
           </table>
         </div>
@@ -305,19 +305,19 @@
       </div>
     </div>
 
-    <!-- ── 위험도 히트맵 (영역 × 브랜드) ──────────────── -->
+    <!-- ?�?� ?�험???�트�?(?�역 × 브랜?? ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
     <div class="btm-row" style="margin-top:12px">
       <div class="card" id="heatmapCard" style="flex:1 1 100%">
         <div class="card-hd">
           <span class="card-tit">브랜드/영역별 위험도 <span class="card-sub-note">— 위반 건수 상위 브랜드 · Top 3 영역</span></span>
-          <span class="card-tag">카드/칩 클릭 시 상세</span>
+          <div class="card-hd-right"><span class="card-tag">카드/칩 클릭 시 상세</span><select class="chart-mode-sel" id="modeHeat" onchange="setChartMode('heat',this.value)"><option value="acc">누적</option><option value="mon">당월</option></select></div>
         </div>
         <div class="heatmap-wrap" id="heatmapWrap"></div>
       </div>
     </div>
   </div>
 
-  <!-- ── 드릴다운 사이드 패널 ─────────────────────────── -->
+  <!-- ?�?� ?�릴?�운 ?�이???�널 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
   <div class="drill-overlay" id="drillOverlay" onclick="closeDrill()"></div>
   <aside class="drill-panel" id="drillPanel">
     <div class="drill-hd">
@@ -335,7 +335,7 @@
     </div>
   </aside>
 
-  <!-- ── 데이터 입력 ─────────────────────────────────── -->
+  <!-- ?�?� ?�이???�력 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
   <div id="page-input" class="pg">
     <div id="inputForm">
       <p class="pg-title">데이터 입력</p>
@@ -373,17 +373,17 @@
             </label>
             <span class="xl-file-name" id="xlFileName">선택된 파일 없음</span>
           </div>
-          <p class="xl-hint">양식의 <b>데이터</b> 시트만 채워서 업로드하세요. 첫 행(헤더)은 그대로 두고 두 번째 행부터 입력합니다. 같은 양식으로 모든 영역(가맹/불법파견/...) 데이터를 한 번에 올릴 수 있습니다.</p>
+          <p class="xl-hint">양식의 <b>데이터</b> 시트만 채워서 업로드하세요. 첫 행(헤더)은 그대로 두고 두 번째 행부터 입력합니다. 같은 양식으로 모든 영역(가맹/불법파견 등) 기록 가능.</p>
         </div>
         <div class="xl-up xl-up-safe" id="xlSafeBlock" style="display:none">
           <div class="xl-up-row">
             <span class="xl-safe-tag">🦺 안전 전용</span>
-            <label class="xl-file-lbl" for="safe-file">📂 안전 점검표 업로드 (.xlsx)
+            <label class="xl-file-lbl" for="safe-file">📂 안전 엑셀파일 업로드(.xlsx)
               <input type="file" id="safe-file" accept=".xlsx,.xls" onchange="handleSafetyFile(event)" hidden>
             </label>
             <span class="xl-file-name" id="safeFileName">선택된 파일 없음</span>
           </div>
-          <p class="xl-hint">안전 점검표 파일의 <b>첫 번째 시트</b>만 읽습니다. 매장(행)별 각 점검 항목을 펼쳐 자동 등록합니다 — 항목 값이 <b>0이 아니면 위반(처리중)</b>, <b>0이면 모니터링</b>, <b>빈 칸은 제외</b>(항목 개수만큼 집계). 영역은 <b>안전</b> 고정, 매장명은 비고로 저장됩니다.<br><span class="xl-hint-warn">⚠️ 문서보안(DRM)이 걸린 파일은 읽을 수 없습니다 — 보안 해제(반출)된 사본으로 업로드하세요.</span></p>
+          <p class="xl-hint">안전 엑셀파일의 <b>첫 번째 시트</b>를 읽습니다. 매장(행)별 안전점검 항목값을 채워주세요. 값이 <b>0이 아니면 위반(처리중)</b>, <b>0이면 → 모니터링</b>으로 등록됩니다.</p>
         </div>
         <div class="xl-preview hide" id="xlPreview">
           <div class="xl-pv-hd">
@@ -393,13 +393,13 @@
               <span class="xl-pv-stat">전체: <b id="xlTotCnt">0</b>행</span>
             </div>
             <div class="xl-pv-acts">
-              <button class="btn-pri" id="xlConfirmBtn" onclick="confirmBulkUpload()">✓ 유효 건 업로드</button>
+              <button class="btn-pri" id="xlConfirmBtn" onclick="confirmBulkUpload()">✅ 유효 건만 업로드</button>
               <button class="btn-sec" onclick="cancelBulkUpload()">취소</button>
             </div>
           </div>
           <div class="xl-pv-tbl-wrap">
             <table class="xl-pv-tbl">
-              <thead><tr><th>#</th><th>날짜</th><th>영역</th><th>상세유형</th><th>브랜드</th><th>건수</th><th>상태</th><th>비고</th><th>검증</th></tr></thead>
+              <thead><tr><th>#</th><th>날짜</th><th>영역</th><th>상세유형</th><th>브랜드</th><th>건수</th><th>상태</th><th>비고</th><th>결과</th></tr></thead>
               <tbody id="xlPvTbody"></tbody>
             </table>
           </div>
@@ -415,7 +415,7 @@
             <select id="f-brand">
               <option value="">선택하세요</option>
               <option>애슐리</option><option>피자몰</option><option>로운</option><option>자연별곡</option>
-              <option>델리바이애슐리</option><option>리미니</option><option>프랑제리</option><option>카페</option><option>프랜차이즈</option><option>상권</option><option>본부</option>
+              <option>델리바이애슐리</option><option>리미니</option><option>프랑제리</option><option>카페</option><option>프랜차이즈</option>
               <option>광주ck</option><option>주안ck</option><option>기흥ck</option><option>CX팀</option>
             </select>
           </div>
@@ -435,11 +435,11 @@
         <div class="f-acts">
           <button class="btn-pri" id="submitBtn" onclick="addRecord()">입력하기</button>
           <button class="btn-sec" onclick="resetForm()">초기화</button>
-          <div class="sav" id="savInd"><div class="spin"></div>저장 중...</div>
+          <div class="sav" id="savInd"><div class="spin"></div>저장 중..</div>
         </div>
       </div>
       <div class="fsec">
-        <p class="fsec-tit">데이터 목록 <span class="a-badge" id="listBadge">불법파견</span> <span class="fsec-tit-note">— 상세유형 · 브랜드 · 건수 · 상태 · 비고 수정 가능</span></p>
+        <p class="fsec-tit">데이터 목록 <span class="a-badge" id="listBadge">불법파견</span> <span class="fsec-tit-note">— 인라인 수정 가능</span></p>
         <div class="inp-filter-bar">
           <label class="inp-filter-lbl">상세유형
             <select id="inpSubFilter" class="inp-filter-sel" onchange="setInpSubFilter(this.value)">
@@ -460,7 +460,7 @@
           <button class="inp-filter-rst" onclick="resetInpFilters()">필터 초기화</button>
         </div>
         <div class="inp-bulk-bar">
-          <span class="inp-bulk-cnt" id="inpBulkCnt">0건 선택됨</span>
+          <span class="inp-bulk-cnt" id="inpBulkCnt">0개 선택됨</span>
           <span class="inp-bulk-stat">
             <select class="inp-bulk-sel" id="inpBulkStatSel"></select>
             <button class="inp-bulk-stat-btn" id="inpBulkStatBtn" onclick="bulkUpdStatusSelected()" disabled>선택 상태 변경</button>
@@ -469,7 +469,7 @@
         </div>
         <div class="recs">
           <table>
-            <thead><tr><th class="chk-col"><input type="checkbox" id="inpChkAll" title="현재 목록 전체 선택" onchange="toggleInpSelAll(this.checked)"></th><th>날짜</th><th>위반유형</th><th>상세유형</th><th>브랜드</th><th>건수</th><th>상태</th><th>비고</th><th>작성자</th><th></th></tr></thead>
+            <thead><tr><th class="chk-col"><input type="checkbox" id="inpChkAll" title="현재 목록 전체 선택"></th><th>날짜</th><th>유형</th><th>상세</th><th>브랜드</th><th>건수</th><th>상태</th><th>비고</th><th>작성자</th><th>삭제</th></tr></thead>
             <tbody id="inputTbody"></tbody>
           </table>
         </div>
@@ -477,7 +477,7 @@
     </div>
   </div>
 
-  <!-- ── AI 분석 ─────────────────────────────────────── -->
+  <!-- ?�?� AI 분석 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
   <div id="page-ai" class="pg">
     <p class="pg-title">AI 리스크 분석</p>
     <p class="pg-sub">분석할 항목을 선택하면 해당 부분만 빠르게 리포트로 받아볼 수 있습니다.</p>
@@ -489,7 +489,7 @@
         </div>
         <div class="ai-ctrls">
           <input type="text" id="aiContext" class="ai-ctx-inp" maxlength="500"
-                 placeholder="분석 추가 컨텍스트 (예: 브랜드장 입장에서 우리 브랜드 리스크 관리 수준 분석)">
+                 placeholder="분석 추가 컨텍스트 (예: 브랜드장 입장에서 우리 브랜드 리스크 관리 측면에서 분석)">
           <select id="aiStyle" class="ai-style-sel" onchange="changeAIStyle()">
             <option value="notion">📝 노션 스타일</option>
             <option value="newspaper">📰 신문 스타일</option>
@@ -500,7 +500,7 @@
       </div>
       <div class="ai-opts">
         <p class="ai-opts-tit">1. 분석 대상 브랜드 선택</p>
-        <p class="ai-opts-hint">선택한 브랜드의 데이터로 아래 분석 항목들을 수행합니다. 선택하지 않으면 전체 브랜드가 분석 대상이 됩니다.</p>
+        <p class="ai-opts-hint">선택된 브랜드의 데이터로 아래 분석 항목을 실행합니다. 선택이 없으면 전체 브랜드가 기준.</p>
         <div class="ai-brand-grid" id="aiBrandGrid"><!-- JS에서 렌더 --></div>
         <div class="ai-opt-acts">
           <button class="ai-opt-link" onclick="aiBrandAll(true)">모두 선택</button>
@@ -509,14 +509,14 @@
       </div>
       <div class="ai-opts">
         <p class="ai-opts-tit">2. 분석 항목 선택</p>
-        <p class="ai-opts-hint">선택한 브랜드 컨텍스트로 아래 항목들을 분석합니다.</p>
+        <p class="ai-opts-hint">선택된 브랜드 컨텍스트로 아래 항목을 분석합니다</p>
         <div class="ai-opt-grid">
-          <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="risk"   checked> 위험도 식별</label>
+          <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="risk"   checked> 위험도 영역별</label>
           <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="trend"  checked> 트렌드 분석</label>
           <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="rate"          > 완료율</label>
           <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="advice"        > 권고사항</label>
           <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="plan"          > 액션 플랜</label>
-          <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="compare"       > 브랜드별 비교</label>
+          <label class="ai-opt"><input type="checkbox" class="ai-opt-cb" value="compare"       > 브랜드 비교</label>
         </div>
         <div class="ai-opt-acts">
           <button class="ai-opt-link" onclick="aiOptAll(true)">모두 선택</button>
@@ -532,12 +532,12 @@
     </div>
   </div>
 
-  <!-- ── 관리자 ──────────────────────────────────────── -->
+  <!-- ?�?� 관리자 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
   <div id="page-admin" class="pg">
     <p class="pg-title">관리자 페이지</p>
     <p class="pg-sub">사용자 계정을 직접 추가하고 관리하세요.</p>
     <div class="fsec" id="pendingSec" style="display:none">
-      <p class="fsec-tit">가입 신청 대기 <span class="a-badge" id="pendingCntBadge">0</span> <span class="fsec-tit-note">— 승인 시 즉시 로그인 가능, 거절 시 신청이 삭제됩니다</span></p>
+      <p class="fsec-tit">가입 신청 대기<span class="a-badge" id="pendingCntBadge">0</span> <span class="fsec-tit-note">— 신청자가 없으면 숨김</span></p>
       <div class="recs">
         <table>
           <thead><tr><th>아이디</th><th>이름</th><th>희망 브랜드</th><th>신청일</th><th>처리</th></tr></thead>
@@ -548,8 +548,8 @@
     <div class="fsec">
       <p class="fsec-tit">새 계정 추가</p>
       <div class="fgrid">
-        <div class="fgroup"><label>이름</label><input type="text" id="new-name" placeholder="홍길동"></div>
-        <div class="fgroup"><label>아이디</label><input type="text" id="new-id" placeholder="영문/숫자 조합"></div>
+        <div class="fgroup"><label>이름</label><input type="text" id="new-name" placeholder="이름 입력"></div>
+        <div class="fgroup"><label>아이디</label><input type="text" id="new-id" placeholder="아이디 입력"></div>
         <div class="fgroup"><label>임시 비밀번호</label><input type="text" id="new-pw" placeholder="4자 이상"></div>
         <div class="fgroup"><label>권한</label>
           <select id="new-role" onchange="toggleNewBrandPicker()">
@@ -559,7 +559,7 @@
         </div>
       </div>
       <div id="newBrandWrap" style="margin-top:1rem">
-        <p class="brand-pick-tit">접근 가능 브랜드 <span class="brand-pick-hint">— 브랜드장이 대시보드/AI에서 볼 수 있는 브랜드</span></p>
+        <p class="brand-pick-tit">접근 가능 브랜드 <span class="brand-pick-hint">※ 브랜드장일 때만 적용</span></p>
         <div class="brand-pick-grid" id="newBrandGrid"><!-- JS에서 렌더 --></div>
         <div class="brand-pick-acts">
           <button type="button" class="ai-opt-link" onclick="newBrandAll(true)">모두 선택</button>
@@ -567,7 +567,7 @@
         </div>
       </div>
       <div id="newTypeWrap" style="margin-top:1rem">
-        <p class="brand-pick-tit">확인 가능 영역 <span class="brand-pick-hint">— 브랜드장이 대시보드/AI에서 볼 수 있는 영역</span></p>
+        <p class="brand-pick-tit">허인 가능 영역 <span class="brand-pick-hint">※ 브랜드장일 때만 적용</span></p>
         <div class="brand-pick-grid" id="newTypeGrid"><!-- JS에서 렌더 --></div>
         <div class="brand-pick-acts">
           <button type="button" class="ai-opt-link" onclick="newTypeAll(true)">모두 선택</button>
@@ -577,34 +577,34 @@
       <div class="f-acts" style="margin-top:1rem"><button class="btn-pri" onclick="createUser()">계정 추가</button></div>
       <div id="newUserResult" style="display:none;margin-top:1rem">
         <div class="ibox"><span class="iurl" id="newUserInfo"></span><button class="cp-btn" onclick="copyUser()">복사</button></div>
-        <p class="new-user-hint">위 정보를 팀원에게 전달하세요.</p>
+        <p class="new-user-hint">※ 위 정보를 당사자에게 전달하세요</p>
       </div>
     </div>
     <div class="fsec">
-      <p class="fsec-tit">가입된 사용자 <span class="fsec-tit-note">— 권한·브랜드는 행에서 직접 수정</span></p>
+      <p class="fsec-tit">가입된 사용자 <span class="fsec-tit-note">※ 권한·브랜드는 아래서 직접 수정</span></p>
       <div class="recs">
         <table>
-          <thead><tr><th>아이디</th><th>이름</th><th>권한</th><th>접근 브랜드</th><th>접근 영역</th><th>가입일</th><th></th></tr></thead>
+          <thead><tr><th>아이디</th><th>이름</th><th>권한</th><th>접근 브랜드</th><th>접근 영역</th><th>관리</th></tr></thead>
           <tbody id="userTbody"></tbody>
         </table>
       </div>
     </div>
     <div class="fsec">
-      <p class="fsec-tit">영역별 알림 임계치 <span class="fsec-tit-note">— 당월 위반이 전월 대비 +건수 또는 +% 이상 증가하면 대시보드 상단에 알림</span></p>
+      <p class="fsec-tit">영역별 알림 임계값 <span class="fsec-tit-note">※ 당월 위반이 당월 임계를 초과하면 알림</span></p>
       <div class="recs">
         <table>
-          <thead><tr><th>영역</th><th>전월 대비 +건수 임계</th><th>전월 대비 +% 임계</th></tr></thead>
+          <thead><tr><th>영역</th><th>당월 위반+건수 임계</th><th>당월 위반+% 임계</th></tr></thead>
           <tbody id="thresholdTbody"></tbody>
         </table>
       </div>
       <div class="f-acts" style="margin-top:0.8rem">
-        <button class="btn-pri" onclick="saveThresholds()">임계치 저장</button>
+        <button class="btn-pri" onclick="saveThresholds()">임계값 저장</button>
         <button class="btn-sec" onclick="resetThresholds()">기본값 복원</button>
       </div>
     </div>
   </div>
 
-  <!-- ── 사용 설명서 ─────────────────────────────────── -->
+  <!-- ?�?� ?�용 ?�명???�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
   <div id="page-help" class="pg">
     <div class="help-toolbar">
       <div>
@@ -806,12 +806,12 @@
     </main>
   </div><!-- /.app-main -->
 
-  <!-- 모바일 사이드바 오버레이 -->
+  <!-- 모바???�이?�바 ?�버?�이 -->
   <div class="side-overlay" id="sideOverlay" onclick="closeSidebar()"></div>
 
 </div><!-- /.app -->
 
-<!-- ── 보고서 생성 모달 ─────────────────────────────── -->
+<!-- ?�?� 보고???�성 모달 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
 <div class="mb hide" id="reportModal">
   <div class="modal">
     <p class="mo-title">📊 보고서 생성</p>
@@ -830,12 +830,12 @@
   </div>
 </div>
 
-<!-- ── 세션 만료 경고 모달 ─────────────────────────── -->
+<!-- ?�?� ?�션 만료 경고 모달 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
 <div class="mb hide" id="sessionWarnModal">
   <div class="modal">
-    <p class="mo-title">⏳ 세션이 곧 만료됩니다</p>
+    <p class="mo-title">⚠ 세션이 곧 만료됩니다</p>
     <p class="mo-sub">보안을 위해 로그인 후 3시간이 지나면 자동 로그아웃됩니다.<br>
-      <b id="sessWarnCount">5분 00초</b> 후 자동 로그아웃됩니다.</p>
+      <b id="sessWarnCount">5분 00초</b> 후 자동 로그아웃됩니다</p>
     <div class="mo-acts">
       <button class="btn-full" onclick="extendSession()">세션 연장 (3시간)</button>
       <button class="btn-lnk"  onclick="logout()">지금 로그아웃</button>
@@ -843,7 +843,7 @@
   </div>
 </div>
 
-<!-- ── 비밀번호 변경 모달 ──────────────────────────── -->
+<!-- ?�?� 비�?번호 변�?모달 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
 <div class="mb hide" id="changePwModal">
   <div class="modal">
     <p class="mo-title">비밀번호 변경</p>
@@ -869,14 +869,14 @@
   </div>
 </div>
 
-<!-- ── Edit name modal ─────────────────────────────── -->
+<!-- ?�?� Edit name modal ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
 <div class="mb hide" id="editNameModal">
   <div class="modal">
     <p class="mo-title" id="editNameTitle">이름 변경</p>
     <p class="mo-sub">사용자에게 표시되는 이름을 변경합니다.</p>
     <div class="fg">
       <label>이름</label>
-      <input type="text" id="editNameInput" placeholder="새 이름 입력"
+      <input type="text" id="editNameInput" placeholder="이름 입력"
              onkeydown="if(event.key==='Enter')saveEditName()">
     </div>
     <div class="mo-acts">
@@ -886,11 +886,11 @@
   </div>
 </div>
 
-<!-- ── Edit brands modal ───────────────────────────── -->
+<!-- ?�?� Edit brands modal ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
 <div class="mb hide" id="editBrandsModal">
   <div class="modal modal-wide">
     <p class="mo-title" id="editBrandsTitle">브랜드 권한</p>
-    <p class="mo-sub">이 사용자가 대시보드/AI에서 볼 수 있는 브랜드를 선택하세요.</p>
+    <p class="mo-sub">이 사용자가 대시보드·AI에서 볼 수 있는 브랜드를 선택하세요</p>
     <div class="brand-pick-grid" id="editBrandsGrid"></div>
     <div class="brand-pick-acts" style="margin-top:0.6rem">
       <button type="button" class="ai-opt-link" onclick="editBrandsAll(true)">모두 선택</button>
@@ -903,11 +903,11 @@
   </div>
 </div>
 
-<!-- ── Edit types modal ────────────────────────────── -->
+<!-- ?�?� Edit types modal ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
 <div class="mb hide" id="editTypesModal">
   <div class="modal modal-wide">
     <p class="mo-title" id="editTypesTitle">영역 권한</p>
-    <p class="mo-sub">이 사용자가 대시보드/AI에서 볼 수 있는 영역을 선택하세요.</p>
+    <p class="mo-sub">이 사용자가 대시보드·AI에서 볼 수 있는 영역을 선택하세요</p>
     <div class="brand-pick-grid" id="editTypesGrid"></div>
     <div class="brand-pick-acts" style="margin-top:0.6rem">
       <button type="button" class="ai-opt-link" onclick="editTypesAll(true)">모두 선택</button>
@@ -920,20 +920,20 @@
   </div>
 </div>
 
-<!-- ── Approve modal (가입 신청 승인) ───────────────── -->
+<!-- ?�?� Approve modal (가???�청 ?�인) ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
 <div class="mb hide" id="apprModal">
   <div class="modal modal-wide">
     <p class="mo-title" id="apprTitle">가입 승인</p>
-    <p class="mo-sub">이 사용자에게 부여할 브랜드 및 영역 권한을 선택하세요.</p>
+    <p class="mo-sub">이 사용자에게 부여할 브랜드·영역 권한을 선택하세요</p>
 
-    <p class="brand-pick-tit" style="margin-top:0.8rem">접근 브랜드 <span class="brand-pick-hint">— 신청자가 선택한 브랜드가 미리 체크되어 있습니다</span></p>
+    <p class="brand-pick-tit" style="margin-top:0.8rem">접근 브랜드 <span class="brand-pick-hint">※ 신청자가 고른 브랜드가 미리 체크됩니다</span></p>
     <div class="brand-pick-grid" id="apprBrandGrid"></div>
     <div class="brand-pick-acts" style="margin-top:0.5rem">
       <button type="button" class="ai-opt-link" onclick="apprBrandAll(true)">모두 선택</button>
       <button type="button" class="ai-opt-link" onclick="apprBrandAll(false)">모두 해제</button>
     </div>
 
-    <p class="brand-pick-tit" style="margin-top:1rem">확인 가능 영역</p>
+    <p class="brand-pick-tit" style="margin-top:1rem">허인 가능 영역</p>
     <div class="brand-pick-grid" id="apprTypeGrid"></div>
     <div class="brand-pick-acts" style="margin-top:0.5rem">
       <button type="button" class="ai-opt-link" onclick="apprTypeAll(true)">모두 선택</button>
@@ -947,13 +947,14 @@
   </div>
 </div>
 
-<!-- ── Toasts ───────────────────────────────────────── -->
+<!-- ?�?� Toasts ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
 <div class="undo-toast" id="undoToast">
-  <span>삭제되었습니다.</span>
+  <span>삭제되었습니다</span>
   <button class="undo-btn" onclick="undoDelete()">되돌리기</button>
 </div>
 <div class="toast" id="toast"></div>
 
 </body>
 </html>
+
 

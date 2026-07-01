@@ -71,11 +71,20 @@ function runKpiCountUp() {
 }
 
 // ── 대시보드 ─────────────────────────────────────────
+let _loadSeq = 0;
 async function loadData() {
   if (!user) { records = []; return; }   // 비로그인 시 데이터 자체를 비움
+  const seq = ++_loadSeq;
   setSy('불러오는 중...', '#15803d', '#f0fdf4');
-  try { records = await sbGet('records'); }
-  catch(e) { records = []; }
+  let fetched;
+  try { fetched = await sbGet('records'); }
+  catch(e) {
+    if (seq !== _loadSeq) return;        // 더 새로운 로드가 있으면 무시
+    setSy('불러오기 실패 — 이전 데이터 유지', '#dc2626', '#fef2f2');
+    return;                              // records 유지, 렌더 없이 종료
+  }
+  if (seq !== _loadSeq) return;          // 응답 도중 더 새로운 로드가 시작됐으면 버림
+  records = fetched;
   // 레거시 영역명 정규화: 'IP(지식재산)' → 'IP', '고객지원' → '클레임'
   records.forEach(r => {
     if (r.type === 'IP(지식재산)') r.type = 'IP';
@@ -388,9 +397,10 @@ function renderDash(k) {
     document.getElementById('kpi1r').textContent   = done ? `조치완료 ${done.toLocaleString()}건` : '-';
     document.getElementById('kpi1s').textContent   = `${yr}년 ${mo}월까지 누적`;
 
-    document.getElementById('kpi2Str').textContent = '당월 징계 건수';
-    document.getElementById('kpi2').textContent    = mTot.toLocaleString();
-    document.getElementById('kpi2r').textContent   = act ? `적발 ${act.toLocaleString()}건` : '-';
+    const mDone = dmb.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
+    document.getElementById('kpi2Str').textContent = '당월 조치완료 건수';
+    document.getElementById('kpi2').textContent    = mDone.toLocaleString();
+    document.getElementById('kpi2r').textContent   = mTot ? `적발 ${mTot.toLocaleString()}건` : '-';
     document.getElementById('kpi2s').textContent   = `${yr}년 ${mo}월 기준`;
 
     k3s.textContent = `조치완료 ${done.toLocaleString()} / 적발 ${vio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
@@ -528,18 +538,19 @@ function renderDash(k) {
   rb('rsBtnDone', isClm ? '처리완료': isJng   ? '조치완료' : isBc ? '해결' : isCatNoMon ? '완료'  : '완료');
 
   renderLine(d, ref);
-  renderRight(dm, k, ref);
+  renderRight(_modeRight === 'acc' ? d : dm, k, ref);
   // 막대그래프(브랜드별 현황)는 admin만 — 브랜드장은 본인 1~몇 개만 보이면 차트 의미가 옅어 카드 자체를 숨김.
   // 브랜드장에게는 도넛/라인 차트의 환산 안내 푸터로 안내가 충분히 전달됨.
   const barCard = document.getElementById('barChartCard');
   if (isAdmin()) {
     if (barCard) barCard.style.display = '';
-    renderBar(dm);
+    renderBar(_modeBar === 'acc' ? d : dm);
   } else {
     if (barCard) barCard.style.display = 'none';
   }
-  renderRecent(dm);
-  renderHeatmap();
+  _recentData = d.slice(0, 100);
+  renderRecent(_recentData);
+  renderHeatmap(_modeHeat === 'acc' ? null : ym);
   renderAlerts();
 
   // 영업비밀 10:1 환산 안내: 도넛·브랜드별 현황은 전체·영업비밀에서, 추이 그래프는 영업비밀 탭에서만 노출
@@ -554,7 +565,7 @@ function renderDash(k) {
   // KPI 카운트업: 렌더 직후 + 8초 주기 반복
   clearInterval(_kpiRepeat);
   runKpiCountUp();
-  _kpiRepeat = setInterval(runKpiCountUp, 8000);
+  _kpiRepeat = setInterval(runKpiCountUp, 5000);
 
   const board = document.getElementById('gradeBoard');
   if (board) {
@@ -569,7 +580,7 @@ function renderDash(k) {
       } else {
         visibleAreas = GRADE_AREAS;
       }
-      const showOverall = (k === 'all') && (!curDashCat || curDashCat === 'all');
+      const showOverall = k === 'all';
       if (!visibleAreas.length) {
         board.style.display = 'none';
       } else {
@@ -578,6 +589,51 @@ function renderDash(k) {
       }
     }
   }
+}
+
+// ── 차트 누적/당월 모드 ─────────────────────────────
+let _modeRight = 'acc', _modeBar = 'acc', _modeHeat = 'acc';
+let _recentData = [];
+function setChartMode(id, val) {
+  if (id === 'right') _modeRight = val;
+  if (id === 'bar')   _modeBar   = val;
+  if (id === 'heat')  _modeHeat  = val;
+  renderDash(curFilter);
+}
+
+// ── 등급 순위판 정보 팝업 ──────────────────────────
+let __gradeInfoEl = null;
+function showGradeInfo(target) {
+  if (__gradeInfoEl) return;
+  const isCat = curDashCat && curDashCat !== 'all';
+  const areaList = isCat
+    ? (CAT_TYPES[curDashCat] || []).filter(t => GRADE_AREAS.includes(t))
+    : GRADE_AREAS;
+  const areaStr = areaList.join(', ');
+  __gradeInfoEl = document.createElement('div');
+  __gradeInfoEl.className = 'grade-info-popup';
+  __gradeInfoEl.innerHTML =
+    `<div class="gip-tit">순위 산정 기준</div>` +
+    `<div class="gip-sec">평가 영역 (${areaList.length}개)</div>` +
+    `<div class="gip-val">${esc(areaStr)}</div>` +
+    `<div class="gip-sec">영역별 등급 기준 (당월 위반 건수)</div>` +
+    `<div class="gip-val">A ≤3건 · B ≤6건 · C ≤9건 · D 10건↑<br>부실채권: A ≤3 · B ≤5 · C ≤10 · D 11↑<br>(2개월초과+금액≤1억 → 즉시 D)</div>` +
+    `<div class="gip-sec">등급 점수</div>` +
+    `<div class="gip-val">A=10점 · B=8점 · C=5점 · D=3점 · F=0점</div>` +
+    `<div class="gip-sec">종합등급 기준 (평균점수)</div>` +
+    `<div class="gip-val">A 9-10 · B 7-8 · C 4-6 · D 1-3 · F 0</div>` +
+    `<div class="gip-sec">100점 환산</div>` +
+    `<div class="gip-val">평균점수 × 10</div>`;
+  document.body.appendChild(__gradeInfoEl);
+  const rect = target.getBoundingClientRect();
+  const pw = 260;
+  let left = rect.left;
+  if (left + pw > window.innerWidth - 12) left = Math.max(12, window.innerWidth - pw - 12);
+  __gradeInfoEl.style.left = left + 'px';
+  __gradeInfoEl.style.top  = (rect.bottom + 6) + 'px';
+}
+function hideGradeInfo() {
+  if (__gradeInfoEl) { __gradeInfoEl.remove(); __gradeInfoEl = null; }
 }
 
 // ── 브랜드 리스크 등급 순위판 ──────────────────────
@@ -637,34 +693,37 @@ function renderLeaderboard(visibleAreas, showOverall) {
   const brands = (isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b)))
     .filter(b => !RANK_EXCLUDE.has(b));
 
+  const scoreAreas = visibleAreas.filter(t => GRADE_AREAS.includes(t));
   const ranked = brands.map(brand => {
     const details = {};
-    let total = 0;
     GRADE_AREAS.forEach(type => {
       const d = calcGradeDetail(type, brand, ym);
       details[type] = d;
-      total += GRADE_SCORE[d.grade] ?? 0;
     });
-    const avg = total / GRADE_AREAS.length;
+    let total = 0;
+    scoreAreas.forEach(type => { total += GRADE_SCORE[details[type].grade] ?? 0; });
+    const avg   = scoreAreas.length ? total / scoreAreas.length : 0;
+    const score = parseFloat((avg * 10).toFixed(1));
     const overallGrade = avg >= 9 ? 'A' : avg >= 7 ? 'B' : avg >= 4 ? 'C' : avg >= 1 ? 'D' : 'F';
-    return { brand, details, total, overallGrade };
-  }).sort((a, b) => b.total - a.total || a.brand.localeCompare(b.brand));
+    return { brand, details, total, score, overallGrade };
+  }).sort((a, b) => b.score - a.score || a.brand.localeCompare(b.brand));
 
   const tbody = document.getElementById('gradeRows');
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  ranked.forEach(({ brand, details, overallGrade }, idx) => {
+  ranked.forEach(({ brand, details, score, overallGrade }, idx) => {
     const rank = idx + 1;
     const pc   = rank === 1 ? 'p1' : rank === 2 ? 'p2' : rank === 3 ? 'p3' : '';
     const tr   = document.createElement('tr');
+    const scoreTxt = Number.isInteger(score) ? score : score.toFixed(1);
     tr.innerHTML =
       `<td><span class="gp ${pc}">${rank}</span></td>` +
       `<td class="gt-brand">${esc(brand)}</td>` +
-      (showOverall ? `<td class="gt-overall"><span class="gc ${overallGrade}">${overallGrade}</span></td><td class="gt-sep"></td>` : '') +
+      (showOverall ? `<td class="gt-overall"><div class="gt-overall-wrap"><span class="gc ${overallGrade}">${overallGrade}</span><span class="gt-overall-score">${scoreTxt}점</span></div></td><td class="gt-sep"></td>` : '') +
       visibleAreas.map(t =>
         `<td class="gt-area"><div class="gc-cell"><span class="gc ${details[t].grade}">${details[t].grade}</span>` +
-        `<span class="gc-cnt">${details[t].cnt}/<span class="gc-mon">${details[t].cnt + details[t].mon}</span></span></div></td>`
+        `<span class="gc-cnt"><span class="gc-vio">${details[t].cnt}</span>/<span class="gc-mon">${details[t].cnt + details[t].mon}</span></span></div></td>`
       ).join('');
     tbody.appendChild(tr);
     setTimeout(() => tr.classList.add('gb-in'), 40 + idx * 500);
@@ -762,7 +821,7 @@ function scheduleRankAnim() {
 // 고정 브랜드 순서로 카드 배치, 각 카드에 Top 3 영역을 칩으로 표시
 const BRAND_ORDER = ['애슐리','피자몰','로운','자연별곡','리미니','델리바이애슐리','프랜차이즈','카페','프랑제리','기흥ck','광주ck','주안ck','CX팀','상권','본부'];
 
-function renderHeatmap() {
+function renderHeatmap(scopeYm) {
   const wrap = document.getElementById('heatmapWrap');
   if (!wrap) return;
   const brands = isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b));
@@ -783,9 +842,8 @@ function renderHeatmap() {
         : `브랜드/상세유형별 위험도 <span class="card-sub-note">— ${esc(curFilter)} · 상세 위반 유형별 위반 건수</span>`;
   }
 
-  // 기준 월로 스코프된 records
-  const ym = refYm();
-  const mr = records.filter(r => r.date && r.date.startsWith(ym));
+  // scopeYm 있으면 당월, 없으면 누적(전체)
+  const mr = scopeYm ? records.filter(r => r.date && r.date.startsWith(scopeYm)) : records;
 
   // 카운트: 전체 모드는 (영역, 브랜드), 영역 모드는 (상세유형, 브랜드)
   const cnt = isAll
@@ -1053,12 +1111,12 @@ function renderPager(c, curr, total) {
   c.innerHTML = html;
 }
 
-function gotoPage(p) { recentPage = p; renderRecent(getFRM(curFilter)); }
+function gotoPage(p) { recentPage = p; renderRecent(_recentData); }
 
 function setRecentStatus(btn, st) {
   document.querySelectorAll('.rs-btn').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
   recentStatus = st;
   recentPage = 0;
-  renderRecent(getFRM(curFilter));
+  renderRecent(_recentData);
 }
