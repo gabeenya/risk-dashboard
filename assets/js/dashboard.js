@@ -385,9 +385,11 @@ function renderDash(k) {
   // kpi3Str/kpi3: 부실채권은 아래 isBc 블록에서 '회수금액'으로 덮어씀
   document.getElementById('kpi3Str').textContent = isClm ? '처리완료율' : isJng ? '조치완료율' : isBc ? '회수금액' : '완료율';
   document.getElementById('kpi3').textContent    = isBc ? '-' : dr + '%';
-  // 안전 뷰: KPI3(완료율) 카드 숨김
+  // 안전/클레임 뷰: KPI3 숨김 + 나머지 3칸 균등 너비
   const _kpi3Card = document.getElementById('kpi3Str') && document.getElementById('kpi3Str').closest('.kpi');
   if (_kpi3Card) _kpi3Card.style.display = (isAn || isClm) ? 'none' : '';
+  const _kpiGrid = _kpi3Card && _kpi3Card.closest('.kpi-grid');
+  if (_kpiGrid) _kpiGrid.style.gridTemplateColumns = (isAn || isClm) ? 'repeat(3,1fr)' : '';
 
   const k3s    = document.getElementById('kpi3s');
   const doneLbl = isClm ? '처리완료' : isJng ? '조치완료' : isBc ? '해결' : '완료';
