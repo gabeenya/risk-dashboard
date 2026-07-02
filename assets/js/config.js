@@ -30,7 +30,7 @@ window.__sbLastErr = '';
 const sbIns = async (t, d) => {
   const r = await fetch(`${SB_URL}/rest/v1/${t}`, {
     method: 'POST',
-    headers: { ...H, 'Prefer': 'return=representation' },
+    headers: { ...H, 'Prefer': 'return=minimal' },
     body: JSON.stringify(d)
   });
   if (!r.ok) { const msg = await r.text(); console.error('[sbIns]', t, r.status, msg); window.__sbLastErr = msg; return false; }

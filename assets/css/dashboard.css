@@ -280,16 +280,17 @@ tr.sla-over:hover td { background: #fee2e2; }
 .ph-row td { color: transparent; user-select: none; pointer-events: none; }
 .ph-row:hover td { background: transparent; }
 
-/* 최근 모니터링 표 — 컨테이너 너비에 자연스럽게 맞춰 축소.
-   고정폭 컬럼(날짜/유형/브랜드/상태)은 nowrap, 가변 컬럼(상세/비고)은 wrap 허용. */
-.btm-row .recs { overflow-x: auto; }
-.btm-row .recs table { width: 100%; table-layout: fixed; }
-.btm-row .recs th:nth-child(1), .btm-row .recs td:nth-child(1) { width: 12%; min-width: 60px; white-space: nowrap; }   /* 날짜 */
-.btm-row .recs th:nth-child(2), .btm-row .recs td:nth-child(2) { width: 14%; min-width: 70px; white-space: nowrap; }   /* 유형 */
-.btm-row .recs th:nth-child(3), .btm-row .recs td:nth-child(3) { width: 28%; word-break: break-word; }                  /* 상세 (가변, wrap) */
-.btm-row .recs th:nth-child(4), .btm-row .recs td:nth-child(4) { width: 12%; min-width: 70px; white-space: nowrap; }    /* 브랜드 */
-.btm-row .recs th:nth-child(5), .btm-row .recs td:nth-child(5) { width: 14%; min-width: 80px; white-space: nowrap; }    /* 상태 */
-.btm-row .recs th:nth-child(6), .btm-row .recs td:nth-child(6) { width: 20%; word-break: break-word; }                  /* 비고 (가변, wrap) */
+/* 최근 모니터링 — 무한 티커: 헤더 고정 테이블 + 바디 포트(overflow:hidden) 별도 구성 */
+.recs-port { overflow: hidden; }
+.btm-row .recs-htbl,
+.btm-row .recs-btbl { width: 100%; table-layout: fixed; }
+@keyframes ticker-up { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+.btm-row .recs-htbl th:nth-child(1), .btm-row .recs-btbl td:nth-child(1) { width: 12%; min-width: 60px; white-space: nowrap; }   /* 날짜 */
+.btm-row .recs-htbl th:nth-child(2), .btm-row .recs-btbl td:nth-child(2) { width: 14%; min-width: 70px; white-space: nowrap; }   /* 유형 */
+.btm-row .recs-htbl th:nth-child(3), .btm-row .recs-btbl td:nth-child(3) { width: 28%; word-break: break-word; }                 /* 상세 */
+.btm-row .recs-htbl th:nth-child(4), .btm-row .recs-btbl td:nth-child(4) { width: 12%; min-width: 70px; white-space: nowrap; }   /* 브랜드 */
+.btm-row .recs-htbl th:nth-child(5), .btm-row .recs-btbl td:nth-child(5) { width: 14%; min-width: 80px; white-space: nowrap; }   /* 상태 */
+.btm-row .recs-htbl th:nth-child(6), .btm-row .recs-btbl td:nth-child(6) { width: 20%; word-break: break-word; }                 /* 비고 */
 
 /* ── 모바일 — 띠지(필터바) 가로 스크롤 ─────────────── */
 @media (max-width: 768px) {

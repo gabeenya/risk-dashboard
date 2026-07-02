@@ -46,9 +46,14 @@ async function addNote() {
   const btn = document.getElementById('ni-add-btn');
   if (btn) btn.disabled = true;
   const content = serializeNote(main, detail, action);
-  const ok = await sbIns('notes', [{ id: Date.now(), date, type: curType, content, author: user.name }]);
+  const ok = await sbIns('notes', [{ date, type: curType, content, author: user.name }]);
   if (btn) btn.disabled = false;
-  if (!ok) { toast('저장 실패'); return; }
+  if (!ok) {
+    let em = window.__sbLastErr || '';
+    try { em = JSON.parse(em).message || em; } catch {}
+    toast('저장 실패 — ' + (em.slice(0, 100) || '알 수 없는 오류'));
+    return;
+  }
   const fetched = await sbGet('notes');
   notes = (fetched || []).sort((a, b) => b.date.localeCompare(a.date));
   const mainEl = document.getElementById('ni-main');
@@ -73,7 +78,12 @@ async function saveNote(id) {
   const date    = dateInp ? dateInp.value : note.date;
   const content = serializeNote(mInp.value.trim(), dInp ? dInp.value.trim() : '', aInp ? aInp.value.trim() : '');
   const ok = await sbUpd('notes', id, { date, content });
-  if (!ok) { toast('수정 실패'); return; }
+  if (!ok) {
+    let em = window.__sbLastErr || '';
+    try { em = JSON.parse(em).message || em; } catch {}
+    toast('수정 실패 — ' + (em.slice(0, 100) || '알 수 없는 오류'));
+    return;
+  }
   note.date = date;
   note.content = content;
   renderNotesList();

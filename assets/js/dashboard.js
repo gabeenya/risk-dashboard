@@ -349,17 +349,16 @@ function _applyCardAnim(el, anim, delay) {
   if (!el) return;
   el.style.animation = 'none';
   void el.offsetWidth;
-  el.style.animation = `${anim} 0.44s cubic-bezier(0.22,0.61,0.36,1) ${delay || '0s'} both`;
+  el.style.animation = `${anim} 0.75s cubic-bezier(0.22,0.61,0.36,1) ${delay || '0s'} both`;
 }
 
-function animateRecentRows() {
+function _resumeTicker() {
   const tb = document.getElementById('recentTbody');
-  if (!tb) return;
-  tb.querySelectorAll('tr:not(.ph-row)').forEach((tr, i) => {
-    tr.style.animation = 'none';
-    void tr.offsetWidth;
-    tr.style.animation = `row-flow-in 0.3s cubic-bezier(0.22,0.61,0.36,1) ${(i * 0.05).toFixed(2)}s both`;
-  });
+  if (tb) tb.style.animationPlayState = 'running';
+}
+function _pauseTicker() {
+  const tb = document.getElementById('recentTbody');
+  if (tb) tb.style.animationPlayState = 'paused';
 }
 
 function animateHeatmapBars() {
@@ -384,15 +383,14 @@ function _triggerCardAnim(el) {
   else if (el.id === 'lineChartCard')  { if (lChart) { lChart.reset();  lChart.update();  } }
   else if (el.id === 'rightChartCard') { if (rChart) { rChart.reset();  rChart.update();  } }
   else if (el.id === 'barChartCard')   { if (bChart) { bChart.reset();  bChart.update();  } }
-  else                              { animateRecentRows(); }
+  else                              { _resumeTicker(); }
 }
 
 function _resetCardAnim(el) {
   if (!el) return;
   if (el.id === 'gradeBoard') { el.style.animation = ''; }
   else if (!_CHART_IDS.includes(el.id) && el.id !== 'heatmapCard') {
-    const tb = document.getElementById('recentTbody');
-    if (tb) tb.querySelectorAll('tr').forEach(tr => tr.style.animation = '');
+    _pauseTicker();
   }
   // 차트/히트맵: 별도 리셋 불필요
 }
@@ -1231,6 +1229,7 @@ function renderLine(d, ref) {
     },
     options: {
       responsive: true, maintainAspectRatio: false,
+      animation: { duration: 1800, easing: 'easeInOutQuart' },
       plugins: { legend: { display: false } },
       scales: {
         x: { grid:{color:'rgba(0,0,0,0.03)'}, ticks:{font:{size:10},color:'#94a3b8',autoSkip:false,maxRotation:0} },
@@ -1259,7 +1258,9 @@ function renderRight(d, k, ref) {
       type: 'doughnut',
       data: { labels: TYPES, datasets: [{ data: cnt, backgroundColor: TC, borderWidth: 3, borderColor: '#fff' }] },
       options: {
-        responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{display:false}},
+        responsive:true, maintainAspectRatio:false, cutout:'65%',
+        animation: { duration: 1800, easing: 'easeInOutQuart' },
+        plugins:{legend:{display:false}},
         onClick: (_, els) => { if (els.length) openDrill('type', TYPES[els[0].index]); }
       }
     });
@@ -1280,7 +1281,9 @@ function renderRight(d, k, ref) {
       type: 'doughnut',
       data: { labels: subs, datasets: [{ data: cnt, backgroundColor: subs.map((_,i) => SC[i%SC.length]), borderWidth: 3, borderColor: '#fff' }] },
       options: {
-        responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{display:false}},
+        responsive:true, maintainAspectRatio:false, cutout:'65%',
+        animation: { duration: 1800, easing: 'easeInOutQuart' },
+        plugins:{legend:{display:false}},
         onClick: (_, els) => { if (els.length) openDrill('subtype', k, subs[els[0].index]); }
       }
     });
@@ -1304,6 +1307,7 @@ function renderBar(d) {
     },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      animation: { duration: 1800, easing: 'easeInOutQuart' },
       plugins: { legend: { display: false } },
       scales: {
         x: { grid:{color:'rgba(0,0,0,0.03)'}, ticks:{font:{size:10},color:'#94a3b8'}, beginAtZero:true },
@@ -1315,23 +1319,38 @@ function renderBar(d) {
 }
 
 function renderRecent(d) {
-  const tb = document.getElementById('recentTbody');
-  const pg = document.getElementById('recentPager');
-  const PAGE_SIZE = 10;
-  // 상태별 필터 적용
-  const filtered = recentStatus === 'all' ? d : d.filter(r => r.status === recentStatus);
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const tb   = document.getElementById('recentTbody');
+  const pg   = document.getElementById('recentPager');
+  const port = document.getElementById('recsPort');
+
+  const PAGE_SIZE = 20;  // 페이지당 행 수
+  const MAX_PAGE  = 5;   // 최대 페이지 수
+  const SHOW      = 10;  // 한 번에 보이는 행 수
+  const MAX_ROWS  = PAGE_SIZE * MAX_PAGE;  // 최대 100건
+
+  const filtered = (recentStatus === 'all' ? d : d.filter(r => r.status === recentStatus))
+                    .slice(0, MAX_ROWS);
+
+  const totalPages = Math.min(MAX_PAGE, Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
   if (recentPage >= totalPages) recentPage = totalPages - 1;
   if (recentPage < 0) recentPage = 0;
-  const start = recentPage * PAGE_SIZE;
-  const slice = filtered.slice(start, start + PAGE_SIZE);
 
-  if (!slice.length) {
+  const pageRows = filtered.slice(recentPage * PAGE_SIZE, (recentPage + 1) * PAGE_SIZE);
+
+  // 기존 티커 초기화
+  tb.style.animation = 'none';
+  tb.style.animationPlayState = '';
+
+  if (pg) pg.style.display = '';
+
+  if (!pageRows.length) {
     tb.innerHTML = '<tr><td colspan="6"><div class="empty">데이터를 입력해 주세요</div></td></tr>';
-    pg.innerHTML = '';
+    if (port) port.style.height = '';
+    if (pg) pg.innerHTML = '';
     return;
   }
-  let html = slice.map(r => {
+
+  const makeRow = r => {
     const over = isSlaOver(r);
     const ageBadge = over ? ` <span class="sla-badge" title="발생 후 ${daysSince(r.date)}일 경과">${daysSince(r.date)}일</span>` : '';
     return `<tr${over ? ' class="sla-over"' : ''}>
@@ -1342,16 +1361,29 @@ function renderRecent(d) {
     <td><span class="st ${sc(r.status)}">${esc(statLbl(r.status, r.type))}</span>${ageBadge}</td>
     <td class="cell-sub">${esc(r.note||'-')}</td>
   </tr>`;
-  }).join('');
-  for (let i = slice.length; i < PAGE_SIZE; i++) {
-    html += '<tr class="ph-row"><td colspan="6">&nbsp;</td></tr>';
+  };
+
+  const singleHtml = pageRows.map(makeRow).join('');
+
+  // 단일 세트 렌더 후 행 높이 측정
+  tb.innerHTML = singleHtml;
+  void tb.offsetHeight;
+  const rowH = pageRows.length ? (tb.offsetHeight / pageRows.length) : 36;
+  if (port) port.style.height = `${rowH * Math.min(SHOW, pageRows.length)}px`;
+
+  if (pageRows.length <= SHOW) {
+    // 10개 이하: 정적 표시 (순환 불필요)
+    renderPager(pg, recentPage, totalPages);
+    return;
   }
-  tb.innerHTML = html;
+
+  // 2배 복제 → -50% translateY = 정확히 1세트(20행) 이동 → 무한 루프
+  tb.innerHTML = singleHtml + singleHtml;
+  const dur = pageRows.length * 2.5;  // 행당 2.5초 (20행 → 50초 1주기)
+  void tb.offsetHeight;
+  tb.style.animation = `ticker-up ${dur}s linear infinite`;
+
   renderPager(pg, recentPage, totalPages);
-  // 페이지 전환·상태 필터 변경 등으로 직접 호출된 경우: 카드가 보이면 즉시 워터폴 애니메이션
-  // (renderDash 경로: _prevIntersect 삭제 + Observer 재연결로 처리)
-  const rc = document.querySelector('#barChartCard ~ .card');
-  if (rc && isInViewport(rc) && _prevIntersect.has(rc)) animateRecentRows();
 }
 
 function renderPager(c, curr, total) {
