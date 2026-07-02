@@ -76,17 +76,17 @@ async function loadData() {
   if (!user) { records = []; return; }   // 비로그인 시 데이터 자체를 비움
   const seq = ++_loadSeq;
   setSy('불러오는 중...', '#15803d', '#f0fdf4');
-  let fetched;
-  let fetchedNotes;
-  try { [fetched, fetchedNotes] = await Promise.all([sbGet('records'), sbGet('notes')]); }
-  catch(e) {
-    if (seq !== _loadSeq) return;
+  // notes 실패가 records 로딩을 막지 않도록 allSettled 사용
+  const [recRes, notesRes] = await Promise.allSettled([sbGet('records'), sbGet('notes')]);
+  if (seq !== _loadSeq) return;
+  if (recRes.status === 'rejected') {
     setSy('불러오기 실패 — 이전 데이터 유지', '#dc2626', '#fef2f2');
     return;
   }
-  if (seq !== _loadSeq) return;
-  records = fetched;
-  notes   = (fetchedNotes || []).sort((a, b) => b.date.localeCompare(a.date));
+  records = Array.isArray(recRes.value) ? recRes.value : [];
+  if (notesRes.status === 'fulfilled' && Array.isArray(notesRes.value)) {
+    notes = notesRes.value.sort((a, b) => b.date.localeCompare(a.date));
+  }
   // 레거시 영역명 정규화: 'IP(지식재산)' → 'IP', '고객지원' → '클레임'
   records.forEach(r => {
     if (r.type === 'IP(지식재산)') r.type = 'IP';

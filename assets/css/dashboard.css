@@ -237,9 +237,12 @@
 .jng-pg-btn:disabled { opacity:0.4; cursor:default; }
 .jng-pg-info { font-size:11px; color:#94a3b8; }
 
+/* ── 리스크 측정판 / 조치사항 공통 섹션 헤더 ─────────── */
+.gb-sec-hd { display:flex; align-items:center; gap:8px; margin:0 -1.2rem 0.85rem; padding:0.48rem 1.2rem; background:#eef2f8; }
+.gb-sec-tit { font-size:13px; font-weight:700; color:#1e3a8a; letter-spacing:0.2px; }
+
 /* ── 조치사항 섹션 래퍼 ──────────────────────────────── */
-.action-sec { border-top:2px solid #e2e8f0; margin-top:1rem; padding-top:0.8rem; }
-.action-sec-hd { font-size:13px; font-weight:800; color:#0f172a; letter-spacing:0.3px; margin-bottom:0.8rem; }
+.action-sec { border-top:1.5px solid #e2e8f0; margin-top:1.1rem; padding-top:1rem; }
 
 /* ── 영역별 특이사항 패널 (대시보드) ────────────────── */
 .notes-panel { padding-top:0.8rem; border-top:1px solid #f1f5f9; margin-top:0.6rem; }

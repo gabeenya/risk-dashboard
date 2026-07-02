@@ -17,7 +17,7 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때마다 v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260702t';</script>
+<script>window.__ASSET_V = '20260702w';</script>
 
 <!-- ?�폰?? Pretendard (?��? UI ?��? ?�트) -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
@@ -226,9 +226,11 @@
     <div class="alert-bar" id="alertBar" style="display:none"></div>
     <!-- ?�?� 브랜??리스???�급 ?�위???�?� -->
     <div class="grade-board card" id="gradeBoard">
-      <div class="card-hd">
-        <span class="card-tit">리스크 노출/측정판<span class="live-badge"><span class="live-dot"></span>LIVE</span><button class="grade-info-btn" onmouseenter="showGradeInfo(this)" onmouseleave="hideGradeInfo()" onclick="showGradeInfo(this)">?</button></span>
-        <span class="card-tag" id="gradeYm"></span>
+      <div class="gb-sec-hd">
+        <span class="gb-sec-tit">리스크 노출/측정판</span>
+        <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+        <button class="grade-info-btn" onmouseenter="showGradeInfo(this)" onmouseleave="hideGradeInfo()" onclick="showGradeInfo(this)">?</button>
+        <span class="card-tag" id="gradeYm" style="margin-left:auto"></span>
       </div>
       <div class="grade-legend">
         <span class="gc A">A</span><span>우수</span>
@@ -245,7 +247,9 @@
         </table>
       </div>
       <div class="action-sec">
-        <div class="action-sec-hd">조치사항</div>
+        <div class="gb-sec-hd">
+          <span class="gb-sec-tit">조치사항</span>
+        </div>
         <div id="jngPanel" class="jng-panel">
           <div class="jng-panel-hd">
             <span>징계 현황</span>
