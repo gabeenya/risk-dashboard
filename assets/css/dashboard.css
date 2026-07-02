@@ -270,7 +270,7 @@
 .action-sec { border-top:1.5px solid #e2e8f0; margin-top:1.1rem; padding-top:1rem; }
 
 /* ── 측정판 + 조치사항 나란히 (부정/부실 제거 · 매장 운영 관리 분류뷰) ── */
-.grade-board.layout-side { display:grid; grid-template-columns:1fr 300px; grid-template-rows:auto auto 1fr; column-gap:1.2rem; }
+.grade-board.layout-side { display:grid; grid-template-columns:1fr 3fr; grid-template-rows:auto auto 1fr; column-gap:1.2rem; }
 .grade-board.layout-side > .gb-sec-hd  { grid-column:1; margin-right:0; }
 .grade-board.layout-side > .grade-legend { grid-column:1; }
 .grade-board.layout-side > .grade-tbl-wrap { grid-column:1; grid-row:3; margin-bottom:0; }
