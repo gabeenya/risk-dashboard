@@ -237,8 +237,12 @@
 .jng-pg-btn:disabled { opacity:0.4; cursor:default; }
 .jng-pg-info { font-size:11px; color:#94a3b8; }
 
+/* ── 조치사항 섹션 래퍼 ──────────────────────────────── */
+.action-sec { border-top:2px solid #e2e8f0; margin-top:1rem; padding-top:0.8rem; }
+.action-sec-hd { font-size:13px; font-weight:800; color:#0f172a; letter-spacing:0.3px; margin-bottom:0.8rem; }
+
 /* ── 영역별 특이사항 패널 (대시보드) ────────────────── */
-.notes-panel { padding-top:0.9rem; border-top:1px solid #f1f5f9; margin-top:0.6rem; }
+.notes-panel { padding-top:0.8rem; border-top:1px solid #f1f5f9; margin-top:0.6rem; }
 .notes-panel-hd { font-size:12px; font-weight:700; color:#0f172a; margin-bottom:0.6rem; }
 .notes-dash-list { display:flex; flex-direction:column; gap:8px; }
 .nd-item { background:#fafafa; border:1px solid #eaecf0; border-left:3px solid #6366f1; border-radius:8px; padding:8px 12px; }

@@ -60,6 +60,18 @@ function checkSession() {
   if (left <= 0) { autoLogout(); return; }
   if (left <= SESS_WARN_MS && !sessWarned) showSessionWarn();
   if (sessWarned) updateSessionWarnCountdown(left);
+  updateSessCountdown(left);
+}
+function updateSessCountdown(ms) {
+  const el  = document.getElementById('sessCountdown');
+  const bar = document.getElementById('sessCountdownBar');
+  if (!el) return;
+  if (bar) bar.style.display = user ? '' : 'none';
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const sc = Math.floor((ms % 60000) / 1000);
+  el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sc).padStart(2,'0')}`;
+  el.style.color = ms <= SESS_WARN_MS ? '#dc2626' : '#64748b';
 }
 
 function autoLogout() {
@@ -279,5 +291,7 @@ function applyUser() {
   } else {
     if (app) app.classList.add('logged-out');
     c.classList.remove('show');
+    const bar = document.getElementById('sessCountdownBar');
+    if (bar) bar.style.display = 'none';
   }
 }

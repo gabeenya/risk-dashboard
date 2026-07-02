@@ -124,6 +124,9 @@ body {
 .uchip-info { display: flex; flex-direction: column; min-width: 0; }
 .uchip-name { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .uchip-meta { font-size: 10.5px; color: #8092ba; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sess-countdown-bar { display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.06); border-radius:8px; padding:5px 10px; margin-top:8px; }
+.sess-countdown-lbl { font-size:10px; color:#8092ba; }
+.sess-countdown { font-size:12px; font-weight:700; color:#64748b; font-variant-numeric:tabular-nums; letter-spacing:0.5px; }
 .side-foot-acts { display: flex; gap: 6px; margin-top: 8px; }
 .lo-btn {
   flex: 1; font-size: 11.5px; color: #aebbd8;

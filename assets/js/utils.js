@@ -105,7 +105,10 @@ function goHome() {
   document.getElementById('page-dashboard').classList.add('on');
   document.getElementById('tabDashboard').classList.add('on');
   curFilter = 'all';
-  curBrand = 'all';   // 영역·브랜드 필터 동기화는 renderDash 내 syncAreaControls/populateDashBrandSel가 처리
+  curBrand = 'all';
+  curDashCat = 'all';
+  const catSel = document.getElementById('dashCatSel');
+  if (catSel) catSel.value = 'all';
   setTopbarTitle('dashboard');
   closeSidebar();
   loadData();
