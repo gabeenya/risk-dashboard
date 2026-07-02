@@ -362,8 +362,8 @@ function renderDash(k) {
   const mTot = dmb.reduce((s, r) => s + monCnt(r), 0);
   const mVio = dmb.filter(isVio).reduce((s, r) => s + r.count, 0);
   const done = dYb.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);   // 기준월까지 누적 완료
-  const act  = dmb.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);
-  const slaOver = dmb.filter(isSlaOver).reduce((s, r) => s + r.count, 0);
+  const act  = dYb.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);  // 누적 전체 기준
+  const slaOver = dYb.filter(isSlaOver).reduce((s, r) => s + r.count, 0);
   const dr  = vio ? (done / vio * 100).toFixed(1) : 0;   // 누적 완료율 = 누적 완료 / 누적 위반
   const vr  = tot  ? (vio  / tot  * 100).toFixed(1) : 0;
   const mvr = mTot ? (mVio / mTot * 100).toFixed(1) : 0;
