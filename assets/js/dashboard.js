@@ -690,27 +690,49 @@ function hideGradeInfo() {
 }
 
 // ── 브랜드 리스크 등급 순위판 ──────────────────────
-const GRADE_AREAS   = ['불법파견','표시광고','가맹','IP','노무','영업비밀','부실채권'];
+const GRADE_AREAS   = ['불법파견','표시광고','가맹','IP','노무','영업비밀','부실채권','안전'];
 const GRADE_SCORE   = { A:10, B:8, C:5, D:3, F:0 };
 const RANK_EXCLUDE  = new Set(['광주ck','기흥ck','주안ck','CX팀','상권','본부']);
 
 // 등급 + 위반 건수를 함께 반환
 function calcGradeDetail(type, brand, ym) {
   const recs = records.filter(r => r.brand === brand && r.type === type && r.date.startsWith(ym));
+
   if (type === '부실채권') {
+    // F: 2개월 초과 미입금 액 > 1억
+    const overF = recs.filter(r => {
+      if (r.subtype !== '2개월 초과 미입금') return false;
+      const amt = r.bc_amount != null ? Number(r.bc_amount) : (parseBcAmt(r) ?? 0);
+      return amt > 100000000;
+    });
+    if (overF.length) return { grade:'F', cnt: overF.reduce((s,r) => s+r.count, 0), mon: 0 };
+    // D: 2개월 초과 미입금 액 ≤ 1억
     const over2 = recs.filter(r => {
       if (r.subtype !== '2개월 초과 미입금') return false;
       const amt = r.bc_amount != null ? Number(r.bc_amount) : (parseBcAmt(r) ?? Infinity);
       return amt <= 100000000;
     });
     if (over2.length) return { grade:'D', cnt: over2.reduce((s,r) => s+r.count, 0), mon: 0 };
-    const cnt = recs.filter(r => r.subtype === '미입금').reduce((s, r) => s + r.count, 0);
-    const mon = recs.filter(r => r.status === '모니터링').reduce((s, r) => s + r.count, 0);
-    const grade = cnt <= 3 ? 'A' : cnt <= 5 ? 'B' : cnt <= 10 ? 'C' : 'D';
-    return { grade, cnt, mon };
+    // A/B/C: 전체 건수
+    const cnt = recs.reduce((s, r) => s + r.count, 0);
+    const grade = cnt <= 3 ? 'A' : cnt <= 6 ? 'B' : cnt <= 9 ? 'C' : 'D';
+    return { grade, cnt, mon: 0 };
   }
+
+  if (type === '안전') {
+    // F: 중대재해 발생 1건 이상
+    const critical = recs.filter(r => r.subtype === '중대재해 발생');
+    if (critical.some(r => r.count > 0)) return { grade:'F', cnt: critical.reduce((s,r)=>s+r.count,0), mon: 0 };
+    // A/B/C/D: 발생+조치완료 전체 건수 (모니터링 제외)
+    const cnt = recs.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
+    const grade = cnt <= 3 ? 'A' : cnt <= 6 ? 'B' : cnt <= 9 ? 'C' : 'D';
+    return { grade, cnt, mon: 0 };
+  }
+
+  // 컴플라이언스 영역: 외부노출 1건 이상이면 F (우선)
   const mon = recs.filter(r => r.status === '모니터링').reduce((s, r) => s + r.count, 0);
   const cnt = recs.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
+  if (recs.some(r => r.exposed)) return { grade:'F', cnt, mon };
   const grade = cnt <= 3 ? 'A' : cnt <= 6 ? 'B' : cnt <= 9 ? 'C' : 'D';
   return { grade, cnt, mon };
 }
