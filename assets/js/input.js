@@ -46,6 +46,7 @@ async function addNote() {
   const btn = document.getElementById('ni-add-btn');
   if (btn) btn.disabled = true;
   const content = serializeNote(main, detail, action);
+  console.log('[addNote] main:', main, '| detail:', detail, '| action:', action, '| content:', content);
   // id: Date.now()은 int4(최대 21억) 오버플로우 → 초 단위(~17.5억)로 int4 범위 내 사용
   const ok = await sbIns('notes', [{ id: Math.floor(Date.now() / 1000), date, type: curType, content, author: user.name }]);
   if (btn) btn.disabled = false;
@@ -123,17 +124,24 @@ async function addRecord() {
   btn.disabled = true;
   ind.classList.add('show');
 
-  await sbIns('records', {
-    id: Date.now(), date, type,
+  const ok = await sbIns('records', {
+    id: Math.floor(Date.now() / 1000), date, type,
     subtype: sub || '-', brand,
     status, count, note,
     jg_name, jg_sent, bc_amount, exposed,
     author: user.name
   });
-  await loadData();
 
   btn.disabled = false;
   ind.classList.remove('show');
+
+  if (!ok) {
+    const raw = window.__sbLastErr || '알 수 없는 오류';
+    toast('저장 실패 — ' + raw.slice(0, 120));
+    return;
+  }
+
+  await loadData();
   renderInputTable();
   toast('저장 완료!');
   resetForm();

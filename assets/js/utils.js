@@ -85,9 +85,18 @@ function parseBcAmt(r) {
   return isNaN(v) ? null : v;
 }
 // 특이사항 content JSON 파서/직렬화 (m=주요이슈, d=이슈상세, a=조치완료)
+// Supabase jsonb 컬럼은 이미 파싱된 object로 반환될 수 있어 typeof 분기 처리
 function parseNoteContent(content) {
-  try { return (content && content.trim().startsWith('{')) ? JSON.parse(content) : { m: content||'', d:'', a:'' }; }
-  catch { return { m: content||'', d:'', a:'' }; }
+  if (!content) return { m: '', d: '', a: '' };
+  if (typeof content === 'object') return { m: content.m||'', d: content.d||'', a: content.a||'' };
+  try {
+    const s = String(content);
+    if (s.trim().startsWith('{')) {
+      const p = JSON.parse(s);
+      return { m: p.m||'', d: p.d||'', a: p.a||'' };
+    }
+    return { m: s, d: '', a: '' };
+  } catch { return { m: String(content), d: '', a: '' }; }
 }
 function serializeNote(m, d, a) { return JSON.stringify({ m: m||'', d: d||'', a: a||'' }); }
 
