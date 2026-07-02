@@ -137,7 +137,8 @@
 /* ── 영역별 특이사항 (데이터 입력) ───────────────────── */
 .ni-form { margin-bottom:4px; }
 .ni-form-row { display:flex; gap:12px; align-items:flex-start; }
-.ni-date { flex:0 0 140px; padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; color:#0f172a; background:#fff; }
+.ni-date { flex:0 0 130px; padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; color:#0f172a; background:#fff; }
+.ni-brand-sel { flex:0 0 110px; padding:8px 6px; border:1px solid #e2e8f0; border-radius:8px; font-size:12px; color:#0f172a; background:#fff; font-family:inherit; }
 .ni-form-fields { flex:1; display:flex; flex-direction:column; gap:7px; }
 .ni-field-row { display:flex; align-items:center; gap:8px; }
 .ni-label { flex:0 0 90px; font-size:11px; font-weight:700; color:#64748b; letter-spacing:0.2px; }
@@ -152,6 +153,7 @@
 .ni-item-date-inp { width:130px; padding:4px 8px; border:1px solid #e2e8f0; border-radius:6px; font-size:12px; color:#475569; font-family:inherit; }
 .ni-item-date-inp[readonly] { background:#f8fafc; border-color:transparent; }
 .ni-item-author { font-size:11px; color:#94a3b8; }
+.ni-item-brand { font-size:10px; font-weight:700; color:#fff; background:#0ea5e9; border-radius:4px; padding:1px 6px; }
 .ni-save-btn { margin-left:auto; background:#6366f1; color:#fff; border:none; border-radius:6px; padding:3px 10px; font-size:12px; cursor:pointer; font-family:inherit; }
 .ni-save-btn:hover { background:#4f46e5; }
 .ni-del-btn { background:none; border:none; color:#94a3b8; font-size:16px; cursor:pointer; line-height:1; padding:0 2px; }

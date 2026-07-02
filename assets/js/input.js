@@ -10,6 +10,11 @@ function renderNotesList() {
   if (badge) badge.textContent = curType;
   const dateFld = document.getElementById('ni-date');
   if (dateFld && !dateFld.value) dateFld.value = td();
+  const brandSel = document.getElementById('ni-brand');
+  if (brandSel && !brandSel.options.length) {
+    brandSel.innerHTML = '<option value="">전체(없음)</option>' +
+      BRANDS.map(b => `<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  }
 
   const list = document.getElementById('notesInputList');
   if (!list) return;
@@ -26,6 +31,7 @@ function renderNotesList() {
       `<div class="ni-item-hd">` +
       `<input type="date" class="ni-item-date-inp" id="ni-nd-${n.id}" value="${esc(n.date)}" ${canEdit?'':'readonly'}>` +
       `<span class="ni-item-author">${esc(n.author||'')}</span>` +
+      (n.brand ? `<span class="ni-item-brand">${esc(n.brand)}</span>` : '') +
       (canEdit ? `<button class="ni-save-btn" onclick="saveNote(${n.id})">저장</button><button class="ni-del-btn" onclick="deleteNote(${n.id})">×</button>` : '') +
       `</div>` +
       `<div class="ni-item-fields">` +
@@ -46,9 +52,10 @@ async function addNote() {
   const btn = document.getElementById('ni-add-btn');
   if (btn) btn.disabled = true;
   const content = serializeNote(main, detail, action);
+  const brand = (document.getElementById('ni-brand')?.value || '').trim() || null;
   console.log('[addNote] main:', main, '| detail:', detail, '| action:', action, '| content:', content);
   // id: Date.now()은 int4(최대 21억) 오버플로우 → 초 단위(~17.5억)로 int4 범위 내 사용
-  const ok = await sbIns('notes', [{ id: Math.floor(Date.now() / 1000), date, type: curType, content, author: user.name }]);
+  const ok = await sbIns('notes', [{ id: Math.floor(Date.now() / 1000), date, type: curType, brand, content, author: user.name }]);
   if (btn) btn.disabled = false;
   if (!ok) {
     const raw = window.__sbLastErr || '알 수 없는 오류';

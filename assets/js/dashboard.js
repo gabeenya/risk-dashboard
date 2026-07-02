@@ -715,8 +715,12 @@ function renderDash(k) {
 
   const board = document.getElementById('gradeBoard');
   if (board) {
-    if (curBrand !== 'all') {
+    // 브랜드 단독 선택 (분류·영역 필터 없음): 본인 브랜드 측정판 표시
+    const brandOnlyView = curBrand !== 'all' && k === 'all' && (!curDashCat || curDashCat === 'all');
+    if (curBrand !== 'all' && !brandOnlyView) {
+      // 브랜드 + 분류/영역 동시 선택: 기존대로 측정판 숨김
       board.style.display = 'none';
+      board.classList.remove('layout-side');
     } else {
       let visibleAreas;
       if (k !== 'all') {
@@ -729,10 +733,20 @@ function renderDash(k) {
       const showOverall = k === 'all';
       if (!visibleAreas.length) {
         board.style.display = 'none';
+        board.classList.remove('layout-side');
       } else {
         board.style.display = '';
-        renderLeaderboard(visibleAreas, showOverall);
+        // 영역 수가 적은 분류뷰: 측정판과 조치사항을 좌우 배치
+        const isSide = !brandOnlyView && k === 'all' && (curDashCat === '부정/부실 제거' || curDashCat === '매장 운영 관리');
+        board.classList.toggle('layout-side', isSide);
+        renderLeaderboard(visibleAreas, showOverall, brandOnlyView);
       }
+    }
+    // 징계현황: 전체뷰·부정/부실 제거 분류뷰·감사 영역뷰에서만 노출
+    const jngPanel = document.getElementById('jngPanel');
+    if (jngPanel) {
+      const showJng = (k === 'all' && (curDashCat === 'all' || curDashCat === '부정/부실 제거')) || k === '감사';
+      jngPanel.style.display = showJng ? '' : 'none';
     }
   }
   renderNotesSection(k);
@@ -761,6 +775,10 @@ function renderNotesSection(k) {
       : [...notes];
   } else {
     filtered = notes.filter(n => n.type === k);
+  }
+  // 브랜드별뷰: 해당 브랜드 또는 전체(brand=null/undefined) 특이사항만
+  if (curBrand !== 'all') {
+    filtered = filtered.filter(n => !n.brand || n.brand === curBrand);
   }
   panel.style.display = '';
   const list  = document.getElementById('notesDashList');
@@ -935,9 +953,10 @@ function calcGradeDetail(type, brand, ym) {
 // 하위 호환 (다른 곳에서 사용 가능)
 function calcGrade(type, brand, ym) { return calcGradeDetail(type, brand, ym).grade; }
 
-function renderLeaderboard(visibleAreas, showOverall) {
+function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
   visibleAreas = visibleAreas || GRADE_AREAS;
   if (showOverall === undefined) showOverall = true;
+  brandOnly = !!brandOnly;
   const board = document.getElementById('gradeBoard');
   if (!board) return;
 
@@ -954,7 +973,7 @@ function renderLeaderboard(visibleAreas, showOverall) {
   const headTr = document.getElementById('gradeHead');
   if (headTr) {
     headTr.innerHTML =
-      `<th class="gt-rank">순위</th>` +
+      (brandOnly ? '' : `<th class="gt-rank">순위</th>`) +
       `<th class="gt-brand">브랜드</th>` +
       (showOverall ? `<th class="gt-overall">종합등급</th><th class="gt-sep"></th>` : '') +
       visibleAreas.map(t => `<th class="gt-area">${esc(t)}</th>`).join('');
@@ -964,7 +983,7 @@ function renderLeaderboard(visibleAreas, showOverall) {
     .filter(b => !RANK_EXCLUDE.has(b));
 
   const scoreAreas = visibleAreas.filter(t => GRADE_AREAS.includes(t));
-  const ranked = brands.map(brand => {
+  let ranked = brands.map(brand => {
     const details = {};
     GRADE_AREAS.forEach(type => {
       const d = calcGradeDetail(type, brand, ym);
@@ -977,6 +996,7 @@ function renderLeaderboard(visibleAreas, showOverall) {
     const overallGrade = avg >= 9 ? 'A' : avg >= 7 ? 'B' : avg >= 4 ? 'C' : avg >= 1 ? 'D' : 'F';
     return { brand, details, total, score, overallGrade };
   }).sort((a, b) => b.score - a.score || a.brand.localeCompare(b.brand));
+  if (brandOnly) ranked = ranked.filter(r => r.brand === curBrand);
 
   const tbody = document.getElementById('gradeRows');
   if (!tbody) return;
@@ -988,7 +1008,7 @@ function renderLeaderboard(visibleAreas, showOverall) {
     const tr   = document.createElement('tr');
     const scoreTxt = Number.isInteger(score) ? score : score.toFixed(1);
     tr.innerHTML =
-      `<td><span class="gp ${pc}">${rank}</span></td>` +
+      (brandOnly ? '' : `<td><span class="gp ${pc}">${rank}</span></td>`) +
       `<td class="gt-brand">${esc(brand)}</td>` +
       (showOverall ? `<td class="gt-overall"><div class="gt-overall-wrap"><span class="gc ${overallGrade}">${overallGrade}</span><span class="gt-overall-score">${scoreTxt}점</span></div></td><td class="gt-sep"></td>` : '') +
       visibleAreas.map(t =>
