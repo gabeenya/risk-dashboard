@@ -46,12 +46,12 @@ async function addNote() {
   const btn = document.getElementById('ni-add-btn');
   if (btn) btn.disabled = true;
   const content = serializeNote(main, detail, action);
-  const ok = await sbIns('notes', [{ date, type: curType, content, author: user.name }]);
+  // id: Date.now()은 int4(최대 21억) 오버플로우 → 초 단위(~17.5억)로 int4 범위 내 사용
+  const ok = await sbIns('notes', [{ id: Math.floor(Date.now() / 1000), date, type: curType, content, author: user.name }]);
   if (btn) btn.disabled = false;
   if (!ok) {
-    let em = window.__sbLastErr || '';
-    try { em = JSON.parse(em).message || em; } catch {}
-    toast('저장 실패 — ' + (em.slice(0, 100) || '알 수 없는 오류'));
+    const raw = window.__sbLastErr || '알 수 없는 오류';
+    toast('저장 실패 — ' + raw.slice(0, 120));
     return;
   }
   const fetched = await sbGet('notes');

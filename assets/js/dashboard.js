@@ -764,21 +764,39 @@ function renderNotesSection(k) {
     return;
   }
   const showArea = (k === 'all');
-  list.innerHTML = filtered.map(n => {
+  const thead = `<thead><tr>
+    ${showArea ? '<th class="nd-th nd-th-area">영역</th>' : ''}
+    <th class="nd-th nd-th-date">날짜</th>
+    <th class="nd-th">주요이슈</th>
+    <th class="nd-th">이슈상세</th>
+    <th class="nd-th">조치완료</th>
+  </tr></thead>`;
+  const tbody = filtered.map(n => {
     const p = parseNoteContent(n.content);
-    return `<div class="nd-item">` +
-      `<div class="nd-meta">` +
-      (showArea ? `<span class="nd-type">${esc(n.type)}</span>` : '') +
-      `<span class="nd-date">${esc(n.date)}</span>` +
-      `<span class="nd-author">${esc(n.author||'')}</span>` +
-      `</div>` +
-      `<div class="nd-fields">` +
-      (p.m ? `<div class="nd-field"><span class="nd-fl">주요이슈</span><span class="nd-fv">${esc(p.m)}</span></div>` : '') +
-      (p.d ? `<div class="nd-field"><span class="nd-fl">이슈상세</span><span class="nd-fv">${esc(p.d)}</span></div>` : '') +
-      (p.a ? `<div class="nd-field"><span class="nd-fl">조치완료</span><span class="nd-fv">${esc(p.a)}</span></div>` : '') +
-      `</div>` +
-      `</div>`;
+    return `<tr>
+      ${showArea ? `<td class="nd-td nd-td-area"><span class="nd-type">${esc(n.type)}</span></td>` : ''}
+      <td class="nd-td nd-td-date">${esc(n.date.slice(5).replace('-','/'))}</td>
+      <td class="nd-td"><div class="nd-cell-scroll">${esc(p.m||'-')}</div></td>
+      <td class="nd-td"><div class="nd-cell-scroll">${esc(p.d||'-')}</div></td>
+      <td class="nd-td"><div class="nd-cell-scroll">${esc(p.a||'-')}</div></td>
+    </tr>`;
   }).join('');
+  list.innerHTML = `<div class="nd-tbl-wrap"><table class="nd-tbl">${thead}<tbody>${tbody}</tbody></table></div>`;
+
+  // 드래그 스크롤 — 긴 텍스트를 마우스로 드래그해서 볼 수 있도록
+  list.querySelectorAll('.nd-cell-scroll').forEach(el => {
+    let active = false, startY = 0, scrollTop = 0;
+    el.addEventListener('mousedown', e => {
+      active = true; startY = e.clientY; scrollTop = el.scrollTop; e.preventDefault();
+    });
+    el.addEventListener('mousemove', e => {
+      if (!active) return;
+      el.scrollTop = scrollTop - (e.clientY - startY);
+    });
+    const stop = () => { active = false; };
+    el.addEventListener('mouseup', stop);
+    el.addEventListener('mouseleave', stop);
+  });
 }
 
 // ── 차트 누적/당월 모드 ─────────────────────────────

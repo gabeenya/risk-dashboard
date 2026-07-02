@@ -251,17 +251,21 @@
 /* ── 영역별 특이사항 패널 (대시보드) ────────────────── */
 .notes-panel { padding-top:0.8rem; border-top:1px solid #f1f5f9; margin-top:0.6rem; }
 .notes-panel-hd { font-size:12px; font-weight:700; color:#0f172a; margin-bottom:0.6rem; }
-.notes-dash-list { display:flex; flex-direction:column; gap:8px; }
-.nd-item { background:#fafafa; border:1px solid #eaecf0; border-left:3px solid #6366f1; border-radius:8px; padding:8px 12px; }
-.nd-meta { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
-.nd-type { font-size:10px; font-weight:700; color:#fff; background:#6366f1; border-radius:4px; padding:1px 6px; }
-.nd-date { font-size:11px; color:#94a3b8; }
-.nd-author { font-size:11px; color:#94a3b8; margin-left:auto; }
-.nd-fields { display:flex; flex-direction:column; gap:5px; margin-top:4px; }
-.nd-field { display:flex; gap:8px; align-items:baseline; }
-.nd-fl { flex:0 0 68px; font-size:10px; font-weight:700; color:#6366f1; letter-spacing:0.2px; }
-.nd-fv { font-size:12px; color:#334155; line-height:1.5; }
+.nd-type { font-size:10px; font-weight:700; color:#fff; background:#6366f1; border-radius:4px; padding:1px 6px; white-space:nowrap; }
 .nd-empty { font-size:12px; color:#94a3b8; }
+/* 테이블 레이아웃 */
+.nd-tbl-wrap { overflow-x:auto; }
+.nd-tbl { width:100%; border-collapse:collapse; table-layout:fixed; min-width:480px; }
+.nd-th { font-size:11px; font-weight:700; color:#475569; background:#f8fafc; border-bottom:2px solid #e2e8f0; padding:6px 8px; text-align:left; white-space:nowrap; }
+.nd-th-area { width:72px; }
+.nd-th-date { width:56px; }
+.nd-td { font-size:12px; color:#334155; border-bottom:1px solid #f1f5f9; padding:6px 8px; vertical-align:top; }
+.nd-td-area { white-space:nowrap; vertical-align:middle; }
+.nd-td-date { white-space:nowrap; font-size:11px; color:#64748b; vertical-align:middle; }
+/* 긴 텍스트 셀: 최대 3줄 높이, 드래그 스크롤 가능 */
+.nd-cell-scroll { max-height:54px; overflow-y:auto; cursor:grab; word-break:break-word; line-height:1.5; user-select:none; }
+.nd-cell-scroll:active { cursor:grabbing; }
+.nd-tbl tbody tr:hover td { background:#f8fafc; }
 
 /* ── SLA 14일 초과 강조 ───────────────────────────── */
 .sla-alert { color: #dc2626; font-weight: 600; }
