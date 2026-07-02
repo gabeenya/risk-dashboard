@@ -131,12 +131,10 @@ function setInputType(btn, type) {
   if (_jgSW) _jgSW.style.display = _showJg ? '' : 'none';
   if (!_showJg && _jgNI) _jgNI.value = '';
   if (!_showJg && _jgSI) _jgSI.value = '';
-  // 외부노출 여부 — 컴플라이언스 · 매장 운영 관리 영역에서만 표시
+  // 외부노출 여부 — 전 영역 표시
   const exposedWrap = document.getElementById('f-exposed-wrap');
-  const showExposed = (CAT_TYPES['컴플라이언스'] || []).includes(type) || (CAT_TYPES['매장 운영 관리'] || []).includes(type);
-  if (exposedWrap) exposedWrap.style.display = showExposed ? '' : 'none';
+  if (exposedWrap) exposedWrap.style.display = '';
   const expCb = document.getElementById('f-exposed');
-  if (expCb && !showExposed) expCb.checked = false;
 
   // 상태 select: 영역별 표시 라벨 적용, 징계는 모니터링 옵션 제거
   const stSel = document.getElementById('f-status');

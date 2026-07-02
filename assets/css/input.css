@@ -129,6 +129,10 @@
 .exposed-chk-lbl input[type="checkbox"] { width: 14px; height: 14px; accent-color: #dc2626; cursor: pointer; flex-shrink: 0; }
 /* 목록 테이블 — 외부노출 뱃지 */
 .exposed-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; white-space: nowrap; margin-bottom: 3px; }
+/* 목록 테이블 — 외부노출 전용 컬럼 */
+.exp-th { width: 52px; text-align: center !important; }
+.exp-td { text-align: center; vertical-align: middle; }
+.exp-td input[type="checkbox"] { width: 14px; height: 14px; accent-color: #dc2626; cursor: pointer; }
 
 /* ── 영역별 특이사항 (데이터 입력) ───────────────────── */
 .ni-form { margin-bottom:4px; }

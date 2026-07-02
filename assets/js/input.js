@@ -115,8 +115,7 @@ async function addRecord() {
   const jg_sent   = type === '징계'   ? (document.getElementById('f-jg-sent')?.value  || '') : null;
   const bc_amount = (type === '부실채권' && BC_AMT_SUBS.includes(sub))
     ? (parseInt(document.getElementById('f-amount')?.value) || null) : null;
-  const _expTypes = [...(CAT_TYPES['컴플라이언스'] || []), ...(CAT_TYPES['매장 운영 관리'] || [])];
-  const exposed   = _expTypes.includes(type) ? (document.getElementById('f-exposed')?.checked || false) : false;
+  const exposed = document.getElementById('f-exposed')?.checked || false;
   if (!date || !brand || count < 1) { toast('필수 항목을 모두 입력해 주세요.'); return; }
 
   const btn = document.getElementById('submitBtn');
@@ -145,6 +144,32 @@ async function addRecord() {
   renderInputTable();
   toast('저장 완료!');
   resetForm();
+}
+
+async function updJgName(id, val, btnEl) {
+  const ok = await sbUpd('records', id, { jg_name: val });
+  if (!ok) { toast('저장 실패'); return; }
+  if (btnEl) { btnEl.textContent = '완료 ✓'; btnEl.classList.add('saved'); setTimeout(() => { btnEl.textContent = '저장'; btnEl.classList.remove('saved'); }, 1500); }
+  const rec = records.find(r => r.id === id); if (rec) rec.jg_name = val;
+}
+async function updJgSent(id, val, btnEl) {
+  const ok = await sbUpd('records', id, { jg_sent: val });
+  if (!ok) { toast('저장 실패'); return; }
+  if (btnEl) { btnEl.textContent = '완료 ✓'; btnEl.classList.add('saved'); setTimeout(() => { btnEl.textContent = '저장'; btnEl.classList.remove('saved'); }, 1500); }
+  const rec = records.find(r => r.id === id); if (rec) rec.jg_sent = val;
+}
+async function updBcAmount(id, val, btnEl) {
+  const amt = parseInt(val) || null;
+  const ok = await sbUpd('records', id, { bc_amount: amt });
+  if (!ok) { toast('저장 실패'); return; }
+  if (btnEl) { btnEl.textContent = '완료 ✓'; btnEl.classList.add('saved'); setTimeout(() => { btnEl.textContent = '저장'; btnEl.classList.remove('saved'); }, 1500); }
+  const rec = records.find(r => r.id === id); if (rec) rec.bc_amount = amt;
+}
+async function updExposed(id, exposed) {
+  const ok = await sbUpd('records', id, { exposed });
+  if (!ok) { toast('저장 실패'); return; }
+  const rec = records.find(r => r.id === id);
+  if (rec) rec.exposed = exposed;
 }
 
 async function updStatus(id, s) {
@@ -323,19 +348,36 @@ function filteredInputRecords() {
 function renderInputTable() {
   refreshInpFilterOpts();
   const tb  = document.getElementById('inputTbody');
+  const th  = document.getElementById('inputThead');
   const cnt = document.getElementById('inpFilterCnt');
   const total = records.filter(r => r.type === curType).length;
   const fl = filteredInputRecords();
+  const isJg = curType === '징계';
+  const isBc = curType === '부실채권';
+  const colSpan = isJg ? 13 : isBc ? 12 : 11;
+
+  // 동적 헤더
+  if (th) {
+    th.innerHTML = `<tr>
+      <th class="chk-col"><input type="checkbox" id="inpChkAll" title="현재 목록 전체 선택" onchange="toggleInpSelAll(this.checked)"></th>
+      <th>날짜</th><th>유형</th><th>상세</th><th>브랜드</th><th>건수</th><th>상태</th>
+      ${isJg ? '<th>성명</th><th>양형</th>' : ''}
+      ${isBc ? '<th>금액</th>' : ''}
+      <th>비고</th>
+      <th class="exp-th">외부노출</th>
+      <th>작성자</th><th>삭제</th>
+    </tr>`;
+  }
+
   if (cnt) cnt.textContent = (inpSub === 'all' && inpBrand === 'all' && inpStat === 'all')
     ? `총 ${total}건`
     : `${fl.length}건 / 총 ${total}건`;
   if (!fl.length) {
-    tb.innerHTML = '<tr><td colspan="10"><div class="empty">조건에 해당하는 데이터가 없습니다</div></td></tr>';
+    tb.innerHTML = `<tr><td colspan="${colSpan}"><div class="empty">조건에 해당하는 데이터가 없습니다</div></td></tr>`;
     updInpBulkUI();
     return;
   }
   tb.innerHTML = fl.map(r => {
-    // r.id는 Date.now() 기반 정수여야 하지만, RLS off 상태에서 외부 조작 가능성 → 강제 정수 캐스팅으로 인라인 핸들러 JS 인젝션 차단
     const rid = Number(r.id) || 0;
     const subs = SUB[r.type] || [];
     const subCell = subs.length === 0
@@ -345,68 +387,65 @@ function renderInputTable() {
            ${subs.map(s => `<option${r.subtype===s?' selected':''}>${esc(s)}</option>`).join('')}
          </select>`;
     const over = isSlaOver(r);
+
+    // 영역별 전용 컬럼 + 비고
+    let specialCols = '';
+    if (isJg) {
+      let _name = '', _sent = '', _noteText = '';
+      if (r.jg_name != null || r.jg_sent != null) {
+        _name = r.jg_name || ''; _sent = r.jg_sent || ''; _noteText = r.note || '';
+      } else {
+        const _jg = parseJgRecord(r);
+        if (_jg) { _name = _jg.name; _sent = _jg.sent; _noteText = _jg.note; }
+      }
+      specialCols = `
+        <td><div class="note-wrap"><input type="text" class="note-inp" id="jgname-inp-${rid}" value="${esc(_name)}" placeholder="-"
+          onkeydown="if(event.key==='Enter'){const b=document.getElementById('jgname-btn-${rid}');updJgName(${rid},this.value,b)}">
+          <button class="note-save-btn" id="jgname-btn-${rid}" onclick="updJgName(${rid},document.getElementById('jgname-inp-${rid}').value,this)">저장</button></div></td>
+        <td><div class="note-wrap"><input type="text" class="note-inp" id="jgsent-inp-${rid}" value="${esc(_sent)}" placeholder="-"
+          onkeydown="if(event.key==='Enter'){const b=document.getElementById('jgsent-btn-${rid}');updJgSent(${rid},this.value,b)}">
+          <button class="note-save-btn" id="jgsent-btn-${rid}" onclick="updJgSent(${rid},document.getElementById('jgsent-inp-${rid}').value,this)">저장</button></div></td>
+        <td><div class="note-wrap"><input type="text" class="note-inp" id="note-inp-${rid}" value="${esc(_noteText)}" placeholder="-"
+          onkeydown="if(event.key==='Enter'){const b=document.getElementById('note-btn-${rid}');updNote(${rid},this.value,b)}">
+          <button class="note-save-btn" id="note-btn-${rid}" onclick="updNote(${rid},document.getElementById('note-inp-${rid}').value,this)">저장</button></div></td>`;
+    } else if (isBc) {
+      const hasBcAmt = BC_AMT_SUBS.includes(r.subtype);
+      let _amt = null;
+      if (r.bc_amount != null) { _amt = Number(r.bc_amount); }
+      else { const _old = parseBcAmt(r); if (_old !== null) _amt = _old; }
+      const _bcNote = r.bc_amount != null ? (r.note || '') : parseBcNote(r);
+      specialCols = `
+        <td>${hasBcAmt ? `<div class="note-wrap"><input type="number" min="0" step="1000" class="note-inp" id="bcamt-inp-${rid}" value="${_amt != null ? _amt : ''}" placeholder="-"
+          onkeydown="if(event.key==='Enter'){const b=document.getElementById('bcamt-btn-${rid}');updBcAmount(${rid},this.value,b)}">
+          <button class="note-save-btn" id="bcamt-btn-${rid}" onclick="updBcAmount(${rid},document.getElementById('bcamt-inp-${rid}').value,this)">저장</button></div>` : '<span class="cell-muted">-</span>'}</td>
+        <td><div class="note-wrap"><input type="text" class="note-inp" id="note-inp-${rid}" value="${esc(_bcNote)}" placeholder="-"
+          onkeydown="if(event.key==='Enter'){const b=document.getElementById('note-btn-${rid}');updNote(${rid},this.value,b)}">
+          <button class="note-save-btn" id="note-btn-${rid}" onclick="updNote(${rid},document.getElementById('note-inp-${rid}').value,this)">저장</button></div></td>`;
+    } else {
+      specialCols = `
+        <td><div class="note-wrap"><input type="text" class="note-inp" id="note-inp-${rid}" value="${esc(r.note||'')}" placeholder="-"
+          onkeydown="if(event.key==='Enter'){const b=document.getElementById('note-btn-${rid}');updNote(${rid},this.value,b)}">
+          <button class="note-save-btn" id="note-btn-${rid}" onclick="updNote(${rid},document.getElementById('note-inp-${rid}').value,this)">저장</button></div></td>`;
+    }
+
     return `<tr${over ? ' class="sla-over"' : ''}>
     <td class="chk-cell"><input type="checkbox" class="inp-chk"${inpSelected.has(rid) ? ' checked' : ''} onchange="toggleInpSel(${rid},this.checked)"></td>
     <td><input type="date" class="st-sel date-sel" value="${esc(r.date)}" onchange="updDate(${rid},this.value)">${over ? ` <span class="sla-badge" title="${daysSince(r.date)}일 경과">${daysSince(r.date)}일</span>` : ''}</td>
     <td>${esc(r.type)}</td>
     <td>${subCell}</td>
-    <td>
-      <select class="st-sel brand-sel" onchange="updBrand(${rid},this.value)">
+    <td><select class="st-sel brand-sel" onchange="updBrand(${rid},this.value)">
         ${BRANDS.map(b => `<option${r.brand===b?' selected':''}>${esc(b)}</option>`).join('')}
-      </select>
-    </td>
-    <td>
-      <div class="note-wrap count-wrap">
-        <input type="number" min="1" class="note-inp count-inp" id="cnt-inp-${rid}"
-          value="${Number(r.count) || 0}"
+      </select></td>
+    <td><div class="note-wrap count-wrap">
+        <input type="number" min="1" class="note-inp count-inp" id="cnt-inp-${rid}" value="${Number(r.count) || 0}"
           onkeydown="if(event.key==='Enter'){const b=document.getElementById('cnt-btn-${rid}');updCount(${rid},this.value,b)}">
-        <button class="note-save-btn" id="cnt-btn-${rid}"
-          onclick="updCount(${rid},document.getElementById('cnt-inp-${rid}').value,this)">저장</button>
-      </div>
-    </td>
-    <td>
-      <select class="st-sel" onchange="updStatus(${rid},this.value)">
+        <button class="note-save-btn" id="cnt-btn-${rid}" onclick="updCount(${rid},document.getElementById('cnt-inp-${rid}').value,this)">저장</button>
+      </div></td>
+    <td><select class="st-sel" onchange="updStatus(${rid},this.value)">
         ${(()=>{ const _av = (['징계','부실채권','안전','클레임'].includes(r.type)) ? STATS.filter(s => s !== '모니터링') : STATS; const _opts = _av.includes(r.status) ? _av : [r.status, ..._av]; return _opts.map(s=>`<option value="${esc(s)}"${r.status===s?' selected':''}>${esc(statLbl(s,r.type))}</option>`).join(''); })()}
-      </select>
-    </td>
-    <td>${(()=>{
-      // 징계 — 정식 컬럼 우선, 구 note 인코딩 하위 호환
-      if (r.type === '징계') {
-        let _name, _sent, _noteText;
-        if (r.jg_name != null || r.jg_sent != null) {
-          _name = r.jg_name || ''; _sent = r.jg_sent || ''; _noteText = r.note || '';
-        } else {
-          const _jg = parseJgRecord(r);
-          if (_jg) { _name = _jg.name; _sent = _jg.sent; _noteText = _jg.note; }
-        }
-        if (_name != null) {
-          const _parts = [_name, _sent, _noteText].filter(Boolean).map(esc);
-          return `<span class="jg-info-cell">${_parts.join(' · ') || '-'}</span>`;
-        }
-      }
-      // 부실채권 금액 — 정식 컬럼 우선, 구 note 인코딩 하위 호환
-      if (r.type === '부실채권' && BC_AMT_SUBS.includes(r.subtype)) {
-        let _amt, _noteText;
-        if (r.bc_amount != null) {
-          _amt = Number(r.bc_amount); _noteText = r.note || '';
-        } else {
-          const _old = parseBcAmt(r);
-          if (_old !== null) { _amt = _old; _noteText = parseBcNote(r); }
-        }
-        if (_amt != null) {
-          return `<span class="bc-amt-cell">${_amt.toLocaleString()}원${_noteText ? ' · ' + esc(_noteText) : ''}</span>`;
-        }
-      }
-      const _expShow = [...(CAT_TYPES['컴플라이언스']||[]),...(CAT_TYPES['매장 운영 관리']||[])].includes(r.type);
-      const _expBadge = (_expShow && r.exposed) ? '<span class="exposed-badge">외부노출</span><br>' : '';
-      return `${_expBadge}<div class="note-wrap">
-        <input type="text" class="note-inp" id="note-inp-${rid}"
-          value="${esc(r.note||'')}" placeholder="-"
-          onkeydown="if(event.key==='Enter'){const b=document.getElementById('note-btn-${rid}');updNote(${rid},this.value,b)}">
-        <button class="note-save-btn" id="note-btn-${rid}"
-          onclick="updNote(${rid},document.getElementById('note-inp-${rid}').value,this)">저장</button>
-      </div>`;
-    })()}</td>
+      </select></td>
+    ${specialCols}
+    <td class="exp-td"><input type="checkbox" title="외부노출" ${r.exposed?'checked':''} onchange="updExposed(${rid},this.checked)"></td>
     <td class="cell-muted">${esc(r.author||'-')}</td>
     <td><button class="del-btn" onclick="delRecord(${rid})">✕</button></td>
   </tr>`;
@@ -512,7 +551,7 @@ async function bulkUpdStatusSelected() {
 let xlParsed = [];
 
 // 헤더 키 (양식 다운로드 + 업로드 파싱 시 공통으로 사용)
-const XL_HEADERS = ['날짜','영역','상세유형','브랜드','건수','상태','비고'];
+const XL_HEADERS = ['날짜','영역','상세유형','브랜드','건수','상태','비고','노출여부','성명','양형','금액'];
 
 async function downloadExcelTemplate() {
   if (typeof ExcelJS === 'undefined') { toast('엑셀 라이브러리 로드 실패'); return; }
@@ -524,10 +563,10 @@ async function downloadExcelTemplate() {
   const ws1 = wb.addWorksheet('데이터');
   ws1.columns = XL_HEADERS.map((h, i) => ({
     header: h,
-    width: [12,10,24,14,7,12,30][i]
+    width: [12,10,24,14,7,12,30,10,14,14,12][i]
   }));
   ws1.getColumn('A').numFmt = '@'; // 날짜 열 텍스트 형식 — 엑셀 자동 변환 방지
-  ws1.addRow([today, '가맹', '예상매출액 임의산정', '애슐리', 1, '모니터링', '예시 행 — 삭제 후 입력하세요']);
+  ws1.addRow([today, '가맹', '예상매출액 임의산정', '애슐리', 1, '모니터링', '예시 행 — 삭제 후 입력하세요', '', '', '', '']);
   ws1.getRow(1).font = { bold: true };
   ws1.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } };
 
@@ -602,6 +641,16 @@ async function downloadExcelTemplate() {
       type: 'list', allowBlank: true, showErrorMessage: true,
       errorStyle: 'warning', errorTitle: '상태', error: '목록에서 선택하세요.',
       formulae: [`INDIRECT(IF($B${r}="클레임","상태_클레임",IF($B${r}="안전","상태_안전","상태_기본")))`]
+    };
+    ws1.getCell(`H${r}`).dataValidation = {
+      type: 'list', allowBlank: true, showErrorMessage: true,
+      errorStyle: 'warning', errorTitle: '노출여부', error: 'O 또는 빈칸으로 입력하세요.',
+      formulae: ['"O"']
+    };
+    ws1.getCell(`K${r}`).dataValidation = {
+      type: 'decimal', allowBlank: true, showErrorMessage: true,
+      errorStyle: 'warning', errorTitle: '금액', error: '숫자만 입력하세요 (부실채권 전용).',
+      operator: 'greaterThanOrEqual', formulae: [0]
     };
   }
 
@@ -703,9 +752,19 @@ function validateXlRow(row, lineNo) {
   else if (!STATS.includes(status)) errs.push(`상태 (${status}) 알 수 없음`);
 
   const note = String(row['비고'] || '').trim();
+  const _expRaw = String(row['노출여부'] || '').trim().toUpperCase();
+  const exposed = ['O', 'Y', '예', '✓', 'V', 'TRUE', '1'].includes(_expRaw);
+  // 징계 전용
+  const jg_name = type === '징계' ? String(row['성명'] || '').trim() || null : null;
+  const jg_sent = type === '징계' ? String(row['양형'] || '').trim() || null : null;
+  // 부실채권 금액 전용
+  const _amtStr = String(row['금액'] || '').replace(/[,원\s]/g, '');
+  const _amtVal = parseInt(_amtStr);
+  const bc_amount = (type === '부실채권' && BC_AMT_SUBS.includes(subtype) && !isNaN(_amtVal) && _amtVal > 0) ? _amtVal : null;
 
   return {
-    lineNo, date, type, subtype, brand, count: count || 0, status, note,
+    lineNo, date, type, subtype, brand, count: count || 0, status, note, exposed,
+    jg_name, jg_sent, bc_amount,
     errs, ok: errs.length === 0
   };
 }
@@ -730,6 +789,10 @@ function renderXlPreview(rows) {
     <td>${r.count||'-'}</td>
     <td>${esc(r.status ? statLbl(r.status, r.type) : '-')}</td>
     <td>${esc(r.note||'')}</td>
+    <td>${r.exposed ? 'O' : ''}</td>
+    <td>${r.jg_name ? esc(r.jg_name) : ''}</td>
+    <td>${r.jg_sent ? esc(r.jg_sent) : ''}</td>
+    <td>${r.bc_amount != null ? r.bc_amount.toLocaleString() : ''}</td>
     <td>${r.ok?'<span class="xl-badge xl-badge-ok">유효</span>':`<span class="xl-badge xl-badge-err" title="${esc(errsTxt)}">${esc(errsTxt)}</span>`}</td>
   </tr>`;
   }).join('');
@@ -748,12 +811,14 @@ async function confirmBulkUpload() {
   btn.textContent = '업로드 중...';
 
   // 배열 POST로 일괄 INSERT (Supabase REST는 array body 지원)
-  // ID 중복 방지를 위해 lineNo 기반 오프셋 부여
-  const base = Date.now();
+  // ID 중복 방지를 위해 lineNo 기반 오프셋 부여; 초 단위로 int4 범위 내 유지
+  const base = Math.floor(Date.now() / 1000);
   const payload = okRows.map((r, i) => ({
     id: base + i,
     date: r.date, type: r.type, subtype: r.subtype,
     brand: r.brand, count: r.count, status: r.status, note: r.note,
+    exposed: r.exposed || false,
+    jg_name: r.jg_name || null, jg_sent: r.jg_sent || null, bc_amount: r.bc_amount || null,
     author: user.name
   }));
 

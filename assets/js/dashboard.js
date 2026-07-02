@@ -1003,44 +1003,36 @@ function renderJngSection(ym, lbl) {
   const pager = document.getElementById('jngPager');
   if (!wrap) return;
 
-  const validRecs = jngRecs.filter(r => {
-    let name = r.jg_name || '', sent = r.jg_sent || '';
-    if (!name && !sent) { const p = parseJgRecord(r); if (p) { name = p.name; sent = p.sent; } }
-    return name || sent;
-  });
-
   if (!jngRecs.length) {
     wrap.innerHTML = `<span class="jng-empty">${mode === 'mon' ? '해당 월' : '해당 기간'} 징계 현황 없음</span>`;
     if (pager) pager.style.display = 'none';
     return;
   }
-  if (!validRecs.length) {
-    wrap.innerHTML = '<span class="jng-empty">성명·양형 정보가 입력되지 않은 건만 있습니다</span>';
-    if (pager) pager.style.display = 'none';
-    return;
-  }
 
   const PAGE = 10;
-  const total = Math.ceil(validRecs.length / PAGE);
+  const total = Math.ceil(jngRecs.length / PAGE);
   if (_jngPage >= total) _jngPage = total - 1;
   if (_jngPage < 0)      _jngPage = 0;
-  const pageRecs = validRecs.slice(_jngPage * PAGE, (_jngPage + 1) * PAGE);
+  const pageRecs = jngRecs.slice(_jngPage * PAGE, (_jngPage + 1) * PAGE);
 
-  wrap.innerHTML = pageRecs.map(r => {
+  const tbody = pageRecs.map(r => {
     let name = r.jg_name || '', sent = r.jg_sent || '';
     if (!name && !sent) { const p = parseJgRecord(r); if (p) { name = p.name; sent = p.sent; } }
-    return `<div class="jng-card">` +
-      `<div class="jng-card-brand">${esc(r.brand)}</div>` +
-      `<div class="jng-card-name">${esc(name) || '-'}</div>` +
-      `<div class="jng-card-sent">${esc(sent) || '-'}</div>` +
-      `</div>`;
+    const noteText = r.jg_name != null ? (r.note || '') : (parseJgRecord(r)?.note || r.note || '');
+    return `<tr>
+      <td>${esc(r.date ? r.date.slice(5).replace('-','/') : '-')}</td>
+      <td>${esc(r.brand || '-')}</td>
+      <td>${esc(r.subtype && r.subtype !== '-' ? r.subtype : '-')}</td>
+      <td>${esc(name || '-')}</td>
+      <td>${esc(sent || '-')}</td>
+      <td>${esc(noteText || '-')}</td>
+      <td><span class="rc-st ${sc(r.status)}">${esc(statLbl(r.status, '징계'))}</span></td>
+    </tr>`;
   }).join('');
-
-  setTimeout(() => {
-    wrap.querySelectorAll('.jng-card').forEach((el, i) =>
-      setTimeout(() => el.classList.add('jc-in'), i * 60)
-    );
-  }, 80);
+  wrap.innerHTML = `<div class="jng-tbl-wrap"><table class="jng-tbl">
+    <thead><tr><th>날짜</th><th>브랜드</th><th>상세유형</th><th>성명</th><th>양형</th><th>비고</th><th>상태</th></tr></thead>
+    <tbody>${tbody}</tbody>
+  </table></div>`;
 
   if (pager) {
     pager.style.display = total > 1 ? '' : 'none';
