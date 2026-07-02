@@ -552,9 +552,10 @@ let xlParsed = [];
 
 // 영역별 유효 상태 라벨 (엑셀 표시용 — validateXlRow에서 DB 값으로 정규화)
 function _areaStats(type) {
-  if (type === '클레임')                              return ['접수/처리중','처리완료'];
-  if (type === '안전')                                return ['발생','조치완료'];
-  if (['감사','부실채권'].includes(type))             return ['위반(처리중)','완료'];
+  if (type === '클레임')   return ['접수/처리중','처리완료'];
+  if (type === '안전')     return ['발생','조치완료'];
+  if (type === '감사')     return ['적발','조치완료'];
+  if (type === '부실채권') return ['발생','해결'];
   return ['모니터링','위반(처리중)','완료'];
 }
 
@@ -734,11 +735,13 @@ function validateXlRow(row, lineNo) {
   let status = String(row['상태'] || '').trim();
   // 영역별 표시 라벨 → DB 값 정규화
   const __STAT_ALIAS = {
-    '접수/처리중': '위반(처리중)', '처리완료': '완료',   // 클레임
-    '발생':        '위반(처리중)', '조치완료':  '완료',  // 안전
+    '접수/처리중': '위반(처리중)', '처리완료': '완료',  // 클레임
+    '발생':        '위반(처리중)', '조치완료': '완료',  // 안전·감사
+    '적발':        '위반(처리중)',                      // 감사
+    '해결':        '완료',                              // 부실채권
   };
   if (__STAT_ALIAS[status]) status = __STAT_ALIAS[status];
-  if (!status) status = (['안전','클레임'].includes(type)) ? '위반(처리중)' : '모니터링';
+  if (!status) status = (['안전','클레임','감사','부실채권'].includes(type)) ? '위반(처리중)' : '모니터링';
   else if (!STATS.includes(status)) errs.push(`상태 (${status}) 알 수 없음`);
 
   const note = String(row['비고'] || '').trim();
