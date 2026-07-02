@@ -150,4 +150,5 @@ function setInputType(btn, type) {
   inpSub = 'all'; inpBrand = 'all'; inpStat = 'all';
   inpSelected.clear();
   renderInputTable();
+  if (typeof renderNotesList === 'function') renderNotesList();
 }

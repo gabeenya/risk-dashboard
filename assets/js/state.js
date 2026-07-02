@@ -1,5 +1,6 @@
 // ── 전역 런타임 상태 ─────────────────────────────────
 let records     = [];
+let notes       = [];
 let users       = [];
 let lChart, rChart, bChart;
 let curFilter   = 'all';

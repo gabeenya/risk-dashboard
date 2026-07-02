@@ -1,8 +1,94 @@
 // ── 데이터 입력 ──────────────────────────────────────
 function renderInputPg() {
-  // 비로그인 시에는 switchTab에서 진입을 막으므로 폼만 렌더한다
   document.getElementById('inputForm').style.display = user ? '' : 'none';
-  if (user) renderInputTable();
+  if (user) { renderInputTable(); renderNotesList(); }
+}
+
+// ── 영역별 특이사항 ───────────────────────────────────
+function renderNotesList() {
+  const badge = document.getElementById('notesAreaBadge');
+  if (badge) badge.textContent = curType;
+  const dateFld = document.getElementById('ni-date');
+  if (dateFld && !dateFld.value) dateFld.value = td();
+
+  const list = document.getElementById('notesInputList');
+  if (!list) return;
+  const filtered = notes.filter(n => n.type === curType)
+                        .sort((a, b) => b.date.localeCompare(a.date));
+  if (!filtered.length) {
+    list.innerHTML = '<span class="ni-empty">등록된 특이사항 없음</span>';
+    return;
+  }
+  const canEdit = isAdmin();
+  list.innerHTML = filtered.map(n => {
+    const p = parseNoteContent(n.content);
+    return `<div class="ni-item">` +
+      `<div class="ni-item-hd">` +
+      `<input type="date" class="ni-item-date-inp" id="ni-nd-${n.id}" value="${esc(n.date)}" ${canEdit?'':'readonly'}>` +
+      `<span class="ni-item-author">${esc(n.author||'')}</span>` +
+      (canEdit ? `<button class="ni-save-btn" onclick="saveNote(${n.id})">저장</button><button class="ni-del-btn" onclick="deleteNote(${n.id})">×</button>` : '') +
+      `</div>` +
+      `<div class="ni-item-fields">` +
+      `<div class="ni-field-row"><label class="ni-label">주요이슈</label><input type="text" class="ni-text-inp ni-item-inp" id="ni-m-${n.id}" value="${esc(p.m)}" ${canEdit?'':'readonly'}></div>` +
+      `<div class="ni-field-row"><label class="ni-label">이슈상세</label><input type="text" class="ni-text-inp ni-item-inp" id="ni-d-${n.id}" value="${esc(p.d)}" ${canEdit?'':'readonly'}></div>` +
+      `<div class="ni-field-row"><label class="ni-label">조치완료 사항</label><input type="text" class="ni-text-inp ni-item-inp" id="ni-a-${n.id}" value="${esc(p.a)}" ${canEdit?'':'readonly'}></div>` +
+      `</div>` +
+      `</div>`;
+  }).join('');
+}
+
+async function addNote() {
+  const date   = document.getElementById('ni-date').value;
+  const main   = (document.getElementById('ni-main')?.value || '').trim();
+  const detail = (document.getElementById('ni-detail')?.value || '').trim();
+  const action = (document.getElementById('ni-action')?.value || '').trim();
+  if (!date || !main) { toast('날짜와 주요이슈를 입력하세요.'); return; }
+  const btn = document.getElementById('ni-add-btn');
+  if (btn) btn.disabled = true;
+  const content = serializeNote(main, detail, action);
+  const ok = await sbIns('notes', [{ id: Date.now(), date, type: curType, content, author: user.name }]);
+  if (btn) btn.disabled = false;
+  if (!ok) { toast('저장 실패'); return; }
+  const fetched = await sbGet('notes');
+  notes = (fetched || []).sort((a, b) => b.date.localeCompare(a.date));
+  const mainEl = document.getElementById('ni-main');
+  const detailEl = document.getElementById('ni-detail');
+  const actionEl = document.getElementById('ni-action');
+  if (mainEl) mainEl.value = '';
+  if (detailEl) detailEl.value = '';
+  if (actionEl) actionEl.value = '';
+  renderNotesList();
+  renderNotesSection(curFilter);
+  toast('특이사항이 추가되었습니다.');
+}
+
+async function saveNote(id) {
+  const note = notes.find(n => n.id === id);
+  if (!note) return;
+  const dateInp = document.getElementById(`ni-nd-${id}`);
+  const mInp    = document.getElementById(`ni-m-${id}`);
+  const dInp    = document.getElementById(`ni-d-${id}`);
+  const aInp    = document.getElementById(`ni-a-${id}`);
+  if (!mInp) return;
+  const date    = dateInp ? dateInp.value : note.date;
+  const content = serializeNote(mInp.value.trim(), dInp ? dInp.value.trim() : '', aInp ? aInp.value.trim() : '');
+  const ok = await sbUpd('notes', id, { date, content });
+  if (!ok) { toast('수정 실패'); return; }
+  note.date = date;
+  note.content = content;
+  renderNotesList();
+  renderNotesSection(curFilter);
+  toast('수정되었습니다.');
+}
+
+async function deleteNote(id) {
+  if (!confirm('이 특이사항을 삭제하시겠습니까?')) return;
+  const ok = await sbDel('notes', id);
+  if (!ok) { toast('삭제 실패'); return; }
+  notes = notes.filter(n => n.id !== id);
+  renderNotesList();
+  renderNotesSection(curFilter);
+  toast('삭제되었습니다.');
 }
 
 async function addRecord() {

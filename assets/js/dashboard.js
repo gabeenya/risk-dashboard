@@ -77,14 +77,16 @@ async function loadData() {
   const seq = ++_loadSeq;
   setSy('불러오는 중...', '#15803d', '#f0fdf4');
   let fetched;
-  try { fetched = await sbGet('records'); }
+  let fetchedNotes;
+  try { [fetched, fetchedNotes] = await Promise.all([sbGet('records'), sbGet('notes')]); }
   catch(e) {
-    if (seq !== _loadSeq) return;        // 더 새로운 로드가 있으면 무시
+    if (seq !== _loadSeq) return;
     setSy('불러오기 실패 — 이전 데이터 유지', '#dc2626', '#fef2f2');
-    return;                              // records 유지, 렌더 없이 종료
+    return;
   }
-  if (seq !== _loadSeq) return;          // 응답 도중 더 새로운 로드가 시작됐으면 버림
+  if (seq !== _loadSeq) return;
   records = fetched;
+  notes   = (fetchedNotes || []).sort((a, b) => b.date.localeCompare(a.date));
   // 레거시 영역명 정규화: 'IP(지식재산)' → 'IP', '고객지원' → '클레임'
   records.forEach(r => {
     if (r.type === 'IP(지식재산)') r.type = 'IP';
@@ -644,6 +646,43 @@ function renderDash(k) {
       }
     }
   }
+  renderNotesSection(k);
+}
+
+function renderNotesSection(k) {
+  const panel = document.getElementById('notesPanel');
+  if (!panel) return;
+  let filtered;
+  if (k === 'all') {
+    filtered = (curDashCat && curDashCat !== 'all')
+      ? notes.filter(n => (CAT_TYPES[curDashCat] || []).includes(n.type))
+      : [...notes];
+  } else {
+    filtered = notes.filter(n => n.type === k);
+  }
+  panel.style.display = '';
+  const list = document.getElementById('notesDashList');
+  if (!list) return;
+  if (!filtered.length) {
+    list.innerHTML = '<span class="nd-empty">해당 기간 특이사항 없음</span>';
+    return;
+  }
+  const showArea = (k === 'all');
+  list.innerHTML = filtered.map(n => {
+    const p = parseNoteContent(n.content);
+    return `<div class="nd-item">` +
+      `<div class="nd-meta">` +
+      (showArea ? `<span class="nd-type">${esc(n.type)}</span>` : '') +
+      `<span class="nd-date">${esc(n.date)}</span>` +
+      `<span class="nd-author">${esc(n.author||'')}</span>` +
+      `</div>` +
+      `<div class="nd-fields">` +
+      (p.m ? `<div class="nd-field"><span class="nd-fl">주요이슈</span><span class="nd-fv">${esc(p.m)}</span></div>` : '') +
+      (p.d ? `<div class="nd-field"><span class="nd-fl">이슈상세</span><span class="nd-fv">${esc(p.d)}</span></div>` : '') +
+      (p.a ? `<div class="nd-field"><span class="nd-fl">조치완료</span><span class="nd-fv">${esc(p.a)}</span></div>` : '') +
+      `</div>` +
+      `</div>`;
+  }).join('');
 }
 
 // ── 차트 누적/당월 모드 ─────────────────────────────

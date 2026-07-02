@@ -84,6 +84,13 @@ function parseBcAmt(r) {
   const v = Number(numStr);
   return isNaN(v) ? null : v;
 }
+// 특이사항 content JSON 파서/직렬화 (m=주요이슈, d=이슈상세, a=조치완료)
+function parseNoteContent(content) {
+  try { return (content && content.trim().startsWith('{')) ? JSON.parse(content) : { m: content||'', d:'', a:'' }; }
+  catch { return { m: content||'', d:'', a:'' }; }
+}
+function serializeNote(m, d, a) { return JSON.stringify({ m: m||'', d: d||'', a: a||'' }); }
+
 // 부실채권 금액 레코드의 비고 텍스트 추출
 function parseBcNote(r) {
   if (!r.note || !r.note.startsWith('_amt:')) return r.note || '';
