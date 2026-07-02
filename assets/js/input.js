@@ -422,6 +422,7 @@ async function downloadExcelTemplate() {
     header: h,
     width: [12,10,24,14,7,12,30][i]
   }));
+  ws1.getColumn('A').numFmt = '@'; // 날짜 열 텍스트 형식 — 엑셀 자동 변환 방지
   ws1.addRow([today, '가맹', '예상매출액 임의산정', '애슐리', 1, '모니터링', '예시 행 — 삭제 후 입력하세요']);
   ws1.getRow(1).font = { bold: true };
   ws1.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } };
@@ -445,18 +446,21 @@ async function downloadExcelTemplate() {
   }
   ws2.columns = [{ width: 14 }, { width: 14 }, { width: 14 }, ...TYPES.map(() => ({ width: 22 }))];
 
-  // ── 클레임 전용 상태(접수/처리중/처리완료) 열 추가 ───
-  // 클레임 영역만 UI 표시 라벨이 다르므로 별도 드롭다운 소스를 둠
-  const CLAIM_STATS = ['접수', '처리중', '처리완료'];
+  // ── 영역별 전용 상태 열 추가 ─────────────────────────
+  const CLAIM_STATS = ['접수/처리중', '처리완료'];
+  const SAFE_STATS  = ['발생', '조치완료'];
   const claimStatCol = 4 + TYPES.length;
-  ws2.getCell(1, claimStatCol).value = '클레임_상태';
-  ws2.getCell(1, claimStatCol).font = { bold: true };
+  const safeStatCol  = claimStatCol + 1;
+  ws2.getCell(1, claimStatCol).value = '클레임_상태'; ws2.getCell(1, claimStatCol).font = { bold: true };
   CLAIM_STATS.forEach((s, i) => { ws2.getCell(i + 2, claimStatCol).value = s; });
   ws2.getColumn(claimStatCol).width = 14;
+  ws2.getCell(1, safeStatCol).value = '안전_상태'; ws2.getCell(1, safeStatCol).font = { bold: true };
+  SAFE_STATS.forEach((s, i) => { ws2.getCell(i + 2, safeStatCol).value = s; });
+  ws2.getColumn(safeStatCol).width = 14;
   const claimStatLetter = ws2.getColumn(claimStatCol).letter;
+  const safeStatLetter  = ws2.getColumn(safeStatCol).letter;
 
   // ── 정의된 이름(영역별 상세유형 범위 + 상태 범위) ─────
-  // 영역명이 그대로 정의된 이름이 되어 INDIRECT($B2) 로 참조됨
   TYPES.forEach((t, idx) => {
     const subsLen = subLists[idx].length;
     if (subsLen === 0) return;
@@ -466,6 +470,7 @@ async function downloadExcelTemplate() {
   });
   wb.definedNames.add(`참고_유효값!$B$2:$B$${1 + STATS.length}`, '상태_기본');
   wb.definedNames.add(`참고_유효값!$${claimStatLetter}$2:$${claimStatLetter}$${1 + CLAIM_STATS.length}`, '상태_클레임');
+  wb.definedNames.add(`참고_유효값!$${safeStatLetter}$2:$${safeStatLetter}$${1 + SAFE_STATS.length}`, '상태_안전');
 
   // ── 데이터 시트 유효성 검사 ───────────────
   const typesEnd  = 1 + TYPES.length;
@@ -492,7 +497,7 @@ async function downloadExcelTemplate() {
     ws1.getCell(`F${r}`).dataValidation = {
       type: 'list', allowBlank: true, showErrorMessage: true,
       errorStyle: 'warning', errorTitle: '상태', error: '목록에서 선택하세요.',
-      formulae: [`INDIRECT(IF($B${r}="클레임","상태_클레임","상태_기본"))`]
+      formulae: [`INDIRECT(IF($B${r}="클레임","상태_클레임",IF($B${r}="안전","상태_안전","상태_기본")))`]
     };
   }
 
@@ -533,18 +538,30 @@ function handleExcelFile(ev) {
 
 function validateXlRow(row, lineNo) {
   const errs = [];
-  // 날짜 — Date 객체 또는 YYYY-MM-DD 문자열, 엑셀 시리얼 숫자도 허용
   let date = row['날짜'];
   if (date instanceof Date && !isNaN(date)) {
     date = date.toISOString().split('T')[0];
-  } else if (typeof date === 'string') {
-    date = date.trim();
-    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) errs.push('날짜 형식 (YYYY-MM-DD)');
   } else if (typeof date === 'number') {
     // 엑셀 시리얼 → JS Date
     const d = new Date(Math.round((date - 25569) * 86400 * 1000));
     if (!isNaN(d)) date = d.toISOString().split('T')[0];
     else errs.push('날짜 형식');
+  } else if (typeof date === 'string') {
+    date = date.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      // YYYY-MM-DD: 정상
+    } else if (/^\d{4}[./]\d{1,2}[./]\d{1,2}$/.test(date)) {
+      // YYYY.MM.DD / YYYY/MM/DD
+      const parts = date.split(/[./]/);
+      date = `${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+    } else if (/^\d{1,2}[-./]\d{1,2}$/.test(date)) {
+      // MM-DD / MM.DD — 당해 연도로 자동 완성
+      const parts = date.split(/[-./]/);
+      date = `${new Date().getFullYear()}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
+    } else if (date) {
+      errs.push('날짜 형식 오류 (YYYY-MM-DD 로 입력)');
+      date = '';
+    }
   } else {
     date = '';
   }
@@ -572,10 +589,13 @@ function validateXlRow(row, lineNo) {
   if (!count || count < 1 || isNaN(count)) errs.push('건수는 1 이상 정수');
 
   let status = String(row['상태'] || '').trim();
-  // 클레임 표시 라벨(접수/처리중/처리완료)도 받아 DB값(STATS)으로 정규화
-  const __STAT_ALIAS = { '접수':'모니터링', '처리중':'위반(처리중)', '처리완료':'완료' };
+  // 영역별 표시 라벨 → DB 값 정규화
+  const __STAT_ALIAS = {
+    '접수/처리중': '위반(처리중)', '처리완료': '완료',   // 클레임
+    '발생':        '위반(처리중)', '조치완료':  '완료',  // 안전
+  };
   if (__STAT_ALIAS[status]) status = __STAT_ALIAS[status];
-  if (!status) status = '모니터링';
+  if (!status) status = (['안전','클레임'].includes(type)) ? '위반(처리중)' : '모니터링';
   else if (!STATS.includes(status)) errs.push(`상태 (${status}) 알 수 없음`);
 
   const note = String(row['비고'] || '').trim();
@@ -658,153 +678,4 @@ function cancelBulkUpload() {
   document.getElementById('xlPreview').classList.add('hide');
   document.getElementById('xlPvTbody').innerHTML = '';
   document.getElementById('xlFileName').textContent = '선택된 파일 없음';
-  const sf = document.getElementById('safeFileName');
-  if (sf) sf.textContent = '선택된 파일 없음';
-}
-
-// ── 안전 영역 전용 일괄 업로드 ────────────────────────
-// 안전 점검표(다중이용업소 시트)는 양식이 일반 양식과 달라 별도 파서를 둠.
-// · 첫 시트만 읽음 / 헤더 행은 '브랜드'가 있는 행으로 자동 감지(이 파일은 2행)
-// · 헤더 바로 윗행의 항목번호(1,2,3,…)로 점검 항목 컬럼 범위를 식별
-// · 상세유형은 병합 헤더(중처법/게시물/교육/작업장/기타/소방)로, 각 유형은 여러 항목 컬럼 묶음
-// · 항목 값 0 → 모니터링, 0이 아니면(1·2·3·5 = 배점) 위반(처리중), 빈칸 → 제외 (항목 개수만큼 집계)
-// · 브랜드(A열)는 세로 병합이라 위에서 이어받음 / 매장명(B) → 비고 / 점검일자(F) → 날짜 / 영역은 '안전' 고정
-
-// 파일 브랜드명 → DB 브랜드(BRANDS) 매핑
-const SAFE_BRAND_MAP = { '애슐리퀸즈': '애슐리', '테루': '프랜차이즈', '반궁': '프랜차이즈' };
-function mapSafeBrand(raw) {
-  const b = String(raw || '').trim();
-  return SAFE_BRAND_MAP[b] || b;
-}
-
-// 헤더 텍스트(공백·오타 차이 흡수) → 안전 상세유형(SUB['안전'])
-function matchSafeSub(raw) {
-  let s = String(raw || '').replace(/\s+/g, '');
-  if (!s) return null;
-  s = s.replace('중처범', '중처법'); // 파일 오타 보정
-  for (const sub of (SUB['안전'] || [])) {
-    if (sub.replace(/\s+/g, '') === s) return sub;
-  }
-  return null;
-}
-
-function handleSafetyFile(ev) {
-  const file = ev.target.files && ev.target.files[0];
-  if (!file) return;
-  document.getElementById('safeFileName').textContent = file.name;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      if (!ws) { toast('첫 번째 시트를 찾을 수 없습니다.'); return; }
-      const grid = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: true });
-      const rows = parseSafetyGrid(grid);
-      if (rows === null) { toast('안전 점검표 형식을 인식하지 못했습니다. (헤더에 \'브랜드\'·\'점검일자\'가 있는지 확인)'); return; }
-      if (!rows.length) { toast('등록할 점검 데이터가 없습니다.'); return; }
-      xlParsed = rows;
-      renderXlPreview(rows);
-    } catch (err) {
-      toast('파일 파싱 실패: ' + err.message);
-    }
-  };
-  reader.readAsArrayBuffer(file);
-  ev.target.value = '';
-}
-
-// grid(배열의 배열) → 검증된 record 행 목록. 형식 미인식 시 null 반환.
-function parseSafetyGrid(grid) {
-  const norm = v => String(v == null ? '' : v).trim();
-
-  // 헤더 행 찾기 ('브랜드' 셀이 있는 행)
-  let hr = -1;
-  for (let i = 0; i < grid.length; i++) {
-    if ((grid[i] || []).some(c => norm(c) === '브랜드')) { hr = i; break; }
-  }
-  if (hr < 0) return null;
-  const header = grid[hr] || [];
-
-  // 주요 컬럼 위치
-  let colBrand = -1, colNote = -1, colDate = -1;
-  header.forEach((c, ci) => {
-    const t = norm(c);
-    if (colBrand < 0 && t === '브랜드') colBrand = ci;
-    if (colNote < 0 && t.includes('매장')) colNote = ci;
-    if (colDate < 0 && t.includes('점검일')) colDate = ci;
-  });
-  if (colBrand < 0 || colNote < 0 || colDate < 0) return null;
-
-  // 상세유형(병합 헤더) 위치 → 컬럼별 소속 유형 결정
-  const catCols = [];
-  header.forEach((c, ci) => { const s = matchSafeSub(c); if (s) catCols.push({ col: ci, sub: s }); });
-  if (!catCols.length) return null;
-  catCols.sort((a, b) => a.col - b.col);
-  const subForCol = ci => { let s = null; for (const c of catCols) { if (c.col <= ci) s = c.sub; else break; } return s; };
-
-  // 항목 컬럼 = 헤더 윗행(항목번호 행)에 숫자가 있는 컬럼
-  const numRow = hr > 0 ? (grid[hr - 1] || []) : [];
-  const itemCols = [];
-  numRow.forEach((c, ci) => {
-    if (typeof c === 'number' && isFinite(c) && ci >= catCols[0].col) {
-      const sub = subForCol(ci);
-      if (sub) itemCols.push({ col: ci, sub });
-    }
-  });
-  if (!itemCols.length) return null;
-
-  // 데이터 행 순회 (헤더 다음 행부터)
-  const out = [];
-  let lastBrand = '';
-  for (let r = hr + 1; r < grid.length; r++) {
-    const row = grid[r] || [];
-    const note = norm(row[colNote]);
-    if (!note || /^\d+(\.\d+)?$/.test(note)) continue; // 매장명 없는/숫자 행(요약 등) 제외
-
-    const rawBrand = norm(row[colBrand]);
-    if (rawBrand) lastBrand = mapSafeBrand(rawBrand);
-    const brand = lastBrand;
-    const date = parseSafeDate(row[colDate]);
-    const origRow = r + 1;
-
-    // 유형별 위반/모니터링 항목 수 집계
-    const tally = {}; // sub → {vio, mon}
-    for (const ic of itemCols) {
-      const cell = row[ic.col];
-      if (cell == null || norm(cell) === '') continue; // 빈칸 제외
-      const n = Number(cell);
-      if (!isFinite(n)) continue;
-      const t = tally[ic.sub] || (tally[ic.sub] = { vio: 0, mon: 0 });
-      if (n === 0) t.mon++; else t.vio++;
-    }
-
-    for (const sub of Object.keys(tally)) {
-      const t = tally[sub];
-      if (t.vio > 0) out.push(buildSafeRow(origRow, date, sub, brand, t.vio, '위반(처리중)', note));
-      if (t.mon > 0) out.push(buildSafeRow(origRow, date, sub, brand, t.mon, '모니터링', note));
-    }
-  }
-  return out;
-}
-
-function buildSafeRow(lineNo, date, subtype, brand, count, status, note) {
-  const errs = [];
-  if (!date) errs.push('점검일자 없음');
-  if (!brand) errs.push('브랜드 없음');
-  else if (!BRANDS.includes(brand)) errs.push(`브랜드 (${brand}) 알 수 없음`);
-  return { lineNo, date, type: '안전', subtype, brand, count, status, note, errs, ok: errs.length === 0 };
-}
-
-function parseSafeDate(v) {
-  if (v instanceof Date && !isNaN(v)) return v.toISOString().split('T')[0];
-  if (typeof v === 'number' && isFinite(v)) {
-    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
-    return isNaN(d) ? '' : d.toISOString().split('T')[0];
-  }
-  if (typeof v === 'string') {
-    const s = v.trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-    const d = new Date(s);
-    return isNaN(d) ? '' : d.toISOString().split('T')[0];
-  }
-  return '';
 }

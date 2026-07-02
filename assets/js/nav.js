@@ -107,10 +107,6 @@ function setInputType(btn, type) {
   document.getElementById('f-type').value = type;
   document.getElementById('areaBadge').textContent = type;
   document.getElementById('listBadge').textContent = type;
-  // 안전 전용 일괄 업로드 폼은 '안전' 영역에서만 노출
-  const safeBlock = document.getElementById('xlSafeBlock');
-  if (safeBlock) safeBlock.style.display = (type === '안전') ? '' : 'none';
-
   const sel = document.getElementById('f-subtype');
   const s = SUB[type];
   if (!s || !s.length) {

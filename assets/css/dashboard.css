@@ -231,6 +231,11 @@
 .jng-card-name { font-weight:700; color:#0f172a; }
 .jng-card-sent { color:#dc2626; font-size:11px; margin-top:2px; }
 .jng-empty { font-size:12px; color:#94a3b8; }
+.jng-mode-sel { margin-left:auto; font-size:11px; padding:2px 6px; border:1px solid #e2e8f0; border-radius:6px; background:#fff; color:#334155; cursor:pointer; }
+.jng-pager { display:flex; align-items:center; gap:8px; margin-top:8px; }
+.jng-pg-btn { font-size:11px; padding:3px 10px; border:1px solid #e2e8f0; border-radius:6px; background:#fff; color:#334155; cursor:pointer; }
+.jng-pg-btn:disabled { opacity:0.4; cursor:default; }
+.jng-pg-info { font-size:11px; color:#94a3b8; }
 
 /* ── SLA 14일 초과 강조 ───────────────────────────── */
 .sla-alert { color: #dc2626; font-weight: 600; }

@@ -810,47 +810,93 @@ function renderLeaderboard(visibleAreas, showOverall) {
   scheduleRankAnim();
 }
 
+let _jngPage = 0;
+
+function onJngModeChange() {
+  _jngPage = 0;
+  const rd = refDate(), yr = rd.getFullYear(), mo = rd.getMonth() + 1;
+  const ym = `${yr}-${String(mo).padStart(2,'0')}`;
+  renderJngSection(ym, `${yr}년 ${mo}월 기준`);
+}
+
+function setJngPage(dir) {
+  _jngPage += dir;
+  const rd = refDate(), yr = rd.getFullYear(), mo = rd.getMonth() + 1;
+  const ym = `${yr}-${String(mo).padStart(2,'0')}`;
+  renderJngSection(ym, `${yr}년 ${mo}월 기준`);
+}
+
 function renderJngSection(ym, lbl) {
-  const jngYm = document.getElementById('jngYm');
-  if (jngYm) jngYm.textContent = lbl;
-
+  const jngYm   = document.getElementById('jngYm');
+  const modeSel = document.getElementById('jngModeSel');
+  const mode    = modeSel ? modeSel.value : 'acc';
   const brands  = isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b));
-  const jngRecs = records.filter(r =>
-    r.type === '징계' && r.date.startsWith(ym) && brands.includes(r.brand)
-  );
 
-  const wrap = document.getElementById('jngCards');
+  let jngRecs;
+  if (mode === 'mon') {
+    jngRecs = records.filter(r => r.type === '징계' && r.date.startsWith(ym) && brands.includes(r.brand));
+    if (jngYm) jngYm.textContent = lbl;
+  } else {
+    const [yr, mo] = ym.split('-').map(Number);
+    jngRecs = records.filter(r => {
+      if (r.type !== '징계' || !r.date || !brands.includes(r.brand)) return false;
+      const [ry, rm] = r.date.split('-').map(Number);
+      return ry === yr && rm <= mo;
+    });
+    if (jngYm) jngYm.textContent = lbl + ' 누적';
+  }
+
+  const wrap  = document.getElementById('jngCards');
+  const pager = document.getElementById('jngPager');
   if (!wrap) return;
 
+  const validRecs = jngRecs.filter(r => {
+    let name = r.jg_name || '', sent = r.jg_sent || '';
+    if (!name && !sent) { const p = parseJgRecord(r); if (p) { name = p.name; sent = p.sent; } }
+    return name || sent;
+  });
+
   if (!jngRecs.length) {
-    wrap.innerHTML = '<span class="jng-empty">해당 월 징계 현황 없음</span>';
+    wrap.innerHTML = `<span class="jng-empty">${mode === 'mon' ? '해당 월' : '해당 기간'} 징계 현황 없음</span>`;
+    if (pager) pager.style.display = 'none';
+    return;
+  }
+  if (!validRecs.length) {
+    wrap.innerHTML = '<span class="jng-empty">성명·양형 정보가 입력되지 않은 건만 있습니다</span>';
+    if (pager) pager.style.display = 'none';
     return;
   }
 
-  const cards = jngRecs.map(r => {
+  const PAGE = 10;
+  const total = Math.ceil(validRecs.length / PAGE);
+  if (_jngPage >= total) _jngPage = total - 1;
+  if (_jngPage < 0)      _jngPage = 0;
+  const pageRecs = validRecs.slice(_jngPage * PAGE, (_jngPage + 1) * PAGE);
+
+  wrap.innerHTML = pageRecs.map(r => {
     let name = r.jg_name || '', sent = r.jg_sent || '';
-    if (!name && !sent) {
-      const p = parseJgRecord(r);
-      if (p) { name = p.name; sent = p.sent; }
-    }
-    if (!name && !sent) return '';
+    if (!name && !sent) { const p = parseJgRecord(r); if (p) { name = p.name; sent = p.sent; } }
     return `<div class="jng-card">` +
       `<div class="jng-card-brand">${esc(r.brand)}</div>` +
       `<div class="jng-card-name">${esc(name) || '-'}</div>` +
       `<div class="jng-card-sent">${esc(sent) || '-'}</div>` +
       `</div>`;
-  }).filter(Boolean);
+  }).join('');
 
-  if (!cards.length) {
-    wrap.innerHTML = '<span class="jng-empty">성명·양형 정보가 입력되지 않은 건만 있습니다</span>';
-    return;
-  }
-  wrap.innerHTML = cards.join('');
   setTimeout(() => {
     wrap.querySelectorAll('.jng-card').forEach((el, i) =>
       setTimeout(() => el.classList.add('jc-in'), i * 60)
     );
   }, 80);
+
+  if (pager) {
+    pager.style.display = total > 1 ? '' : 'none';
+    const pi = document.getElementById('jngPageInfo');
+    if (pi) pi.textContent = `${_jngPage + 1} / ${total}`;
+    const btns = pager.querySelectorAll('button');
+    if (btns[0]) btns[0].disabled = _jngPage === 0;
+    if (btns[1]) btns[1].disabled = _jngPage >= total - 1;
+  }
 }
 
 // ── 리더보드 연속 부상 애니메이션 ───────────────────

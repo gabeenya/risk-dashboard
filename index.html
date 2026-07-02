@@ -17,7 +17,7 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때마다 v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260702n';</script>
+<script>window.__ASSET_V = '20260702o';</script>
 
 <!-- ?�폰?? Pretendard (?��? UI ?��? ?�트) -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
@@ -244,8 +244,17 @@
         <div class="jng-panel-hd">
           <span>징계 현황</span>
           <span class="card-tag" id="jngYm"></span>
+          <select class="jng-mode-sel" id="jngModeSel" onchange="onJngModeChange()">
+            <option value="acc">누적</option>
+            <option value="mon">당월</option>
+          </select>
         </div>
         <div id="jngCards" class="jng-cards"></div>
+        <div class="jng-pager" id="jngPager" style="display:none">
+          <button class="jng-pg-btn" onclick="setJngPage(-1)">‹ 이전</button>
+          <span class="jng-pg-info" id="jngPageInfo"></span>
+          <button class="jng-pg-btn" onclick="setJngPage(1)">다음 ›</button>
+        </div>
       </div>
     </div>
 
@@ -373,17 +382,7 @@
             </label>
             <span class="xl-file-name" id="xlFileName">선택된 파일 없음</span>
           </div>
-          <p class="xl-hint">양식의 <b>데이터</b> 시트만 채워서 업로드하세요. 첫 행(헤더)은 그대로 두고 두 번째 행부터 입력합니다. 같은 양식으로 모든 영역(가맹/불법파견 등) 기록 가능.</p>
-        </div>
-        <div class="xl-up xl-up-safe" id="xlSafeBlock" style="display:none">
-          <div class="xl-up-row">
-            <span class="xl-safe-tag">🦺 안전 전용</span>
-            <label class="xl-file-lbl" for="safe-file">📂 안전 엑셀파일 업로드(.xlsx)
-              <input type="file" id="safe-file" accept=".xlsx,.xls" onchange="handleSafetyFile(event)" hidden>
-            </label>
-            <span class="xl-file-name" id="safeFileName">선택된 파일 없음</span>
-          </div>
-          <p class="xl-hint">안전 엑셀파일의 <b>첫 번째 시트</b>를 읽습니다. 매장(행)별 안전점검 항목값을 채워주세요. 값이 <b>0이 아니면 위반(처리중)</b>, <b>0이면 → 모니터링</b>으로 등록됩니다.</p>
+          <p class="xl-hint">양식의 <b>데이터</b> 시트만 채워서 업로드하세요. 첫 행(헤더)은 그대로 두고 두 번째 행부터 입력합니다. 날짜는 반드시 <b>YYYY-MM-DD</b> 형식으로 입력하세요 (예: 2026-06-27). 같은 양식으로 모든 영역 기록 가능.</p>
         </div>
         <div class="xl-preview hide" id="xlPreview">
           <div class="xl-pv-hd">
