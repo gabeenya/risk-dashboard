@@ -126,7 +126,7 @@ function setInputType(btn, type) {
   if (_amtW) _amtW.style.display = 'none';
   if (_amtI) _amtI.value = '';
   // 징계 전용 필드 표시/숨김
-  const _showJg = type === '징계';
+  const _showJg = type === '감사';
   if (_jgNW) _jgNW.style.display = _showJg ? '' : 'none';
   if (_jgSW) _jgSW.style.display = _showJg ? '' : 'none';
   if (!_showJg && _jgNI) _jgNI.value = '';
@@ -139,7 +139,7 @@ function setInputType(btn, type) {
   // 상태 select: 영역별 표시 라벨 적용, 징계는 모니터링 옵션 제거
   const stSel = document.getElementById('f-status');
   if (stSel) {
-    const availStats = (['징계','부실채권','안전','클레임'].includes(type)) ? STATS.filter(s => s !== '모니터링') : STATS;
+    const availStats = (['감사','부실채권','안전','클레임'].includes(type)) ? STATS.filter(s => s !== '모니터링') : STATS;
     const cur = stSel.value || availStats[0];
     stSel.innerHTML = availStats.map(s => `<option value="${s}">${statLbl(s, type)}</option>`).join('');
     stSel.value = availStats.includes(cur) ? cur : availStats[0];

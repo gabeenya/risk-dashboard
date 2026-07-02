@@ -283,8 +283,9 @@
 .nd-td { font-size:12px; color:#334155; border-bottom:1px solid #f1f5f9; padding:6px 8px; vertical-align:top; }
 .nd-td-area { white-space:nowrap; vertical-align:middle; }
 .nd-td-date { white-space:nowrap; font-size:11px; color:#64748b; vertical-align:middle; }
-/* 긴 텍스트 셀: 최대 3줄 높이, 드래그 스크롤 가능 */
-.nd-cell-scroll { max-height:54px; overflow-y:auto; cursor:grab; word-break:break-word; line-height:1.5; user-select:none; }
+/* 긴 텍스트 셀: 한 줄 고정, 좌우 드래그 스크롤 */
+.nd-cell-scroll { overflow-x:auto; overflow-y:hidden; white-space:nowrap; cursor:grab; line-height:1.5; user-select:none; scrollbar-width:none; }
+.nd-cell-scroll::-webkit-scrollbar { display:none; }
 .nd-cell-scroll:active { cursor:grabbing; }
 .nd-tbl tbody tr:hover td { background:#f8fafc; }
 

@@ -28,7 +28,7 @@ const __STAT_BC_LBL = { '위반(처리중)':'발생', '완료':'해결' };
 function statLbl(status, type) {
   if (type === '클레임')   return __STAT_CS_LBL[status] || status;
   if (type === '안전')     return __STAT_AN_LBL[status] || status;
-  if (type === '징계')     return __STAT_JG_LBL[status] || status;
+  if (type === '감사')     return __STAT_JG_LBL[status] || status;
   if (type === '부실채권') return __STAT_BC_LBL[status] || status;
   return status;
 }
@@ -66,7 +66,7 @@ function esc(s) {
 
 // 징계 성명·양형 레코드 파서 — note 필드에 '_jg:{성명}|{양형}|{비고}' 형식으로 임시 저장
 function parseJgRecord(r) {
-  if (r.type !== '징계') return null;
+  if (r.type !== '감사') return null;
   if (!r.note || !r.note.startsWith('_jg:')) return null;
   const parts = r.note.slice(4).split('|');
   return { name: parts[0] || '', sent: parts[1] || '', note: parts[2] || '' };

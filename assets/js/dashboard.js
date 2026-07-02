@@ -441,7 +441,7 @@ function renderDash(k) {
 
   // 누적(연 누적) — dY / 당월·처리·현재 — dm
   // 징계·부실채권은 모니터링 개념이 없어 위반율 집계에서 제외 (전체 필터 시 분자·분모 모두 제외)
-  const NO_MON = ['징계', '부실채권'];
+  const NO_MON = ['감사', '부실채권'];
   const excNoMon = r => !NO_MON.includes(r.type);
   // 분류 전체 뷰에서 해당 분류의 모든 영역이 NO_MON이면 excNoMon 필터를 건너뜀 (부정/부실 제거 분류)
   const catAllNoMon = k === 'all' && curDashCat !== 'all' &&
@@ -463,7 +463,7 @@ function renderDash(k) {
   // catAllNoMon: 부정/부실 제거 분류 전체 뷰 (징계+부실채권 합산)
   const isClm      = k === '클레임';
   const isAn       = k === '안전';
-  const isJng      = k === '징계';
+  const isJng      = k === '감사';
   const isBc       = k === '부실채권';
   const isCatNoMon = catAllNoMon;
   const isNoMon    = isJng || isBc || isCatNoMon;
@@ -567,8 +567,8 @@ function renderDash(k) {
     k3s.textContent = `미입금·2개월초과 해결 건 합산 · ${yr}년 ${mo}월까지 누적`;
 
     // KPI4: 징계 조치완료율
-    const jngVio  = dY.filter(r => r.type === '징계' && isVio(r)).reduce((s,r) => s+r.count, 0);
-    const jngDone = dY.filter(r => r.type === '징계' && r.status === '완료').reduce((s,r) => s+r.count, 0);
+    const jngVio  = dY.filter(r => r.type === '감사' && isVio(r)).reduce((s,r) => s+r.count, 0);
+    const jngDone = dY.filter(r => r.type === '감사' && r.status === '완료').reduce((s,r) => s+r.count, 0);
     const jngRate = jngVio ? (jngDone / jngVio * 100).toFixed(1) : 0;
     if (k4Lbl) k4Lbl.textContent = '징계';
     document.getElementById('kpi4Str').textContent = '징계 조치완료율';
@@ -645,8 +645,8 @@ function renderDash(k) {
 
     // KPI4: 분류 없이 전체 영역 뷰일 때만 징계 건수 카드 / 그 외(분류 선택 포함)는 조치중 카드
     if (k === 'all' && curDashCat === 'all') {
-      const jngCur = dm.filter(r => r.type === '징계').reduce((s, r) => s + r.count, 0);
-      const jngAcc = dY.filter(r => r.type === '징계').reduce((s, r) => s + r.count, 0);
+      const jngCur = dm.filter(r => r.type === '감사').reduce((s, r) => s + r.count, 0);
+      const jngAcc = dY.filter(r => r.type === '감사').reduce((s, r) => s + r.count, 0);
       if (k4Lbl) k4Lbl.textContent = '징계';
       document.getElementById('kpi4Str').textContent = '누적 징계 건수';
       document.getElementById('kpi4').textContent    = jngAcc.toLocaleString();
@@ -791,7 +791,7 @@ function renderNotesSection(k) {
     </tr>`;
   };
   const singleHtml = pageNotes.map(makeNdRow).join('');
-  const ndcg = `<colgroup>${showArea ? '<col style="width:72px">' : ''}<col style="width:56px"><col><col><col></colgroup>`;
+  const ndcg = `<colgroup>${showArea ? '<col style="width:72px">' : ''}<col style="width:56px"><col style="width:18%"><col style="width:50%"><col style="width:32%"></colgroup>`;
   const ndHead = `<thead><tr>
     ${showArea ? '<th class="nd-th nd-th-area">영역</th>' : ''}
     <th class="nd-th nd-th-date">날짜</th>
@@ -818,11 +818,11 @@ function renderNotesSection(k) {
       tb.innerHTML = singleHtml + singleHtml;
       tb.style.animation = `ticker-up ${pageNotes.length * 2.5}s linear infinite`;
     }
-    // 드래그 스크롤
+    // 드래그 스크롤 (좌우)
     port.querySelectorAll('.nd-cell-scroll').forEach(el => {
-      let active = false, startY = 0, scrollTop = 0;
-      el.addEventListener('mousedown', e => { active = true; startY = e.clientY; scrollTop = el.scrollTop; e.preventDefault(); });
-      el.addEventListener('mousemove', e => { if (!active) return; el.scrollTop = scrollTop - (e.clientY - startY); });
+      let active = false, startX = 0, scrollLeft = 0;
+      el.addEventListener('mousedown', e => { active = true; startX = e.clientX; scrollLeft = el.scrollLeft; e.preventDefault(); });
+      el.addEventListener('mousemove', e => { if (!active) return; el.scrollLeft = scrollLeft - (e.clientX - startX); });
       const stop = () => { active = false; };
       el.addEventListener('mouseup', stop);
       el.addEventListener('mouseleave', stop);
@@ -1027,12 +1027,12 @@ function renderJngSection(ym, lbl) {
 
   let jngRecs;
   if (mode === 'mon') {
-    jngRecs = records.filter(r => r.type === '징계' && r.date.startsWith(ym) && brands.includes(r.brand));
+    jngRecs = records.filter(r => r.type === '감사' && r.date.startsWith(ym) && brands.includes(r.brand));
     if (jngYm) jngYm.textContent = lbl;
   } else {
     const [yr, mo] = ym.split('-').map(Number);
     jngRecs = records.filter(r => {
-      if (r.type !== '징계' || !r.date || !brands.includes(r.brand)) return false;
+      if (r.type !== '감사' || !r.date || !brands.includes(r.brand)) return false;
       const [ry, rm] = r.date.split('-').map(Number);
       return ry === yr && rm <= mo;
     });
@@ -1067,7 +1067,7 @@ function renderJngSection(ym, lbl) {
       <td>${esc(name || '-')}</td>
       <td>${esc(sent || '-')}</td>
       <td>${esc(noteText || '-')}</td>
-      <td><span class="rc-st ${sc(r.status)}">${esc(statLbl(r.status, '징계'))}</span></td>
+      <td><span class="rc-st ${sc(r.status)}">${esc(statLbl(r.status, '감사'))}</span></td>
     </tr>`;
   };
   const singleHtml = pageRecs.map(makeJngRow).join('');
