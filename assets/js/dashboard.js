@@ -745,6 +745,12 @@ function renderDash(k) {
   _setupDashObserver();
 }
 
+let _notesDashPage = 0;
+function setNotesDashPage(dir) {
+  _notesDashPage += dir;
+  renderNotesSection(curFilter);
+}
+
 function renderNotesSection(k) {
   const panel = document.getElementById('notesPanel');
   if (!panel) return;
@@ -757,21 +763,24 @@ function renderNotesSection(k) {
     filtered = notes.filter(n => n.type === k);
   }
   panel.style.display = '';
-  const list = document.getElementById('notesDashList');
+  const list  = document.getElementById('notesDashList');
+  const pager = document.getElementById('notesDashPager');
   if (!list) return;
   if (!filtered.length) {
     list.innerHTML = '<span class="nd-empty">해당 기간 특이사항 없음</span>';
+    if (pager) pager.style.display = 'none';
     return;
   }
+
+  const MAX_RECS = 50, PAGE_SIZE = 10, MAX_PAGE = 5, SHOW = 5;
   const showArea = (k === 'all');
-  const thead = `<thead><tr>
-    ${showArea ? '<th class="nd-th nd-th-area">영역</th>' : ''}
-    <th class="nd-th nd-th-date">날짜</th>
-    <th class="nd-th">주요이슈</th>
-    <th class="nd-th">이슈상세</th>
-    <th class="nd-th">조치완료</th>
-  </tr></thead>`;
-  const tbody = filtered.map(n => {
+  const allNotes = filtered.slice(0, MAX_RECS);
+  const totalPages = Math.min(MAX_PAGE, Math.max(1, Math.ceil(allNotes.length / PAGE_SIZE)));
+  if (_notesDashPage >= totalPages) _notesDashPage = totalPages - 1;
+  if (_notesDashPage < 0)           _notesDashPage = 0;
+  const pageNotes = allNotes.slice(_notesDashPage * PAGE_SIZE, (_notesDashPage + 1) * PAGE_SIZE);
+
+  const makeNdRow = n => {
     const p = parseNoteContent(n.content);
     return `<tr>
       ${showArea ? `<td class="nd-td nd-td-area"><span class="nd-type">${esc(n.type)}</span></td>` : ''}
@@ -780,23 +789,54 @@ function renderNotesSection(k) {
       <td class="nd-td"><div class="nd-cell-scroll">${esc(p.d||'-')}</div></td>
       <td class="nd-td"><div class="nd-cell-scroll">${esc(p.a||'-')}</div></td>
     </tr>`;
-  }).join('');
-  list.innerHTML = `<div class="nd-tbl-wrap"><table class="nd-tbl">${thead}<tbody>${tbody}</tbody></table></div>`;
+  };
+  const singleHtml = pageNotes.map(makeNdRow).join('');
+  const ndcg = `<colgroup>${showArea ? '<col style="width:72px">' : ''}<col style="width:56px"><col><col><col></colgroup>`;
+  const ndHead = `<thead><tr>
+    ${showArea ? '<th class="nd-th nd-th-area">영역</th>' : ''}
+    <th class="nd-th nd-th-date">날짜</th>
+    <th class="nd-th">주요이슈</th>
+    <th class="nd-th">이슈상세</th>
+    <th class="nd-th">조치완료</th>
+  </tr></thead>`;
 
-  // 드래그 스크롤 — 긴 텍스트를 마우스로 드래그해서 볼 수 있도록
-  list.querySelectorAll('.nd-cell-scroll').forEach(el => {
-    let active = false, startY = 0, scrollTop = 0;
-    el.addEventListener('mousedown', e => {
-      active = true; startY = e.clientY; scrollTop = el.scrollTop; e.preventDefault();
+  list.innerHTML = `
+    <div class="nd-tbl-wrap"><table class="nd-tbl nd-tbl-hdr">${ndcg}${ndHead}</table></div>
+    <div class="nd-port" id="ndPort">
+      <table class="nd-tbl nd-tbl-bdy">${ndcg}<tbody id="ndBtbl">${singleHtml}</tbody></table>
+    </div>`;
+
+  setTimeout(() => {
+    const port = document.getElementById('ndPort');
+    const tb   = document.getElementById('ndBtbl');
+    if (!port || !tb) return;
+    const rows = tb.querySelectorAll('tr');
+    if (!rows.length) return;
+    const rowH = (tb.offsetHeight / rows.length) || 36;
+    port.style.height = `${rowH * Math.min(SHOW, pageNotes.length)}px`;
+    if (pageNotes.length > SHOW) {
+      tb.innerHTML = singleHtml + singleHtml;
+      tb.style.animation = `ticker-up ${pageNotes.length * 2.5}s linear infinite`;
+    }
+    // 드래그 스크롤
+    port.querySelectorAll('.nd-cell-scroll').forEach(el => {
+      let active = false, startY = 0, scrollTop = 0;
+      el.addEventListener('mousedown', e => { active = true; startY = e.clientY; scrollTop = el.scrollTop; e.preventDefault(); });
+      el.addEventListener('mousemove', e => { if (!active) return; el.scrollTop = scrollTop - (e.clientY - startY); });
+      const stop = () => { active = false; };
+      el.addEventListener('mouseup', stop);
+      el.addEventListener('mouseleave', stop);
     });
-    el.addEventListener('mousemove', e => {
-      if (!active) return;
-      el.scrollTop = scrollTop - (e.clientY - startY);
-    });
-    const stop = () => { active = false; };
-    el.addEventListener('mouseup', stop);
-    el.addEventListener('mouseleave', stop);
-  });
+  }, 50);
+
+  if (pager) {
+    pager.style.display = totalPages > 1 ? '' : 'none';
+    const pi = document.getElementById('notesDashPageInfo');
+    if (pi) pi.textContent = `${_notesDashPage + 1} / ${totalPages}`;
+    const btns = pager.querySelectorAll('button');
+    if (btns[0]) btns[0].disabled = _notesDashPage === 0;
+    if (btns[1]) btns[1].disabled = _notesDashPage >= totalPages - 1;
+  }
 }
 
 // ── 차트 누적/당월 모드 ─────────────────────────────
@@ -1009,13 +1049,14 @@ function renderJngSection(ym, lbl) {
     return;
   }
 
-  const PAGE = 10;
-  const total = Math.ceil(jngRecs.length / PAGE);
-  if (_jngPage >= total) _jngPage = total - 1;
-  if (_jngPage < 0)      _jngPage = 0;
-  const pageRecs = jngRecs.slice(_jngPage * PAGE, (_jngPage + 1) * PAGE);
+  const MAX_RECS = 50, PAGE_SIZE = 10, MAX_PAGE = 5, SHOW = 5;
+  const allRecs = jngRecs.slice(0, MAX_RECS);
+  const totalPages = Math.min(MAX_PAGE, Math.max(1, Math.ceil(allRecs.length / PAGE_SIZE)));
+  if (_jngPage >= totalPages) _jngPage = totalPages - 1;
+  if (_jngPage < 0)           _jngPage = 0;
+  const pageRecs = allRecs.slice(_jngPage * PAGE_SIZE, (_jngPage + 1) * PAGE_SIZE);
 
-  const tbody = pageRecs.map(r => {
+  const makeJngRow = r => {
     let name = r.jg_name || '', sent = r.jg_sent || '';
     if (!name && !sent) { const p = parseJgRecord(r); if (p) { name = p.name; sent = p.sent; } }
     const noteText = r.jg_name != null ? (r.note || '') : (parseJgRecord(r)?.note || r.note || '');
@@ -1028,19 +1069,37 @@ function renderJngSection(ym, lbl) {
       <td>${esc(noteText || '-')}</td>
       <td><span class="rc-st ${sc(r.status)}">${esc(statLbl(r.status, '징계'))}</span></td>
     </tr>`;
-  }).join('');
-  wrap.innerHTML = `<div class="jng-tbl-wrap"><table class="jng-tbl">
-    <thead><tr><th>날짜</th><th>브랜드</th><th>상세유형</th><th>성명</th><th>양형</th><th>비고</th><th>상태</th></tr></thead>
-    <tbody>${tbody}</tbody>
-  </table></div>`;
+  };
+  const singleHtml = pageRecs.map(makeJngRow).join('');
+  const jcg = `<colgroup><col style="width:7%"><col style="width:10%"><col style="width:12%"><col style="width:10%"><col style="width:22%"><col style="width:29%"><col style="width:10%"></colgroup>`;
+  const jHead = `<thead><tr><th>날짜</th><th>브랜드</th><th>상세유형</th><th>성명</th><th>양형</th><th>비고</th><th>상태</th></tr></thead>`;
+  wrap.innerHTML = `
+    <table class="jng-tbl jng-tbl-hdr">${jcg}${jHead}</table>
+    <div class="jng-port" id="jngPort">
+      <table class="jng-tbl jng-tbl-bdy">${jcg}<tbody id="jngBtbl">${singleHtml}</tbody></table>
+    </div>`;
+
+  setTimeout(() => {
+    const port = document.getElementById('jngPort');
+    const tb   = document.getElementById('jngBtbl');
+    if (!port || !tb) return;
+    const rows = tb.querySelectorAll('tr');
+    if (!rows.length) return;
+    const rowH = (tb.offsetHeight / rows.length) || 28;
+    port.style.height = `${rowH * Math.min(SHOW, pageRecs.length)}px`;
+    if (pageRecs.length > SHOW) {
+      tb.innerHTML = singleHtml + singleHtml;
+      tb.style.animation = `ticker-up ${pageRecs.length * 2.5}s linear infinite`;
+    }
+  }, 50);
 
   if (pager) {
-    pager.style.display = total > 1 ? '' : 'none';
+    pager.style.display = totalPages > 1 ? '' : 'none';
     const pi = document.getElementById('jngPageInfo');
-    if (pi) pi.textContent = `${_jngPage + 1} / ${total}`;
+    if (pi) pi.textContent = `${_jngPage + 1} / ${totalPages}`;
     const btns = pager.querySelectorAll('button');
     if (btns[0]) btns[0].disabled = _jngPage === 0;
-    if (btns[1]) btns[1].disabled = _jngPage >= total - 1;
+    if (btns[1]) btns[1].disabled = _jngPage >= totalPages - 1;
   }
 }
 

@@ -236,10 +236,25 @@
 .jng-card-sent { color:#dc2626; font-size:11px; margin-top:2px; }
 .jng-empty { font-size:12px; color:#94a3b8; }
 /* 징계 현황 테이블 */
-.jng-tbl-wrap { overflow-x:auto; margin-top:4px; }
-.jng-tbl { width:100%; border-collapse:collapse; font-size:12px; min-width:480px; }
-.jng-tbl thead th { font-size:11px; font-weight:700; color:#475569; background:#fef2f2; border-bottom:2px solid #fecaca; padding:5px 8px; text-align:left; white-space:nowrap; }
-.jng-tbl tbody td { color:#334155; border-bottom:1px solid #fef2f2; padding:5px 8px; vertical-align:middle; }
+.jng-tbl-wrap { overflow-x:auto; margin-top:4px; width:100%; }
+.jng-tbl { width:100%; border-collapse:collapse; font-size:12px; min-width:520px; table-layout:fixed; }
+.jng-tbl-hdr { margin-bottom:0; }
+.jng-tbl-bdy { border-top:0; }
+.jng-port { overflow:hidden; width:100%; }
+/* 영역별 특이사항 ticker */
+.nd-tbl-hdr { margin-bottom:0; }
+.nd-tbl-bdy { border-top:0; }
+.nd-port { overflow:hidden; width:100%; }
+.jng-tbl thead th { font-size:11px; font-weight:700; color:#475569; background:#fef2f2; border-bottom:2px solid #fecaca; padding:5px 8px; text-align:left; white-space:nowrap; overflow:hidden; }
+.jng-tbl thead th:nth-child(1) { width:7%; }   /* 날짜 */
+.jng-tbl thead th:nth-child(2) { width:10%; }  /* 브랜드 */
+.jng-tbl thead th:nth-child(3) { width:12%; }  /* 상세유형 */
+.jng-tbl thead th:nth-child(4) { width:10%; }  /* 성명 */
+.jng-tbl thead th:nth-child(5) { width:22%; }  /* 양형 */
+.jng-tbl thead th:nth-child(6) { width:29%; }  /* 비고 */
+.jng-tbl thead th:nth-child(7) { width:10%; }  /* 상태 */
+.jng-tbl tbody td { color:#334155; border-bottom:1px solid #fef2f2; padding:5px 8px; vertical-align:middle; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.jng-tbl tbody td:nth-child(5), .jng-tbl tbody td:nth-child(6) { white-space:normal; word-break:break-word; }
 .jng-tbl tbody tr:hover td { background:#fef2f2; }
 .jng-mode-sel { margin-left:auto; font-size:11px; padding:2px 6px; border:1px solid #e2e8f0; border-radius:6px; background:#fff; color:#334155; cursor:pointer; }
 .jng-pager { display:flex; align-items:center; gap:8px; margin-top:8px; }
