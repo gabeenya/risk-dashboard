@@ -79,11 +79,15 @@ async function loadData() {
   // notes 실패가 records 로딩을 막지 않도록 allSettled 사용
   const [recRes, notesRes] = await Promise.allSettled([sbGet('records'), sbGet('notes')]);
   if (seq !== _loadSeq) return;
-  if (recRes.status === 'rejected') {
-    setSy('불러오기 실패 — 이전 데이터 유지', '#dc2626', '#fef2f2');
-    return;
+  // rejected(네트워크 오류) 또는 배열이 아닌 응답(Supabase 오류 객체 등) → 기존 records 유지
+  if (recRes.status === 'rejected' || !Array.isArray(recRes.value)) {
+    setSy(
+      recRes.status === 'rejected' ? '불러오기 실패 — 이전 데이터 유지' : '응답 오류 — 이전 데이터 유지',
+      '#dc2626', '#fef2f2'
+    );
+    return; // records 덮어쓰지 않음 → 0/0 방지
   }
-  records = Array.isArray(recRes.value) ? recRes.value : [];
+  records = recRes.value;
   if (notesRes.status === 'fulfilled' && Array.isArray(notesRes.value)) {
     notes = notesRes.value.sort((a, b) => b.date.localeCompare(a.date));
   }
@@ -327,6 +331,93 @@ function renderSideAreaCounts() {
     const sum = records.reduce((n, r) => n + (r.type === t ? (Number(r.count) || 0) : 0), 0);
     el.textContent = sum.toLocaleString();
   });
+}
+
+// ── 대시보드 카드 진입 애니메이션 (IntersectionObserver 기반) ──────
+// 차트(라인/도넛/바)는 Chart.js 기본 애니메이션 사용. 스크롤 재진입 시 chart.reset()+update()
+// 그 외 카드(grade board, heatmap, recent rows)는 CSS/transition 애니메이션
+let _dashObserver = null;
+const _prevIntersect = new WeakMap(); // 이전 교차 상태 추적 (prev=false → 이탈 후 재진입)
+
+function isInViewport(el) {
+  if (!el) return false;
+  const r = el.getBoundingClientRect();
+  return r.top < window.innerHeight && r.bottom > 0;
+}
+
+function _applyCardAnim(el, anim, delay) {
+  if (!el) return;
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = `${anim} 0.44s cubic-bezier(0.22,0.61,0.36,1) ${delay || '0s'} both`;
+}
+
+function animateRecentRows() {
+  const tb = document.getElementById('recentTbody');
+  if (!tb) return;
+  tb.querySelectorAll('tr:not(.ph-row)').forEach((tr, i) => {
+    tr.style.animation = 'none';
+    void tr.offsetWidth;
+    tr.style.animation = `row-flow-in 0.3s cubic-bezier(0.22,0.61,0.36,1) ${(i * 0.05).toFixed(2)}s both`;
+  });
+}
+
+function animateHeatmapBars() {
+  const wrap = document.getElementById('heatmapWrap');
+  if (!wrap) return;
+  wrap.querySelectorAll('.rank-area-fill').forEach((bar, i) => {
+    const finalW = bar.style.width;
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
+    void bar.offsetWidth;
+    bar.style.transition = `width 0.55s cubic-bezier(0.25,0.46,0.45,0.94) ${(i * 0.018).toFixed(3)}s`;
+    bar.style.width = finalW;
+  });
+}
+
+const _CHART_IDS = ['lineChartCard', 'rightChartCard', 'barChartCard'];
+
+function _triggerCardAnim(el) {
+  if (!el) return;
+  if (el.id === 'gradeBoard')       { _applyCardAnim(el, 'dash-left-in', '0.05s'); }
+  else if (el.id === 'heatmapCard') { animateHeatmapBars(); }
+  else if (el.id === 'lineChartCard')  { if (lChart) { lChart.reset();  lChart.update();  } }
+  else if (el.id === 'rightChartCard') { if (rChart) { rChart.reset();  rChart.update();  } }
+  else if (el.id === 'barChartCard')   { if (bChart) { bChart.reset();  bChart.update();  } }
+  else                              { animateRecentRows(); }
+}
+
+function _resetCardAnim(el) {
+  if (!el) return;
+  if (el.id === 'gradeBoard') { el.style.animation = ''; }
+  else if (!_CHART_IDS.includes(el.id) && el.id !== 'heatmapCard') {
+    const tb = document.getElementById('recentTbody');
+    if (tb) tb.querySelectorAll('tr').forEach(tr => tr.style.animation = '');
+  }
+  // 차트/히트맵: 별도 리셋 불필요
+}
+
+function _setupDashObserver() {
+  if (_dashObserver) _dashObserver.disconnect();
+  _dashObserver = new IntersectionObserver((entries) => {
+    entries.forEach(({ target, isIntersecting }) => {
+      const prev = _prevIntersect.get(target);
+      _prevIntersect.set(target, isIntersecting);
+      if (!isIntersecting) { _resetCardAnim(target); return; }
+      // 차트: 화면 이탈(prev=false) 후 재진입 시만 재애니메이션 (초기 생성 시 Chart.js가 처리)
+      // 기타: prev!==true (처음 진입 포함) 시 애니메이션
+      const isChart = _CHART_IDS.includes(target.id);
+      if (isChart ? (prev === false) : (prev !== true)) _triggerCardAnim(target);
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
+  [
+    document.getElementById('gradeBoard'),
+    document.getElementById('lineChartCard'),
+    document.getElementById('rightChartCard'),
+    document.getElementById('barChartCard'),
+    document.getElementById('heatmapCard'),
+    document.querySelector('#barChartCard ~ .card'),
+  ].forEach(el => { if (el) _dashObserver.observe(el); });
 }
 
 function renderDash(k) {
@@ -647,6 +738,13 @@ function renderDash(k) {
     }
   }
   renderNotesSection(k);
+
+  // 비-차트 카드의 _prevIntersect 상태 초기화 → Observer 재연결 시 애니메이션 재실행
+  [document.getElementById('gradeBoard'),
+   document.getElementById('heatmapCard'),
+   document.querySelector('#barChartCard ~ .card')
+  ].forEach(el => { if (el) _prevIntersect.delete(el); });
+  _setupDashObserver();
 }
 
 function renderNotesSection(k) {
@@ -1060,6 +1158,7 @@ function renderHeatmap(scopeYm) {
   });
   html += '</div>';
   wrap.innerHTML = html;
+  // 애니메이션은 IntersectionObserver (_triggerCardAnim)가 처리
 }
 
 // ── 드릴다운: 영역×브랜드 / 영역 / 브랜드 / 상세유형 등 조건으로 records 필터해서 패널 표시
@@ -1249,6 +1348,10 @@ function renderRecent(d) {
   }
   tb.innerHTML = html;
   renderPager(pg, recentPage, totalPages);
+  // 페이지 전환·상태 필터 변경 등으로 직접 호출된 경우: 카드가 보이면 즉시 워터폴 애니메이션
+  // (renderDash 경로: _prevIntersect 삭제 + Observer 재연결로 처리)
+  const rc = document.querySelector('#barChartCard ~ .card');
+  if (rc && isInViewport(rc) && _prevIntersect.has(rc)) animateRecentRows();
 }
 
 function renderPager(c, curr, total) {

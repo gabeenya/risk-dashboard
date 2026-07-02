@@ -1,3 +1,7 @@
+/* ── 대시보드 카드 진입 애니메이션 ───────────────────── */
+@keyframes dash-left-in { from { opacity:0; transform:translateX(-18px); } to { opacity:1; transform:none; } }
+@keyframes row-flow-in  { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:none; } }
+
 /* ── 상단 (Overview 라벨 + 기준 월 선택) ──────────── */
 .dash-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .dash-top .sec-label { margin-bottom: 16px; }
@@ -239,7 +243,7 @@
 
 /* ── 리스크 측정판 / 조치사항 공통 섹션 헤더 ─────────── */
 .gb-sec-hd { display:flex; align-items:center; gap:8px; margin:0 -1.2rem 0.85rem; padding:0.48rem 1.2rem; background:#eef2f8; }
-.gb-sec-tit { font-size:13px; font-weight:700; color:#1e3a8a; letter-spacing:0.2px; }
+.gb-sec-tit { font-size:15px; font-weight:700; color:#1e3a8a; letter-spacing:0.2px; }
 
 /* ── 조치사항 섹션 래퍼 ──────────────────────────────── */
 .action-sec { border-top:1.5px solid #e2e8f0; margin-top:1.1rem; padding-top:1rem; }
