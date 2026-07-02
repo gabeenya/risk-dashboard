@@ -20,13 +20,15 @@ function sc(s) {
 }
 
 // 영역별 상태 표시 라벨. DB에는 STATS(모니터링/위반(처리중)/완료)로 저장하되,
-// 클레임: 접수/처리중/처리완료, 징계: 적발/조치완료로 표시. 집계/필터/PPT 로직은 변환 없이 동일하게 동작.
-const __STAT_CS_LBL = { '모니터링':'접수', '위반(처리중)':'처리중', '완료':'처리완료' };
+// 클레임·안전·징계·부실채권은 모니터링 옵션 없이 2단계만 사용.
+const __STAT_CS_LBL = { '위반(처리중)':'접수/처리중', '완료':'처리완료' };
+const __STAT_AN_LBL = { '위반(처리중)':'발생', '완료':'조치완료' };
 const __STAT_JG_LBL = { '위반(처리중)':'적발', '완료':'조치완료' };
 const __STAT_BC_LBL = { '위반(처리중)':'발생', '완료':'해결' };
 function statLbl(status, type) {
-  if (type === '클레임')  return __STAT_CS_LBL[status] || status;
-  if (type === '징계')    return __STAT_JG_LBL[status]  || status;
+  if (type === '클레임')   return __STAT_CS_LBL[status] || status;
+  if (type === '안전')     return __STAT_AN_LBL[status] || status;
+  if (type === '징계')     return __STAT_JG_LBL[status] || status;
   if (type === '부실채권') return __STAT_BC_LBL[status] || status;
   return status;
 }

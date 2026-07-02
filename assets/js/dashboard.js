@@ -371,19 +371,23 @@ function renderDash(k) {
   // 영역별 KPI 라벨: 클레임(접수/처리중/처리완료), 징계(적발/조치완료), 부실채권(발생/해결)
   // catAllNoMon: 부정/부실 제거 분류 전체 뷰 (징계+부실채권 합산)
   const isClm      = k === '클레임';
+  const isAn       = k === '안전';
   const isJng      = k === '징계';
   const isBc       = k === '부실채권';
   const isCatNoMon = catAllNoMon;
   const isNoMon    = isJng || isBc || isCatNoMon;
-  const lblMon  = isClm ? '접수'   : isNoMon ? '전체'       : '모니터링';
-  const lblVio  = isClm ? '처리'   : isJng   ? '적발'       : isBc ? '발생' : isCatNoMon ? '처리(완료)' : '위반';
-  const lblIng  = isClm ? '처리중' : isJng   ? '적발'       : isBc ? '발생' : isCatNoMon ? '조치중'     : '위반(처리중)';
-  const lblRate = isClm ? '처리율' : isJng   ? '조치완료율' : isBc ? '해결율' : isCatNoMon ? '완료율'   : '위반율';
+  const lblMon  = isClm ? '접수'   : isAn ? '발생'     : isNoMon ? '전체'       : '모니터링';
+  const lblVio  = isClm ? '처리'   : isAn ? '조치완료' : isJng   ? '적발'       : isBc ? '발생' : isCatNoMon ? '처리(완료)' : '위반';
+  const lblIng  = isClm ? '처리중' : isAn ? '발생'     : isJng   ? '적발'       : isBc ? '발생' : isCatNoMon ? '조치중'     : '위반(처리중)';
+  const lblRate = isClm ? '처리율' : isAn ? '조치율'   : isJng   ? '조치완료율' : isBc ? '해결율' : isCatNoMon ? '완료율'   : '위반율';
 
   // KPI 카드 라벨/서브 동적 갱신
   // kpi3Str/kpi3: 부실채권은 아래 isBc 블록에서 '회수금액'으로 덮어씀
   document.getElementById('kpi3Str').textContent = isClm ? '처리완료율' : isJng ? '조치완료율' : isBc ? '회수금액' : '완료율';
   document.getElementById('kpi3').textContent    = isBc ? '-' : dr + '%';
+  // 안전 뷰: KPI3(완료율) 카드 숨김
+  const _kpi3Card = document.getElementById('kpi3Str') && document.getElementById('kpi3Str').closest('.kpi');
+  if (_kpi3Card) _kpi3Card.style.display = (isAn || isClm) ? 'none' : '';
 
   const k3s    = document.getElementById('kpi3s');
   const doneLbl = isClm ? '처리완료' : isJng ? '조치완료' : isBc ? '해결' : '완료';
@@ -477,6 +481,55 @@ function renderDash(k) {
     document.getElementById('kpi4Str').textContent = '징계 조치완료율';
     document.getElementById('kpi4').textContent    = jngRate + '%';
     k4s.textContent = `조치완료 ${jngDone.toLocaleString()} / 적발 ${jngVio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
+  } else if (isClm) {
+    // 클레임 뷰 — 처리완료/접수·처리중 기준 (안전과 동일 구조)
+    const mDone   = dmb.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
+    const clRate  = tot  ? (done  / tot  * 100).toFixed(1) : 0;
+    const clMRate = mTot ? (mDone / mTot * 100).toFixed(1) : 0;
+
+    document.getElementById('kpi1Str').textContent = '처리완료 / 접수·처리중';
+    document.getElementById('kpi1').textContent    = `${done.toLocaleString()} / ${tot.toLocaleString()}`;
+    document.getElementById('kpi1r').textContent   = tot ? `처리율 ${clRate}%` : '-';
+    document.getElementById('kpi1s').textContent   = `${yr}년 ${mo}월까지 누적`;
+
+    document.getElementById('kpi2Str').textContent = '처리완료 / 접수·처리중';
+    document.getElementById('kpi2').textContent    = `${mDone.toLocaleString()} / ${mTot.toLocaleString()}`;
+    document.getElementById('kpi2r').textContent   = mTot ? `처리율 ${clMRate}%` : '-';
+    document.getElementById('kpi2s').textContent   = `${yr}년 ${mo}월 기준`;
+
+    if (k4Lbl) k4Lbl.textContent = '현재';
+    document.getElementById('kpi4Str').textContent = '처리중 건수';
+    document.getElementById('kpi4').textContent    = act.toLocaleString();
+    if (slaOver > 0) {
+      k4s.innerHTML = `접수/처리중 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()" onclick="toggleSlaPopup(this, event)">${SLA_DAYS}일 초과 ${slaOver.toLocaleString()}건</span>`;
+    } else {
+      k4s.textContent = '접수/처리중 상태 건수';
+    }
+  } else if (isAn) {
+    // 안전 뷰 — 조치완료/발생 기준
+    // 발생 = 전체 입력값(완료+발생+모니터링), 조치완료 = 완료 상태, 조치율 = 완료/전체
+    const mDone   = dmb.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
+    const anRate  = tot  ? (done  / tot  * 100).toFixed(1) : 0;
+    const anMRate = mTot ? (mDone / mTot * 100).toFixed(1) : 0;
+
+    document.getElementById('kpi1Str').textContent = '조치완료 / 발생';
+    document.getElementById('kpi1').textContent    = `${done.toLocaleString()} / ${tot.toLocaleString()}`;
+    document.getElementById('kpi1r').textContent   = tot ? `조치율 ${anRate}%` : '-';
+    document.getElementById('kpi1s').textContent   = `${yr}년 ${mo}월까지 누적`;
+
+    document.getElementById('kpi2Str').textContent = '조치완료 / 발생';
+    document.getElementById('kpi2').textContent    = `${mDone.toLocaleString()} / ${mTot.toLocaleString()}`;
+    document.getElementById('kpi2r').textContent   = mTot ? `조치율 ${anMRate}%` : '-';
+    document.getElementById('kpi2s').textContent   = `${yr}년 ${mo}월 기준`;
+
+    if (k4Lbl) k4Lbl.textContent = '현재';
+    document.getElementById('kpi4Str').textContent = '발생 건수';
+    document.getElementById('kpi4').textContent    = act.toLocaleString();
+    if (slaOver > 0) {
+      k4s.innerHTML = `발생 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()" onclick="toggleSlaPopup(this, event)">${SLA_DAYS}일 초과 ${slaOver.toLocaleString()}건</span>`;
+    } else {
+      k4s.textContent = '발생 상태 건수';
+    }
   } else {
     // 일반 뷰
     document.getElementById('kpi1Str').textContent = `${lblVio} / ${lblMon}`;
@@ -531,11 +584,11 @@ function renderDash(k) {
 
   // 최근 모니터링 카드 제목/상태 버튼 라벨
   const recTit = document.getElementById('recentCardTit');
-  if (recTit) recTit.textContent = isClm ? '최근 접수 현황' : isJng ? '최근 징계 현황' : isBc ? '최근 부실채권 현황' : isCatNoMon ? '최근 현황' : '최근 모니터링 현황';
+  if (recTit) recTit.textContent = isClm ? '최근 접수 현황' : isAn ? '최근 안전 현황' : isJng ? '최근 징계 현황' : isBc ? '최근 부실채권 현황' : isCatNoMon ? '최근 현황' : '최근 모니터링 현황';
   const rb = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-  rb('rsBtnMon',  isClm ? '접수'    : isNoMon ? '전체'    : '모니터링');
-  rb('rsBtnIng',  isClm ? '처리중'  : isJng   ? '적발'    : isBc ? '발생' : isCatNoMon ? '조치중' : '위반(처리중)');
-  rb('rsBtnDone', isClm ? '처리완료': isJng   ? '조치완료' : isBc ? '해결' : isCatNoMon ? '완료'  : '완료');
+  rb('rsBtnMon',  isClm ? '모니터링'    : isAn ? '모니터링'   : isNoMon ? '전체'    : '모니터링');
+  rb('rsBtnIng',  isClm ? '접수/처리중' : isAn ? '발생'       : isJng   ? '적발'    : isBc ? '발생' : isCatNoMon ? '조치중' : '위반(처리중)');
+  rb('rsBtnDone', isClm ? '처리완료'   : isAn ? '조치완료'   : isJng   ? '조치완료': isBc ? '해결' : isCatNoMon ? '완료'  : '완료');
 
   renderLine(d, ref);
   renderRight(_modeRight === 'acc' ? d : dm, k, ref);

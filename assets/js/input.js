@@ -181,7 +181,7 @@ function refreshInpFilterOpts() {
   // 상태: 현재 영역(curType)의 표시 라벨로 옵션 구성 (클레임은 접수/처리중/처리완료)
   const stt = document.getElementById('inpStatFilter');
   if (stt) {
-    const availSt = (curType === '징계' || curType === '부실채권') ? STATS.filter(s => s !== '모니터링') : STATS;
+    const availSt = (['징계','부실채권','안전','클레임'].includes(curType)) ? STATS.filter(s => s !== '모니터링') : STATS;
     stt.innerHTML = ['<option value="all">전체</option>']
       .concat(availSt.map(s => `<option value="${esc(s)}">${esc(statLbl(s, curType))}</option>`))
       .join('');
@@ -262,7 +262,7 @@ function renderInputTable() {
     </td>
     <td>
       <select class="st-sel" onchange="updStatus(${rid},this.value)">
-        ${((r.type === '징계' || r.type === '부실채권') ? STATS.filter(s => s !== '모니터링') : STATS).map(s => `<option value="${esc(s)}"${r.status===s?' selected':''}>${esc(statLbl(s, r.type))}</option>`).join('')}
+        ${(()=>{ const _av = (['징계','부실채권','안전','클레임'].includes(r.type)) ? STATS.filter(s => s !== '모니터링') : STATS; const _opts = _av.includes(r.status) ? _av : [r.status, ..._av]; return _opts.map(s=>`<option value="${esc(s)}"${r.status===s?' selected':''}>${esc(statLbl(s,r.type))}</option>`).join(''); })()}
       </select>
     </td>
     <td>${(()=>{
@@ -339,7 +339,7 @@ function updInpBulkUI() {
   const stBtn = document.getElementById('inpBulkStatBtn');
   const stSel = document.getElementById('inpBulkStatSel');
   if (stSel) {
-    const availSt = (curType === '징계' || curType === '부실채권') ? STATS.filter(s => s !== '모니터링') : STATS;
+    const availSt = (['징계','부실채권','안전','클레임'].includes(curType)) ? STATS.filter(s => s !== '모니터링') : STATS;
     const cur = stSel.value || availSt[0];
     stSel.innerHTML = availSt.map(s => `<option value="${esc(s)}">${esc(statLbl(s, curType))}</option>`).join('');
     stSel.value = availSt.includes(cur) ? cur : availSt[0];
