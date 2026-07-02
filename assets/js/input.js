@@ -550,117 +550,107 @@ async function bulkUpdStatusSelected() {
 // 검증된 행을 임시로 보관 (확정 시 INSERT)
 let xlParsed = [];
 
-// 헤더 키 (양식 다운로드 + 업로드 파싱 시 공통으로 사용)
-const XL_HEADERS = ['날짜','영역','상세유형','브랜드','건수','상태','비고','노출여부','성명','양형','금액'];
+// 영역별 유효 상태 라벨 (엑셀 표시용 — validateXlRow에서 DB 값으로 정규화)
+function _areaStats(type) {
+  if (type === '클레임')                              return ['접수/처리중','처리완료'];
+  if (type === '안전')                                return ['발생','조치완료'];
+  if (['징계','부실채권'].includes(type))             return ['위반(처리중)','완료'];
+  return ['모니터링','위반(처리중)','완료'];
+}
 
 async function downloadExcelTemplate() {
   if (typeof ExcelJS === 'undefined') { toast('엑셀 라이브러리 로드 실패'); return; }
-  const wb = new ExcelJS.Workbook();
+  const wb   = new ExcelJS.Workbook();
   const today = td();
-  const MAX_ROWS = 500; // 데이터 입력 가능 행 수
+  const MAX_ROWS = 500;
+  const aType = curType;      // 현재 선택된 영역
+  const isJg  = aType === '징계';
+  const isBc  = aType === '부실채권';
+
+  const aStats = _areaStats(aType);
+  const aSubs  = SUB[aType] || [];
+
+  // ── 헤더 / 열 너비 ──────────────────────
+  const headers = ['날짜','영역','상세유형','브랜드','건수','상태','비고','노출여부'];
+  const widths  = [12,    10,    24,       14,    7,    12,   30,   10   ];
+  if (isJg) { headers.push('성명','양형'); widths.push(14, 14); }
+  if (isBc) { headers.push('금액');       widths.push(12);      }
 
   // ── 시트1: 데이터 ─────────────────────────
   const ws1 = wb.addWorksheet('데이터');
-  ws1.columns = XL_HEADERS.map((h, i) => ({
-    header: h,
-    width: [12,10,24,14,7,12,30,10,14,14,12][i]
-  }));
-  ws1.getColumn('A').numFmt = '@'; // 날짜 열 텍스트 형식 — 엑셀 자동 변환 방지
-  ws1.addRow([today, '가맹', '예상매출액 임의산정', '애슐리', 1, '모니터링', '예시 행 — 삭제 후 입력하세요', '', '', '', '']);
+  ws1.columns = headers.map((h, i) => ({ header: h, width: widths[i] }));
+  ws1.getColumn('A').numFmt = '@';
+
+  const exSub  = aSubs[0] || '';
+  const exStat = aStats[0];
+  const exRow  = [today, aType, exSub, '애슐리', 1, exStat, '예시 행 — 삭제 후 입력하세요', ''];
+  if (isJg) exRow.push('', '');
+  if (isBc) exRow.push('');
+  ws1.addRow(exRow);
   ws1.getRow(1).font = { bold: true };
   ws1.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } };
 
-  // ── 시트2: 참고_유효값 ────────────────────
-  // 컬럼 레이아웃: A=영역, B=상태, C=브랜드, D~ = 각 영역별 상세유형
+  // ── 시트2: 참고_유효값 ──────────────────
+  // A=상세유형, B=브랜드, C=상태
   const ws2 = wb.addWorksheet('참고_유효값');
-  const refHeader = ['영역', '상태', '브랜드', ...TYPES];
-  ws2.addRow(refHeader);
+  ws2.addRow(['상세유형', '브랜드', '상태']);
   ws2.getRow(1).font = { bold: true };
-
-  const subLists = TYPES.map(t => SUB[t] || []);
-  const maxLen = Math.max(TYPES.length, STATS.length, BRANDS.length, ...subLists.map(s => s.length));
-  for (let i = 0; i < maxLen; i++) {
-    ws2.addRow([
-      TYPES[i] || '',
-      STATS[i] || '',
-      BRANDS[i] || '',
-      ...subLists.map(s => s[i] || '')
-    ]);
+  const refLen = Math.max(aSubs.length, BRANDS.length, aStats.length);
+  for (let i = 0; i < refLen; i++) {
+    ws2.addRow([aSubs[i] || '', BRANDS[i] || '', aStats[i] || '']);
   }
-  ws2.columns = [{ width: 14 }, { width: 14 }, { width: 14 }, ...TYPES.map(() => ({ width: 22 }))];
+  ws2.columns = [{ width: 24 }, { width: 14 }, { width: 16 }];
 
-  // ── 영역별 전용 상태 열 추가 ─────────────────────────
-  const CLAIM_STATS = ['접수/처리중', '처리완료'];
-  const SAFE_STATS  = ['발생', '조치완료'];
-  const claimStatCol = 4 + TYPES.length;
-  const safeStatCol  = claimStatCol + 1;
-  ws2.getCell(1, claimStatCol).value = '클레임_상태'; ws2.getCell(1, claimStatCol).font = { bold: true };
-  CLAIM_STATS.forEach((s, i) => { ws2.getCell(i + 2, claimStatCol).value = s; });
-  ws2.getColumn(claimStatCol).width = 14;
-  ws2.getCell(1, safeStatCol).value = '안전_상태'; ws2.getCell(1, safeStatCol).font = { bold: true };
-  SAFE_STATS.forEach((s, i) => { ws2.getCell(i + 2, safeStatCol).value = s; });
-  ws2.getColumn(safeStatCol).width = 14;
-  const claimStatLetter = ws2.getColumn(claimStatCol).letter;
-  const safeStatLetter  = ws2.getColumn(safeStatCol).letter;
+  if (aSubs.length > 0) {
+    wb.definedNames.add(`참고_유효값!$A$2:$A$${1 + aSubs.length}`, aType);
+  }
+  wb.definedNames.add(`참고_유효값!$B$2:$B$${1 + BRANDS.length}`, '브랜드목록');
+  wb.definedNames.add(`참고_유효값!$C$2:$C$${1 + aStats.length}`, '상태목록');
 
-  // ── 정의된 이름(영역별 상세유형 범위 + 상태 범위) ─────
-  TYPES.forEach((t, idx) => {
-    const subsLen = subLists[idx].length;
-    if (subsLen === 0) return;
-    const colLetter = ws2.getColumn(4 + idx).letter;
-    const ref = `참고_유효값!$${colLetter}$2:$${colLetter}$${1 + subsLen}`;
-    wb.definedNames.add(ref, t);
-  });
-  wb.definedNames.add(`참고_유효값!$B$2:$B$${1 + STATS.length}`, '상태_기본');
-  wb.definedNames.add(`참고_유효값!$${claimStatLetter}$2:$${claimStatLetter}$${1 + CLAIM_STATS.length}`, '상태_클레임');
-  wb.definedNames.add(`참고_유효값!$${safeStatLetter}$2:$${safeStatLetter}$${1 + SAFE_STATS.length}`, '상태_안전');
-
-  // ── 데이터 시트 유효성 검사 ───────────────
-  const typesEnd  = 1 + TYPES.length;
-  const statsEnd  = 1 + STATS.length;
-  const brandsEnd = 1 + BRANDS.length;
-  const lastRow   = 1 + MAX_ROWS;
-
+  // ── 데이터 유효성 검사 ───────────────────
+  const lastRow = 1 + MAX_ROWS;
   for (let r = 2; r <= lastRow; r++) {
     ws1.getCell(`B${r}`).dataValidation = {
-      type: 'list', allowBlank: true, showErrorMessage: true,
-      errorStyle: 'warning', errorTitle: '영역', error: '목록에서 선택하세요.',
-      formulae: [`참고_유효값!$A$2:$A$${typesEnd}`]
+      type: 'list', allowBlank: true, showErrorMessage: false,
+      formulae: [`"${aType}"`]
     };
-    ws1.getCell(`C${r}`).dataValidation = {
-      type: 'list', allowBlank: true, showErrorMessage: true,
-      errorStyle: 'warning', errorTitle: '상세유형', error: '영역에 맞는 값을 선택하세요.',
-      formulae: [`INDIRECT($B${r})`]
-    };
+    if (aSubs.length > 0) {
+      ws1.getCell(`C${r}`).dataValidation = {
+        type: 'list', allowBlank: true, showErrorMessage: true,
+        errorStyle: 'warning', errorTitle: '상세유형', error: '목록에서 선택하세요.',
+        formulae: [`참고_유효값!$A$2:$A$${1 + aSubs.length}`]
+      };
+    }
     ws1.getCell(`D${r}`).dataValidation = {
       type: 'list', allowBlank: true, showErrorMessage: true,
       errorStyle: 'warning', errorTitle: '브랜드', error: '목록에서 선택하세요.',
-      formulae: [`참고_유효값!$C$2:$C$${brandsEnd}`]
+      formulae: [`참고_유효값!$B$2:$B$${1 + BRANDS.length}`]
     };
     ws1.getCell(`F${r}`).dataValidation = {
       type: 'list', allowBlank: true, showErrorMessage: true,
       errorStyle: 'warning', errorTitle: '상태', error: '목록에서 선택하세요.',
-      formulae: [`INDIRECT(IF($B${r}="클레임","상태_클레임",IF($B${r}="안전","상태_안전","상태_기본")))`]
+      formulae: [`참고_유효값!$C$2:$C$${1 + aStats.length}`]
     };
     ws1.getCell(`H${r}`).dataValidation = {
-      type: 'list', allowBlank: true, showErrorMessage: true,
-      errorStyle: 'warning', errorTitle: '노출여부', error: 'O 또는 빈칸으로 입력하세요.',
+      type: 'list', allowBlank: true, showErrorMessage: false,
       formulae: ['"O"']
     };
-    ws1.getCell(`K${r}`).dataValidation = {
-      type: 'decimal', allowBlank: true, showErrorMessage: true,
-      errorStyle: 'warning', errorTitle: '금액', error: '숫자만 입력하세요 (부실채권 전용).',
-      operator: 'greaterThanOrEqual', formulae: [0]
-    };
+    if (isBc) {
+      ws1.getCell(`I${r}`).dataValidation = {
+        type: 'decimal', allowBlank: true, showErrorMessage: true,
+        errorStyle: 'warning', errorTitle: '금액', error: '숫자만 입력하세요.',
+        operator: 'greaterThanOrEqual', formulae: [0]
+      };
+    }
   }
 
-  // ── 파일 다운로드 ────────────────────────
-  const buf = await wb.xlsx.writeBuffer();
+  // ── 다운로드 ────────────────────────────
+  const buf  = await wb.xlsx.writeBuffer();
   const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `리스크데이터_양식_${today}.xlsx`;
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `리스크데이터_양식_${aType}_${today}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -770,12 +760,26 @@ function validateXlRow(row, lineNo) {
 }
 
 function renderXlPreview(rows) {
-  const ok = rows.filter(r => r.ok).length;
+  const ok  = rows.filter(r => r.ok).length;
   const err = rows.length - ok;
-  document.getElementById('xlOkCnt').textContent = ok;
+  document.getElementById('xlOkCnt').textContent  = ok;
   document.getElementById('xlErrCnt').textContent = err;
   document.getElementById('xlTotCnt').textContent = rows.length;
   document.getElementById('xlConfirmBtn').disabled = ok === 0;
+
+  // 업로드된 데이터의 영역으로 컬럼 결정 (없으면 curType)
+  const detectedType = (rows[0] && rows[0].type) || curType;
+  const isJg = detectedType === '징계';
+  const isBc = detectedType === '부실채권';
+
+  // 헤더 동적 업데이트
+  const thead = document.querySelector('#xlPreview .xl-pv-tbl thead tr');
+  if (thead) {
+    thead.innerHTML = `<th>#</th><th>날짜</th><th>영역</th><th>상세유형</th><th>브랜드</th><th>건수</th><th>상태</th><th>비고</th><th>노출여부</th>
+      ${isJg ? '<th>성명</th><th>양형</th>' : ''}
+      ${isBc ? '<th>금액</th>' : ''}
+      <th>결과</th>`;
+  }
 
   const tb = document.getElementById('xlPvTbody');
   tb.innerHTML = rows.map(r => {
@@ -790,9 +794,8 @@ function renderXlPreview(rows) {
     <td>${esc(r.status ? statLbl(r.status, r.type) : '-')}</td>
     <td>${esc(r.note||'')}</td>
     <td>${r.exposed ? 'O' : ''}</td>
-    <td>${r.jg_name ? esc(r.jg_name) : ''}</td>
-    <td>${r.jg_sent ? esc(r.jg_sent) : ''}</td>
-    <td>${r.bc_amount != null ? r.bc_amount.toLocaleString() : ''}</td>
+    ${isJg ? `<td>${esc(r.jg_name||'')}</td><td>${esc(r.jg_sent||'')}</td>` : ''}
+    ${isBc ? `<td>${r.bc_amount != null ? r.bc_amount.toLocaleString() : ''}</td>` : ''}
     <td>${r.ok?'<span class="xl-badge xl-badge-ok">유효</span>':`<span class="xl-badge xl-badge-err" title="${esc(errsTxt)}">${esc(errsTxt)}</span>`}</td>
   </tr>`;
   }).join('');
