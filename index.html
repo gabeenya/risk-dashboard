@@ -17,36 +17,36 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때마다 v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260703n';</script>
+<script>window.__ASSET_V = '20260703o';</script>
 
 <!-- ?�폰?? Pretendard (?��? UI ?��? ?�트) -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 
 <!-- ?��???(?�이지�?분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260703n">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260703n">
-<link rel="stylesheet" href="assets/css/input.css?v=20260703n">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260703n">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260703n">
-<link rel="stylesheet" href="assets/css/help.css?v=20260703n">
+<link rel="stylesheet" href="assets/css/base.css?v=20260703o">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260703o">
+<link rel="stylesheet" href="assets/css/input.css?v=20260703o">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260703o">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260703o">
+<link rel="stylesheet" href="assets/css/help.css?v=20260703o">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
                   → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260703n"     defer></script>
-<script src="assets/js/constants.js?v=20260703n"  defer></script>
-<script src="assets/js/state.js?v=20260703n"      defer></script>
-<script src="assets/js/utils.js?v=20260703n"      defer></script>
-<script src="assets/js/auth.js?v=20260703n"       defer></script>
-<script src="assets/js/nav.js?v=20260703n"        defer></script>
-<script src="assets/js/dashboard.js?v=20260703n"  defer></script>
-<script src="assets/js/input.js?v=20260703n"      defer></script>
-<script src="assets/js/admin.js?v=20260703n"      defer></script>
-<script src="assets/js/ai.js?v=20260703n"         defer></script>
-<script src="assets/js/ppt.js?v=20260703n"        defer></script>
-<script src="assets/js/main.js?v=20260703n"       defer></script>
+<script src="assets/js/config.js?v=20260703o"     defer></script>
+<script src="assets/js/constants.js?v=20260703o"  defer></script>
+<script src="assets/js/state.js?v=20260703o"      defer></script>
+<script src="assets/js/utils.js?v=20260703o"      defer></script>
+<script src="assets/js/auth.js?v=20260703o"       defer></script>
+<script src="assets/js/nav.js?v=20260703o"        defer></script>
+<script src="assets/js/dashboard.js?v=20260703o"  defer></script>
+<script src="assets/js/input.js?v=20260703o"      defer></script>
+<script src="assets/js/admin.js?v=20260703o"      defer></script>
+<script src="assets/js/ai.js?v=20260703o"         defer></script>
+<script src="assets/js/ppt.js?v=20260703o"        defer></script>
+<script src="assets/js/main.js?v=20260703o"       defer></script>
 </head>
 <body>
 
@@ -55,7 +55,7 @@
   <!-- ?�?� 좌측 ?�이?�바 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
   <aside class="sidebar" id="sidebar">
     <a class="side-logo" onclick="goHome()">
-      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260703n" alt="Elandeats" />
+      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260703o" alt="Elandeats" />
     </a>
     <div class="side-scroll">
       <p class="side-sec">메뉴</p>
@@ -185,12 +185,6 @@
   <div id="page-dashboard" class="pg">
     <div class="dash-top">
       <p class="sec-label">Overview · 외식 BG 리스크 적발 및 처리 분석</p>
-      <div class="month-bar">
-        <span class="month-bar-lbl">기준 월</span>
-        <input type="month" id="dashMonth" class="dash-month" onchange="setDashMonth(this.value)">
-        <button class="month-now-btn" id="dashMonthNow" onclick="resetDashMonth()">당월</button>
-        <span class="month-bar-note" id="dashMonthNote"></span>
-      </div>
     </div>
     <div class="dash-filters">
       <label class="dash-fl"><span class="dash-fl-lbl">분류</span>
@@ -233,7 +227,9 @@
         <select class="chart-mode-sel" id="modeGrade" onchange="setChartMode('grade',this.value)">
           <option value="acc">누적</option>
           <option value="mon">당월</option>
+          <option value="pick">직접 선택</option>
         </select>
+        <input type="month" class="chart-ym-inp" id="ymGrade" style="display:none" onchange="setChartYm('grade',this.value)">
         <span class="card-tag" id="gradeYm" style="margin-left:auto"></span>
       </div>
       <div class="grade-legend">
@@ -285,7 +281,7 @@
 
     <div class="kpi-grid">
       <div class="kpi"><p class="kpi-lbl">누적</p><p class="kpi-str" id="kpi1Str">위반 / 모니터링</p><p class="kpi-val" id="kpi1">-</p><p class="kpi-rate" id="kpi1r">-</p><p class="kpi-sub" id="kpi1s">-</p></div>
-      <div class="kpi"><p class="kpi-lbl">당월</p><p class="kpi-str" id="kpi2Str">위반 / 모니터링</p><p class="kpi-val" id="kpi2">-</p><p class="kpi-rate" id="kpi2r">-</p><p class="kpi-sub" id="kpi2s">-</p></div>
+      <div class="kpi"><div class="kpi-lbl-row"><select class="kpi-mode-sel" id="modeKpi" onchange="setKpiMode(this.value)"><option value="mon">당월</option><option value="pick">직접 선택</option></select><input type="month" class="kpi-ym-inp" id="ymKpi" style="display:none" onchange="setKpiYm(this.value)"></div><p class="kpi-str" id="kpi2Str">위반 / 모니터링</p><p class="kpi-val" id="kpi2">-</p><p class="kpi-rate" id="kpi2r">-</p><p class="kpi-sub" id="kpi2s">-</p></div>
       <div class="kpi dim"><p class="kpi-lbl">처리</p><p class="kpi-str" id="kpi3Str">완료율</p><p class="kpi-val" id="kpi3">-</p><p class="kpi-sub" id="kpi3s">-</p></div>
       <div class="kpi dim"><p class="kpi-lbl" id="kpi4Lbl">현재</p><p class="kpi-str" id="kpi4Str">조치중 건수</p><p class="kpi-val" id="kpi4">-</p><p class="kpi-sub" id="kpi4s">-</p></div>
     </div>
@@ -301,7 +297,7 @@
         <p class="chart-note" id="lineChartNote" style="display:none">※ 영업비밀 '모니터링 건수'의 경우 10:1 환산 반영 / '위반 건수'의 경우 1:1 정상값 반영.<br><span class="chart-note-ex">(ex. 실제 모니터링 건수가 1,540개, 위반 건수가 3건인 경우 그래프에는 154개, 3건으로 반영)</span></p>
       </div>
       <div class="card" id="rightChartCard">
-        <div class="card-hd"><span class="card-tit" id="rChartTit">위반 유형별 분포</span><div class="card-hd-right"><span class="card-tag" id="rChartTag">-</span><select class="chart-mode-sel" id="modeRight" onchange="setChartMode('right',this.value)"><option value="acc">누적</option><option value="mon">당월</option></select></div></div>
+        <div class="card-hd"><span class="card-tit" id="rChartTit">위반 유형별 분포</span><div class="card-hd-right"><span class="card-tag" id="rChartTag">-</span><select class="chart-mode-sel" id="modeRight" onchange="setChartMode('right',this.value)"><option value="acc">누적</option><option value="mon">당월</option><option value="pick">직접 선택</option></select><input type="month" class="chart-ym-inp" id="ymRight" style="display:none" onchange="setChartYm('right',this.value)"></div></div>
         <div id="rChartLeg" class="leg"></div>
         <div class="chart-box chart-box-right"><canvas id="rightChart"></canvas></div>
         <p class="chart-note" id="rChartNote" style="display:none">※ 영업비밀 '모니터링 건수'의 경우 10:1 환산 반영 / '위반 건수'의 경우 1:1 정상값 반영.<br><span class="chart-note-ex">(ex. 실제 모니터링 건수가 1,540개, 위반 건수가 3건인 경우 그래프에는 154개, 3건으로 반영)</span></p>
@@ -310,7 +306,7 @@
 
     <div class="btm-row">
       <div class="card" id="barChartCard">
-        <div class="card-hd"><span class="card-tit">브랜드별 현황</span><div class="card-hd-right"><span class="card-tag">전체 브랜드</span><select class="chart-mode-sel" id="modeBar" onchange="setChartMode('bar',this.value)"><option value="acc">누적</option><option value="mon">당월</option></select></div></div>
+        <div class="card-hd"><span class="card-tit">브랜드별 현황</span><div class="card-hd-right"><span class="card-tag">전체 브랜드</span><select class="chart-mode-sel" id="modeBar" onchange="setChartMode('bar',this.value)"><option value="acc">누적</option><option value="mon">당월</option><option value="pick">직접 선택</option></select><input type="month" class="chart-ym-inp" id="ymBar" style="display:none" onchange="setChartYm('bar',this.value)"></div></div>
         <div class="leg leg-bar">
           <span><span class="ld" style="background:#8fa8c8"></span><span id="barLegMon">누적 모니터링 건수</span></span>
           <span><span class="ld" style="background:#e8845a"></span><span id="barLegVio">위반</span></span>
@@ -347,7 +343,7 @@
       <div class="card" id="heatmapCard" style="flex:1 1 100%">
         <div class="card-hd">
           <span class="card-tit">브랜드/영역별 위험도 <span class="card-sub-note">— 위반 건수 상위 브랜드 · Top 3 영역</span></span>
-          <div class="card-hd-right"><span class="card-tag">카드/칩 클릭 시 상세</span><select class="chart-mode-sel" id="modeHeat" onchange="setChartMode('heat',this.value)"><option value="acc">누적</option><option value="mon">당월</option></select></div>
+          <div class="card-hd-right"><span class="card-tag">카드/칩 클릭 시 상세</span><select class="chart-mode-sel" id="modeHeat" onchange="setChartMode('heat',this.value)"><option value="acc">누적</option><option value="mon">당월</option><option value="pick">직접 선택</option></select><input type="month" class="chart-ym-inp" id="ymHeat" style="display:none" onchange="setChartYm('heat',this.value)"></div>
         </div>
         <div class="heatmap-wrap" id="heatmapWrap"></div>
       </div>
@@ -456,6 +452,7 @@
           <div class="fgroup"><label>건수</label><input type="number" id="f-count" min="1" value="1"></div>
           <div class="fgroup" id="f-jg-name-wrap" style="display:none"><label>징계 대상자</label><input type="text" id="f-jg-name" placeholder="성명 입력"></div>
           <div class="fgroup" id="f-jg-sent-wrap" style="display:none"><label>양형</label><input type="text" id="f-jg-sent" placeholder="예: 경고, 감봉 1개월"></div>
+          <div class="fgroup" id="f-jng-type-wrap" style="display:none"><label>징계유형</label><select id="f-jng-type"><option value="">선택 안함</option><option value="금전회수">금전회수</option><option value="경징계">경징계</option><option value="중징계">중징계</option><option value="형사고발">형사고발</option></select></div>
           <div class="fgroup" id="f-amount-wrap" style="display:none"><label>금액</label><input type="number" id="f-amount" min="0" step="1000" placeholder="금액 입력 (원)"></div>
           <div class="fgroup" id="f-note-wrap"><label>비고 (선택)</label><input type="text" id="f-note" placeholder="메모 입력"></div>
           <div class="fgroup f-exposed-wrap" id="f-exposed-wrap" style="display:none">

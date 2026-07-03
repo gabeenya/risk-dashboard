@@ -121,16 +121,20 @@ function setInputType(btn, type) {
   const _amtI   = document.getElementById('f-amount');
   const _jgNW   = document.getElementById('f-jg-name-wrap');
   const _jgSW   = document.getElementById('f-jg-sent-wrap');
+  const _jgTW   = document.getElementById('f-jng-type-wrap');
   const _jgNI   = document.getElementById('f-jg-name');
   const _jgSI   = document.getElementById('f-jg-sent');
+  const _jgTI   = document.getElementById('f-jng-type');
   if (_amtW) _amtW.style.display = 'none';
   if (_amtI) _amtI.value = '';
   // 징계 전용 필드 표시/숨김
   const _showJg = type === '감사';
   if (_jgNW) _jgNW.style.display = _showJg ? '' : 'none';
   if (_jgSW) _jgSW.style.display = _showJg ? '' : 'none';
+  if (_jgTW) _jgTW.style.display = _showJg ? '' : 'none';
   if (!_showJg && _jgNI) _jgNI.value = '';
   if (!_showJg && _jgSI) _jgSI.value = '';
+  if (!_showJg && _jgTI) _jgTI.value = '';
   // 외부노출 여부 — 전 영역 표시
   const exposedWrap = document.getElementById('f-exposed-wrap');
   if (exposedWrap) exposedWrap.style.display = '';

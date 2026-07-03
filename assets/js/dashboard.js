@@ -432,6 +432,14 @@ function renderDash(k) {
 
   // 기준 월 스코프(당월 KPI·차트·목록·히트맵·알림이 사용)
   const dm = d.filter(r => r.date && r.date.startsWith(ym));
+  // KPI2 전용 월 (당월 or 직접 선택)
+  const kpiYm   = _modeKpi === 'pick' && _ymKpi ? _ymKpi : ym;
+  const dmKpi   = _modeKpi === 'pick' && _ymKpi ? d.filter(r => r.date && r.date.startsWith(_ymKpi)) : dm;
+  const [kpiYr, kpiMo] = kpiYm.split('-').map(Number);
+  // 차트별 당월 데이터 (null → acc 모드에서 d 전체 사용)
+  const pickChartDm = (mode, storedYm) => mode === 'pick' && storedYm ? d.filter(r => r.date && r.date.startsWith(storedYm)) : null;
+  const dmRight = pickChartDm(_modeRight, _ymRight);
+  const dmBar   = pickChartDm(_modeBar,   _ymBar);
   // 연 누적: 기준 연도 1월~기준 월
   const dY = d.filter(r => {
     if (!r.date) return false;
@@ -446,12 +454,12 @@ function renderDash(k) {
   // 분류 전체 뷰에서 해당 분류의 모든 영역이 NO_MON이면 excNoMon 필터를 건너뜀 (부정/부실 제거 분류)
   const catAllNoMon = k === 'all' && curDashCat !== 'all' &&
     (CAT_TYPES[curDashCat] || []).every(t => NO_MON.includes(t));
-  const dYb = (NO_MON.includes(k) || catAllNoMon) ? dY : dY.filter(excNoMon);
-  const dmb  = (NO_MON.includes(k) || catAllNoMon) ? dm : dm.filter(excNoMon);
-  const tot  = dYb.reduce((s, r) => s + monCnt(r), 0);
-  const vio  = dYb.filter(isVio).reduce((s, r) => s + r.count, 0);
-  const mTot = dmb.reduce((s, r) => s + monCnt(r), 0);
-  const mVio = dmb.filter(isVio).reduce((s, r) => s + r.count, 0);
+  const dYb    = (NO_MON.includes(k) || catAllNoMon) ? dY : dY.filter(excNoMon);
+  const dmKpiB = (NO_MON.includes(k) || catAllNoMon) ? dmKpi : dmKpi.filter(excNoMon);
+  const tot    = dYb.reduce((s, r) => s + monCnt(r), 0);
+  const vio    = dYb.filter(isVio).reduce((s, r) => s + r.count, 0);
+  const mTot   = dmKpiB.reduce((s, r) => s + monCnt(r), 0);
+  const mVio   = dmKpiB.filter(isVio).reduce((s, r) => s + r.count, 0);
   const done = dYb.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);   // 기준월까지 누적 완료
   const act  = dYb.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);  // 누적 전체 기준
   const slaOver = dYb.filter(isSlaOver).reduce((s, r) => s + r.count, 0);
@@ -494,11 +502,11 @@ function renderDash(k) {
     document.getElementById('kpi1r').textContent   = done ? `조치완료 ${done.toLocaleString()}건` : '-';
     document.getElementById('kpi1s').textContent   = `${yr}년 ${mo}월까지 누적`;
 
-    const mDone = dmb.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
+    const mDone = dmKpiB.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
     document.getElementById('kpi2Str').textContent = '당월 조치완료 건수';
     document.getElementById('kpi2').textContent    = mDone.toLocaleString();
     document.getElementById('kpi2r').textContent   = mTot ? `적발 ${mTot.toLocaleString()}건` : '-';
-    document.getElementById('kpi2s').textContent   = `${yr}년 ${mo}월 기준`;
+    document.getElementById('kpi2s').textContent   = `${kpiYr}년 ${kpiMo}월 기준`;
 
     k3s.textContent = `조치완료 ${done.toLocaleString()} / 적발 ${vio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
 
@@ -527,7 +535,7 @@ function renderDash(k) {
     document.getElementById('kpi2Str').textContent = '당월 부실채권 발생 건수';
     document.getElementById('kpi2').textContent    = mTot.toLocaleString();
     document.getElementById('kpi2r').textContent   = act ? `발생 ${act.toLocaleString()}건` : '-';
-    document.getElementById('kpi2s').textContent   = `${yr}년 ${mo}월 기준`;
+    document.getElementById('kpi2s').textContent   = `${kpiYr}년 ${kpiMo}월 기준`;
 
     document.getElementById('kpi3Str').textContent = '회수금액';
     document.getElementById('kpi3').textContent    = bcRecovery.toLocaleString() + '원';
@@ -553,7 +561,7 @@ function renderDash(k) {
     document.getElementById('kpi2Str').textContent = '당월 발생 건수';
     document.getElementById('kpi2').textContent    = mTot.toLocaleString();
     document.getElementById('kpi2r').textContent   = act ? `조치중 ${act.toLocaleString()}건` : '-';
-    document.getElementById('kpi2s').textContent   = `${yr}년 ${mo}월 기준`;
+    document.getElementById('kpi2s').textContent   = `${kpiYr}년 ${kpiMo}월 기준`;
 
     // KPI3: 부실채권 누적 회수 금액
     const bcRecovery = dY.filter(r =>
@@ -576,7 +584,7 @@ function renderDash(k) {
     k4s.textContent = `조치완료 ${jngDone.toLocaleString()} / 적발 ${jngVio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
   } else if (isClm) {
     // 클레임 뷰 — 처리완료/접수·처리중 기준 (안전과 동일 구조)
-    const mDone   = dmb.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
+    const mDone   = dmKpiB.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
     const clRate  = tot  ? (done  / tot  * 100).toFixed(1) : 0;
     const clMRate = mTot ? (mDone / mTot * 100).toFixed(1) : 0;
 
@@ -588,7 +596,7 @@ function renderDash(k) {
     document.getElementById('kpi2Str').textContent = '처리완료 / 접수·처리중';
     document.getElementById('kpi2').textContent    = `${mDone.toLocaleString()} / ${mTot.toLocaleString()}`;
     document.getElementById('kpi2r').textContent   = mTot ? `처리율 ${clMRate}%` : '-';
-    document.getElementById('kpi2s').textContent   = `${yr}년 ${mo}월 기준`;
+    document.getElementById('kpi2s').textContent   = `${kpiYr}년 ${kpiMo}월 기준`;
 
     if (k4Lbl) k4Lbl.textContent = '현재';
     document.getElementById('kpi4Str').textContent = '처리중 건수';
@@ -601,7 +609,7 @@ function renderDash(k) {
   } else if (isAn) {
     // 안전 뷰 — 조치완료/발생 기준
     // 발생 = 전체 입력값(완료+발생+모니터링), 조치완료 = 완료 상태, 조치율 = 완료/전체
-    const mDone   = dmb.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
+    const mDone   = dmKpiB.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
     const anRate  = tot  ? (done  / tot  * 100).toFixed(1) : 0;
     const anMRate = mTot ? (mDone / mTot * 100).toFixed(1) : 0;
 
@@ -613,7 +621,7 @@ function renderDash(k) {
     document.getElementById('kpi2Str').textContent = '조치완료 / 발생';
     document.getElementById('kpi2').textContent    = `${mDone.toLocaleString()} / ${mTot.toLocaleString()}`;
     document.getElementById('kpi2r').textContent   = mTot ? `조치율 ${anMRate}%` : '-';
-    document.getElementById('kpi2s').textContent   = `${yr}년 ${mo}월 기준`;
+    document.getElementById('kpi2s').textContent   = `${kpiYr}년 ${kpiMo}월 기준`;
 
     if (k4Lbl) k4Lbl.textContent = '현재';
     document.getElementById('kpi4Str').textContent = '발생 건수';
@@ -633,7 +641,7 @@ function renderDash(k) {
     document.getElementById('kpi2Str').textContent = `${lblVio} / ${lblMon}`;
     document.getElementById('kpi2').textContent    = `${mVio.toLocaleString()} / ${fmtMon(mTot)}`;
     document.getElementById('kpi2r').textContent   = mTot ? `${lblRate} ${mvr}%` : '-';
-    document.getElementById('kpi2s').textContent   = `${yr}년 ${mo}월 기준`;
+    document.getElementById('kpi2s').textContent   = `${kpiYr}년 ${kpiMo}월 기준`;
 
     if (k === 'all') {
       let sub3 = `${doneLbl} ${done.toLocaleString()} / ${lblVio} ${vio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적<br>조치중 ${act.toLocaleString()}건`;
@@ -684,19 +692,19 @@ function renderDash(k) {
   rb('rsBtnDone', isClm ? '처리완료'   : isAn ? '조치완료'   : isJng   ? '조치완료': isBc ? '해결' : isCatNoMon ? '완료'  : '완료');
 
   renderLine(d, ref);
-  renderRight(_modeRight === 'acc' ? d : dm, k, ref);
+  renderRight(_modeRight === 'acc' ? d : (dmRight || dm), k, ref);
   // 막대그래프(브랜드별 현황)는 admin만 — 브랜드장은 본인 1~몇 개만 보이면 차트 의미가 옅어 카드 자체를 숨김.
   // 브랜드장에게는 도넛/라인 차트의 환산 안내 푸터로 안내가 충분히 전달됨.
   const barCard = document.getElementById('barChartCard');
   if (isAdmin()) {
     if (barCard) barCard.style.display = '';
-    renderBar(_modeBar === 'acc' ? d : dm);
+    renderBar(_modeBar === 'acc' ? d : (dmBar || dm));
   } else {
     if (barCard) barCard.style.display = 'none';
   }
   _recentData = d.slice(0, 100);
   renderRecent(_recentData);
-  renderHeatmap(_modeHeat === 'acc' ? null : ym);
+  renderHeatmap(_modeHeat === 'acc' ? null : (_modeHeat === 'pick' && _ymHeat ? _ymHeat : ym));
   renderAlerts();
 
   // 영업비밀 10:1 환산 안내: 도넛·브랜드별 현황은 전체·영업비밀에서, 추이 그래프는 영업비밀 탭에서만 노출
@@ -804,16 +812,18 @@ function renderNotesSection(k) {
     return `<tr>
       ${showArea ? `<td class="nd-td nd-td-area"><span class="nd-type">${esc(n.type)}</span></td>` : ''}
       <td class="nd-td nd-td-date">${esc(n.date.slice(5).replace('-','/'))}</td>
+      <td class="nd-td nd-td-brand">${esc(n.brand||'-')}</td>
       <td class="nd-td"><div class="nd-cell-scroll">${esc(p.m||'-')}</div></td>
       <td class="nd-td"><div class="nd-cell-scroll">${esc(p.d||'-')}</div></td>
       <td class="nd-td"><div class="nd-cell-scroll">${esc(p.a||'-')}</div></td>
     </tr>`;
   };
   const singleHtml = pageNotes.map(makeNdRow).join('');
-  const ndcg = `<colgroup>${showArea ? '<col style="width:72px">' : ''}<col style="width:56px"><col style="width:18%"><col style="width:50%"><col style="width:32%"></colgroup>`;
+  const ndcg = `<colgroup>${showArea ? '<col style="width:64px">' : ''}<col style="width:50px"><col style="width:64px"><col style="width:16%"><col style="width:47%"><col style="width:30%"></colgroup>`;
   const ndHead = `<thead><tr>
     ${showArea ? '<th class="nd-th nd-th-area">영역</th>' : ''}
     <th class="nd-th nd-th-date">날짜</th>
+    <th class="nd-th">브랜드</th>
     <th class="nd-th">주요이슈</th>
     <th class="nd-th">이슈상세</th>
     <th class="nd-th">조치완료</th>
@@ -860,14 +870,32 @@ function renderNotesSection(k) {
 
 // ── 차트 누적/당월 모드 ─────────────────────────────
 let _modeRight = 'acc', _modeBar = 'acc', _modeHeat = 'acc', _modeGrade = 'acc';
+let _ymRight = '', _ymBar = '', _ymHeat = '', _ymGrade = '', _modeKpi = 'mon', _ymKpi = '';
 let _recentData = [];
 function setChartMode(id, val) {
-  if (id === 'right') _modeRight = val;
-  if (id === 'bar')   _modeBar   = val;
-  if (id === 'heat')  _modeHeat  = val;
-  if (id === 'grade') _modeGrade = val;
+  if (id === 'right') { _modeRight = val; if (val !== 'pick') _ymRight = ''; }
+  if (id === 'bar')   { _modeBar   = val; if (val !== 'pick') _ymBar   = ''; }
+  if (id === 'heat')  { _modeHeat  = val; if (val !== 'pick') _ymHeat  = ''; }
+  if (id === 'grade') { _modeGrade = val; if (val !== 'pick') _ymGrade = ''; }
+  const idCap = id.charAt(0).toUpperCase() + id.slice(1);
+  const inp = document.getElementById('ym' + idCap);
+  if (inp) inp.style.display = val === 'pick' ? '' : 'none';
   renderDash(curFilter);
 }
+function setChartYm(id, ym) {
+  if (id === 'right') _ymRight = ym;
+  if (id === 'bar')   _ymBar   = ym;
+  if (id === 'heat')  _ymHeat  = ym;
+  if (id === 'grade') _ymGrade = ym;
+  renderDash(curFilter);
+}
+function setKpiMode(val) {
+  _modeKpi = val; if (val !== 'pick') _ymKpi = '';
+  const inp = document.getElementById('ymKpi');
+  if (inp) inp.style.display = val === 'pick' ? '' : 'none';
+  renderDash(curFilter);
+}
+function setKpiYm(ym) { _ymKpi = ym; renderDash(curFilter); }
 
 // ── 등급 순위판 정보 팝업 ──────────────────────────
 let __gradeInfoEl = null;
@@ -964,12 +992,11 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
   const board = document.getElementById('gradeBoard');
   if (!board) return;
 
-  const rd    = refDate();
-  const yr    = rd.getFullYear();
-  const mo    = rd.getMonth() + 1;
-  const ym    = `${yr}-${String(mo).padStart(2,'0')}`;
-  const isAcc = _modeGrade === 'acc';
-  const lbl   = isAcc ? `${yr}년 ${mo}월 누적 기준` : `${yr}년 ${mo}월 기준`;
+  const isPick = _modeGrade === 'pick';
+  const ym     = (isPick && _ymGrade) ? _ymGrade : `${refDate().getFullYear()}-${String(refDate().getMonth()+1).padStart(2,'0')}`;
+  const [yr, mo] = ym.split('-').map(Number);
+  const isAcc  = _modeGrade === 'acc';
+  const lbl    = isAcc ? `${yr}년 ${mo}월 누적 기준` : `${yr}년 ${mo}월 기준`;
 
   const ymEl = document.getElementById('gradeYm');
   if (ymEl) ymEl.textContent = lbl;
@@ -1065,6 +1092,8 @@ function renderJngSection(ym, lbl) {
     });
     if (jngYm) jngYm.textContent = lbl + ' 누적';
   }
+  // 브랜드별 뷰: 해당 브랜드만 표시
+  if (curBrand !== 'all') jngRecs = jngRecs.filter(r => r.brand === curBrand);
 
   const wrap  = document.getElementById('jngCards');
   const pager = document.getElementById('jngPager');
@@ -1091,6 +1120,7 @@ function renderJngSection(ym, lbl) {
       <td>${esc(r.date ? r.date.slice(5).replace('-','/') : '-')}</td>
       <td>${esc(r.brand || '-')}</td>
       <td>${esc(r.subtype && r.subtype !== '-' ? r.subtype : '-')}</td>
+      <td>${esc(r.jng_type || '-')}</td>
       <td>${esc(name || '-')}</td>
       <td>${esc(sent || '-')}</td>
       <td>${esc(noteText || '-')}</td>
@@ -1098,8 +1128,8 @@ function renderJngSection(ym, lbl) {
     </tr>`;
   };
   const singleHtml = pageRecs.map(makeJngRow).join('');
-  const jcg = `<colgroup><col style="width:7%"><col style="width:10%"><col style="width:12%"><col style="width:10%"><col style="width:22%"><col style="width:29%"><col style="width:10%"></colgroup>`;
-  const jHead = `<thead><tr><th>날짜</th><th>브랜드</th><th>상세유형</th><th>성명</th><th>양형</th><th>비고</th><th>상태</th></tr></thead>`;
+  const jcg = `<colgroup><col style="width:7%"><col style="width:9%"><col style="width:10%"><col style="width:9%"><col style="width:9%"><col style="width:19%"><col style="width:27%"><col style="width:10%"></colgroup>`;
+  const jHead = `<thead><tr><th>날짜</th><th>브랜드</th><th>상세유형</th><th>징계유형</th><th>성명</th><th>양형</th><th>비고</th><th>상태</th></tr></thead>`;
   wrap.innerHTML = `
     <table class="jng-tbl jng-tbl-hdr">${jcg}${jHead}</table>
     <div class="jng-port" id="jngPort">

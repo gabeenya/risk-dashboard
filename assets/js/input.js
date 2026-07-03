@@ -120,6 +120,7 @@ async function addRecord() {
   // 정식 컬럼으로 저장 (마이그레이션 완료 후)
   const jg_name   = type === '감사'   ? (document.getElementById('f-jg-name')?.value  || '') : null;
   const jg_sent   = type === '감사'   ? (document.getElementById('f-jg-sent')?.value  || '') : null;
+  const jng_type  = type === '감사'   ? (document.getElementById('f-jng-type')?.value || '') : null;
   const bc_amount = (type === '부실채권' && BC_AMT_SUBS.includes(sub))
     ? (parseInt(document.getElementById('f-amount')?.value) || null) : null;
   const exposed = document.getElementById('f-exposed')?.checked || false;
@@ -134,7 +135,7 @@ async function addRecord() {
     id: Math.floor(Date.now() / 1000), date, type,
     subtype: sub || '-', brand,
     status, count, note,
-    jg_name, jg_sent, bc_amount, exposed,
+    jg_name, jg_sent, jng_type, bc_amount, exposed,
     author: user.name
   });
 
@@ -158,6 +159,11 @@ async function updJgName(id, val, btnEl) {
   if (!ok) { toast('저장 실패'); return; }
   if (btnEl) { btnEl.textContent = '완료 ✓'; btnEl.classList.add('saved'); setTimeout(() => { btnEl.textContent = '저장'; btnEl.classList.remove('saved'); }, 1500); }
   const rec = records.find(r => r.id === id); if (rec) rec.jg_name = val;
+}
+async function updJngType(id, val) {
+  const ok = await sbUpd('records', id, { jng_type: val });
+  if (!ok) { toast('저장 실패'); return; }
+  const rec = records.find(r => r.id === id); if (rec) rec.jng_type = val;
 }
 async function updJgSent(id, val, btnEl) {
   const ok = await sbUpd('records', id, { jg_sent: val });
@@ -275,8 +281,10 @@ function resetForm() {
   if (amtW) amtW.style.display = 'none';
   const jgNI = document.getElementById('f-jg-name');
   const jgSI = document.getElementById('f-jg-sent');
+  const jgTI = document.getElementById('f-jng-type');
   if (jgNI) jgNI.value = '';
   if (jgSI) jgSI.value = '';
+  if (jgTI) jgTI.value = '';
 }
 
 // 부실채권 금액 입력란 표시/숨김 — 상세유형 변경 시 호출
@@ -361,14 +369,14 @@ function renderInputTable() {
   const fl = filteredInputRecords();
   const isJg = curType === '감사';
   const isBc = curType === '부실채권';
-  const colSpan = isJg ? 13 : isBc ? 12 : 11;
+  const colSpan = isJg ? 14 : isBc ? 12 : 11;
 
   // 동적 헤더
   if (th) {
     th.innerHTML = `<tr>
       <th class="chk-col"><input type="checkbox" id="inpChkAll" title="현재 목록 전체 선택" onchange="toggleInpSelAll(this.checked)"></th>
       <th>날짜</th><th>유형</th><th>상세</th><th>브랜드</th><th>건수</th><th>상태</th>
-      ${isJg ? '<th>성명</th><th>양형</th>' : ''}
+      ${isJg ? '<th>징계유형</th><th>성명</th><th>양형</th>' : ''}
       ${isBc ? '<th>금액</th>' : ''}
       <th>비고</th>
       <th class="exp-th">외부노출</th>
@@ -405,7 +413,10 @@ function renderInputTable() {
         const _jg = parseJgRecord(r);
         if (_jg) { _name = _jg.name; _sent = _jg.sent; _noteText = _jg.note; }
       }
+      const _jt = r.jng_type || '';
+      const _jtOpts = ['금전회수','경징계','중징계','형사고발'].map(v => `<option value="${v}"${_jt===v?' selected':''}>${v}</option>`).join('');
       specialCols = `
+        <td><select class="st-sel" onchange="updJngType(${rid},this.value)"><option value="">-</option>${_jtOpts}</select></td>
         <td><div class="note-wrap"><input type="text" class="note-inp" id="jgname-inp-${rid}" value="${esc(_name)}" placeholder="-"
           onkeydown="if(event.key==='Enter'){const b=document.getElementById('jgname-btn-${rid}');updJgName(${rid},this.value,b)}">
           <button class="note-save-btn" id="jgname-btn-${rid}" onclick="updJgName(${rid},document.getElementById('jgname-inp-${rid}').value,this)">저장</button></div></td>
@@ -786,7 +797,7 @@ function renderXlPreview(rows) {
   const thead = document.querySelector('#xlPreview .xl-pv-tbl thead tr');
   if (thead) {
     thead.innerHTML = `<th>#</th><th>날짜</th><th>영역</th><th>상세유형</th><th>브랜드</th><th>건수</th><th>상태</th><th>비고</th><th>노출여부</th>
-      ${isJg ? '<th>성명</th><th>양형</th>' : ''}
+      ${isJg ? '<th>징계유형</th><th>성명</th><th>양형</th>' : ''}
       ${isBc ? '<th>금액</th>' : ''}
       <th>결과</th>`;
   }
