@@ -858,7 +858,7 @@ function renderNotesSection(k) {
 }
 
 // ── 차트 누적/당월 모드 ─────────────────────────────
-let _modeRight = 'acc', _modeBar = 'acc', _modeHeat = 'acc', _modeGrade = 'mon';
+let _modeRight = 'acc', _modeBar = 'acc', _modeHeat = 'acc', _modeGrade = 'acc';
 let _recentData = [];
 function setChartMode(id, val) {
   if (id === 'right') _modeRight = val;
