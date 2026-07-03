@@ -1,6 +1,5 @@
 // Supabase Edge Function: ai-analyze
-// 클라이언트(GitHub Pages)에서 prompt를 받아 Anthropic API로 프록시 호출.
-// ANTHROPIC_API_KEY는 Supabase Edge Function 시크릿에 보관.
+// Anthropic SSE를 직접 파싱 → 단순화된 { t } SSE로 재전송 (Supabase 프록시 호환)
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -42,7 +41,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2000,
+        max_tokens: 4000,
         stream: true,
         messages: [{ role: 'user', content: prompt }],
       }),
@@ -53,8 +52,43 @@ Deno.serve(async (req) => {
       return json(errData, r.status);
     }
 
-    // Anthropic SSE 스트림을 클라이언트로 그대로 중계
-    return new Response(r.body, {
+    // Anthropic SSE를 파싱해서 { t } / { error } 이벤트만 클라이언트로 재전송
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    const enc = new TextEncoder();
+    let buf = '';
+
+    const outStream = new ReadableStream({
+      async start(ctrl) {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            const lines = buf.split('\n');
+            buf = lines.pop() ?? '';
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              const s = line.slice(6).trim();
+              if (!s || s === '[DONE]') continue;
+              try {
+                const ev = JSON.parse(s);
+                if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
+                  ctrl.enqueue(enc.encode(`data: ${JSON.stringify({ t: ev.delta.text })}\n\n`));
+                } else if (ev.type === 'error') {
+                  ctrl.enqueue(enc.encode(`data: ${JSON.stringify({ error: ev.error?.message ?? 'API error' })}\n\n`));
+                }
+              } catch { /* malformed JSON 무시 */ }
+            }
+          }
+        } finally {
+          ctrl.enqueue(enc.encode('data: [DONE]\n\n'));
+          ctrl.close();
+        }
+      },
+    });
+
+    return new Response(outStream, {
       headers: {
         ...CORS,
         'Content-Type': 'text/event-stream',

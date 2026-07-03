@@ -136,7 +136,7 @@ async function runAI() {
       throw new Error(`서버 오류 (HTTP ${res.status}): ${msg}`);
     }
 
-    // 스트리밍 결과 영역 준비 — 스피너 숨기고 즉시 표시
+    // 결과 영역 준비
     document.getElementById('aiResult').innerHTML =
       `<div class="ai-result-body"><div class="ai-md theme-${theme}" id="aiStreamContent"></div></div>` +
       `<div class="ai-result-foot" id="aiResultFoot" style="display:none">` +
@@ -163,24 +163,19 @@ async function runAI() {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
       buffer = lines.pop() ?? '';
-
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
         const dataStr = line.slice(6).trim();
         if (!dataStr || dataStr === '[DONE]') continue;
         try {
           const evt = JSON.parse(dataStr);
-          if (evt.type === 'error') throw new Error(evt.error?.message || JSON.stringify(evt.error));
-          if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
-            rawText += evt.delta.text;
-            if (!renderPending) {
-              renderPending = true;
-              setTimeout(flushRender, 40);
-            }
+          if (evt.error) throw new Error(evt.error);
+          if (evt.t) {
+            rawText += evt.t;
+            if (!renderPending) { renderPending = true; setTimeout(flushRender, 40); }
           }
         } catch(parseErr) {
           if (parseErr instanceof SyntaxError) continue;
@@ -189,7 +184,6 @@ async function runAI() {
       }
     }
 
-    // 최종 렌더링
     flushRender();
     document.getElementById('aiResultFoot').style.display = '';
     console.log('[AI] 스트리밍 완료, 텍스트 길이:', rawText.length);
