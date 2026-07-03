@@ -79,13 +79,15 @@ async function loadData() {
   // notes 실패가 records 로딩을 막지 않도록 allSettled 사용
   const [recRes, notesRes] = await Promise.allSettled([sbGet('records'), sbGet('notes')]);
   if (seq !== _loadSeq) return;
-  // rejected(네트워크 오류) 또는 배열이 아닌 응답(Supabase 오류 객체 등) → 기존 records 유지
-  if (recRes.status === 'rejected' || !Array.isArray(recRes.value)) {
-    setSy(
-      recRes.status === 'rejected' ? '불러오기 실패 — 이전 데이터 유지' : '응답 오류 — 이전 데이터 유지',
-      '#dc2626', '#fef2f2'
-    );
-    return; // records 덮어쓰지 않음 → 0/0 방지
+  // sbGet이 throw(HTTP 에러·파싱 오류) → rejected / non-array → 기존 records 유지, 0/0 방지
+  if (recRes.status === 'rejected') {
+    const reason = recRes.reason?.message || String(recRes.reason || '');
+    setSy(`불러오기 실패 (${reason}) — 이전 데이터 유지`, '#dc2626', '#fef2f2');
+    return;
+  }
+  if (!Array.isArray(recRes.value)) {
+    setSy('응답 형식 오류 — 이전 데이터 유지', '#dc2626', '#fef2f2');
+    return;
   }
   records = recRes.value;
   if (notesRes.status === 'fulfilled' && Array.isArray(notesRes.value)) {

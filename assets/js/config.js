@@ -1,4 +1,4 @@
-// ── Supabase 설정 + REST 헬퍼 ─────────────────────────
+﻿// ── Supabase 설정 + REST 헬퍼 ─────────────────────────
 // 주의: SB_KEY는 publishable 키이므로 RLS와 함께 동작하도록 설계됨.
 // 변경 전 Supabase 콘솔의 RLS 정책을 먼저 확인할 것.
 const SB_URL = 'https://acbimacjlslxzzjutqyt.supabase.co';
@@ -14,9 +14,15 @@ const sbGet = async t => {
     const r = await fetch(`${SB_URL}/rest/v1/${t}?select=*`, {
       headers: { ...H, 'Range': `${from}-${from + STEP - 1}`, 'Prefer': 'count=exact' }
     });
-    if (!r.ok) return from === 0 ? [] : out;
+    if (!r.ok) {
+      if (from === 0) throw new Error(`HTTP ${r.status}`); // 첫 배치 실패 → throw → Promise rejected → records 보존
+      return out;                                           // 중간 배치 실패 → 부분 결과 반환
+    }
     const batch = await r.json();
-    if (!Array.isArray(batch)) return from === 0 ? [] : out;
+    if (!Array.isArray(batch)) {
+      if (from === 0) throw new Error('non-array response');
+      return out;
+    }
     out = out.concat(batch);
     const cr = r.headers.get('content-range'); // 예: "0-999/1446"
     if (cr && cr.includes('/')) { const tot = parseInt(cr.split('/')[1], 10); if (!isNaN(tot)) total = tot; }
