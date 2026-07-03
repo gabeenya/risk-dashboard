@@ -1,4 +1,4 @@
-// ── KPI 숫자 카운트업 애니메이션 ────────────────────
+﻿// ── KPI 숫자 카운트업 애니메이션 ────────────────────
 let _kpiRepeat = null;
 const _kpiTok  = {};   // 카드별 취소 토큰 — 새 애니메이션 시작 시 구 rAF 루프 종료
 
@@ -432,14 +432,15 @@ function renderDash(k) {
 
   // 기준 월 스코프(당월 KPI·차트·목록·히트맵·알림이 사용)
   const dm = d.filter(r => r.date && r.date.startsWith(ym));
-  // KPI2 전용 월 (당월 or 직접 선택)
-  const kpiYm   = _modeKpi === 'pick' && _ymKpi ? _ymKpi : ym;
-  const dmKpi   = _modeKpi === 'pick' && _ymKpi ? d.filter(r => r.date && r.date.startsWith(_ymKpi)) : dm;
+  // KPI2 전용 (당월/직접선택/기간)
+  const dmKpi  = getChartData(d, _modeKpi, _fromKpi, _toKpi, ym) || dm;
+  const kpiYm  = _modeKpi === 'mon' ? ym : _modeKpi === 'period' ? (_toKpi || _fromKpi || ym) : (_modeKpi || ym);
   const [kpiYr, kpiMo] = kpiYm.split('-').map(Number);
-  // 차트별 당월 데이터 (null → acc 모드에서 d 전체 사용)
-  const pickChartDm = (mode, storedYm) => mode === 'pick' && storedYm ? d.filter(r => r.date && r.date.startsWith(storedYm)) : null;
-  const dmRight = pickChartDm(_modeRight, _ymRight);
-  const dmBar   = pickChartDm(_modeBar,   _ymBar);
+  // 차트별 데이터 (null → acc 모드에서 d 전체 사용)
+  const dmRight = getChartData(d, _modeRight, _fromRight, _toRight, ym);
+  const dmBar   = getChartData(d, _modeBar,   _fromBar,   _toBar,   ym);
+  // 드롭다운 월 목록 동기화
+  syncChartDropdowns();
   // 연 누적: 기준 연도 1월~기준 월
   const dY = d.filter(r => {
     if (!r.date) return false;
@@ -692,19 +693,22 @@ function renderDash(k) {
   rb('rsBtnDone', isClm ? '처리완료'   : isAn ? '조치완료'   : isJng   ? '조치완료': isBc ? '해결' : isCatNoMon ? '완료'  : '완료');
 
   renderLine(d, ref);
-  renderRight(_modeRight === 'acc' ? d : (dmRight || dm), k, ref);
+  renderRight(dmRight || d, k, ref);
   // 막대그래프(브랜드별 현황)는 admin만 — 브랜드장은 본인 1~몇 개만 보이면 차트 의미가 옅어 카드 자체를 숨김.
   // 브랜드장에게는 도넛/라인 차트의 환산 안내 푸터로 안내가 충분히 전달됨.
   const barCard = document.getElementById('barChartCard');
   if (isAdmin()) {
     if (barCard) barCard.style.display = '';
-    renderBar(_modeBar === 'acc' ? d : (dmBar || dm));
+    renderBar(dmBar || d);
   } else {
     if (barCard) barCard.style.display = 'none';
   }
   _recentData = d.slice(0, 100);
   renderRecent(_recentData);
-  renderHeatmap(_modeHeat === 'acc' ? null : (_modeHeat === 'pick' && _ymHeat ? _ymHeat : ym));
+  const hmYm = _modeHeat === 'acc' ? null :
+               _modeHeat === 'period' ? (_toHeat || _fromHeat || ym) :
+               _modeHeat === 'mon' ? ym : _modeHeat;
+  renderHeatmap(hmYm);
   renderAlerts();
 
   // 영업비밀 10:1 환산 안내: 도넛·브랜드별 현황은 전체·영업비밀에서, 추이 그래프는 영업비밀 탭에서만 노출
@@ -744,10 +748,16 @@ function renderDash(k) {
         board.classList.remove('layout-side');
       } else {
         board.style.display = '';
-        // 영역 수가 적은 분류뷰: 측정판과 조치사항을 좌우 배치
-        const isSide = !brandOnlyView && k === 'all' && (curDashCat === '부정/부실 제거' || curDashCat === '매장 운영 관리');
+        // 분류뷰(영역 수 적음) 또는 영역별 뷰: 측정판과 조치사항을 좌우 배치
+        const isSide = !brandOnlyView && (
+          (k === 'all' && (curDashCat === '부정/부실 제거' || curDashCat === '매장 운영 관리')) ||
+          k !== 'all'
+        );
         board.classList.toggle('layout-side', isSide);
-        board.classList.toggle('layout-side-fraud', isSide && curDashCat === '부정/부실 제거');
+        // 1.5:3.5 비율: 부정/부실제거 분류뷰 또는 영역별 뷰
+        board.classList.toggle('layout-side-fraud', isSide && (
+          (curDashCat === '부정/부실 제거' && k === 'all') || k !== 'all'
+        ));
         renderLeaderboard(visibleAreas, showOverall, brandOnlyView);
       }
     }
@@ -788,6 +798,19 @@ function renderNotesSection(k) {
   // 브랜드별뷰: 해당 브랜드 또는 전체(brand=null/undefined) 특이사항만
   if (curBrand !== 'all') {
     filtered = filtered.filter(n => !n.brand || n.brand === curBrand);
+  }
+  // 조치사항 모드 날짜 필터
+  if (_modeAction === 'mon') {
+    const curYmStr = `${refDate().getFullYear()}-${String(refDate().getMonth()+1).padStart(2,'0')}`;
+    filtered = filtered.filter(n => n.date && n.date.startsWith(curYmStr));
+  } else if (_modeAction === 'period') {
+    filtered = filtered.filter(n => {
+      if (!n.date) return true;
+      const nm = n.date.slice(0,7);
+      return (!_fromAction || nm >= _fromAction) && (!_toAction || nm <= _toAction);
+    });
+  } else if (_modeAction !== 'acc' && /^\d{4}-\d{2}$/.test(_modeAction)) {
+    filtered = filtered.filter(n => n.date && n.date.startsWith(_modeAction));
   }
   panel.style.display = '';
   const list  = document.getElementById('notesDashList');
@@ -870,32 +893,106 @@ function renderNotesSection(k) {
 
 // ── 차트 누적/당월 모드 ─────────────────────────────
 let _modeRight = 'acc', _modeBar = 'acc', _modeHeat = 'acc', _modeGrade = 'acc';
-let _ymRight = '', _ymBar = '', _ymHeat = '', _ymGrade = '', _modeKpi = 'mon', _ymKpi = '';
+let _fromRight = '', _toRight = '', _fromBar = '', _toBar = '', _fromHeat = '', _toHeat = '', _fromGrade = '', _toGrade = '';
+let _modeKpi = 'mon', _fromKpi = '', _toKpi = '';
+let _modeAction = 'acc', _fromAction = '', _toAction = '';
 let _recentData = [];
+
+// 데이터에서 사용 가능한 월 목록 반환 (최신순)
+function getAvailableMonths() {
+  const s = new Set();
+  (records || []).forEach(r => { if (r.date && r.date.length >= 7) s.add(r.date.slice(0,7)); });
+  return [...s].sort().reverse();
+}
+
+// 차트/조치 드롭다운 월 목록 동기화
+function syncChartDropdowns() {
+  const months = getAvailableMonths();
+  const monthOpts = months.map(m => {
+    const [y, mo2] = m.split('-').map(Number);
+    return `<option value="${m}">${y}년 ${mo2}월</option>`;
+  }).join('');
+  const blankOpt = `<option value="">전체</option>`;
+  const periodOpt = `<option value="period">기간 설정</option>`;
+
+  [['modeRight',_modeRight],['modeBar',_modeBar],['modeHeat',_modeHeat],['modeGrade',_modeGrade]].forEach(([id, cur]) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = `<option value="acc">누적</option><option value="mon">당월</option>${monthOpts}${periodOpt}`;
+    sel.value = cur;
+  });
+  const kpiSel = document.getElementById('modeKpi');
+  if (kpiSel) { kpiSel.innerHTML = `<option value="mon">당월</option>${monthOpts}${periodOpt}`; kpiSel.value = _modeKpi; }
+  const actSel = document.getElementById('actionModeSel');
+  if (actSel) { actSel.innerHTML = `<option value="acc">누적</option><option value="mon">당월</option>${monthOpts}${periodOpt}`; actSel.value = _modeAction; }
+
+  [['fromRight',_fromRight],['toRight',_toRight],['fromBar',_fromBar],['toBar',_toBar],
+   ['fromHeat',_fromHeat],['toHeat',_toHeat],['fromGrade',_fromGrade],['toGrade',_toGrade],
+   ['fromKpi',_fromKpi],['toKpi',_toKpi],['fromAction',_fromAction],['toAction',_toAction]
+  ].forEach(([id, val]) => {
+    const sel = document.getElementById(id);
+    if (sel) { sel.innerHTML = blankOpt + monthOpts; sel.value = val; }
+  });
+}
+
+// 차트 데이터 필터링 (null = acc 모드, d 전체 사용)
+function getChartData(d, mode, from, to, defaultYm) {
+  if (mode === 'acc') return null;
+  if (mode === 'period') {
+    return d.filter(r => {
+      if (!r.date) return true;
+      const ym2 = r.date.slice(0,7);
+      return (!from || ym2 >= from) && (!to || ym2 <= to);
+    });
+  }
+  const useYm = mode === 'mon' ? defaultYm : mode;
+  return d.filter(r => r.date && r.date.startsWith(useYm));
+}
+
 function setChartMode(id, val) {
-  if (id === 'right') { _modeRight = val; if (val !== 'pick') _ymRight = ''; }
-  if (id === 'bar')   { _modeBar   = val; if (val !== 'pick') _ymBar   = ''; }
-  if (id === 'heat')  { _modeHeat  = val; if (val !== 'pick') _ymHeat  = ''; }
-  if (id === 'grade') { _modeGrade = val; if (val !== 'pick') _ymGrade = ''; }
+  if (id === 'right') { _modeRight = val; if (val !== 'period') { _fromRight = ''; _toRight = ''; } }
+  if (id === 'bar')   { _modeBar   = val; if (val !== 'period') { _fromBar   = ''; _toBar   = ''; } }
+  if (id === 'heat')  { _modeHeat  = val; if (val !== 'period') { _fromHeat  = ''; _toHeat  = ''; } }
+  if (id === 'grade') { _modeGrade = val; if (val !== 'period') { _fromGrade = ''; _toGrade = ''; } }
   const idCap = id.charAt(0).toUpperCase() + id.slice(1);
-  const inp = document.getElementById('ym' + idCap);
-  if (inp) inp.style.display = val === 'pick' ? '' : 'none';
+  const pr = document.getElementById('period' + idCap);
+  if (pr) pr.style.display = val === 'period' ? '' : 'none';
   renderDash(curFilter);
 }
-function setChartYm(id, ym) {
-  if (id === 'right') _ymRight = ym;
-  if (id === 'bar')   _ymBar   = ym;
-  if (id === 'heat')  _ymHeat  = ym;
-  if (id === 'grade') _ymGrade = ym;
+function setChartPeriod(id, which, val) {
+  if (id === 'right') { if (which === 'from') _fromRight = val; else _toRight = val; }
+  if (id === 'bar')   { if (which === 'from') _fromBar   = val; else _toBar   = val; }
+  if (id === 'heat')  { if (which === 'from') _fromHeat  = val; else _toHeat  = val; }
+  if (id === 'grade') { if (which === 'from') _fromGrade = val; else _toGrade = val; }
   renderDash(curFilter);
 }
 function setKpiMode(val) {
-  _modeKpi = val; if (val !== 'pick') _ymKpi = '';
-  const inp = document.getElementById('ymKpi');
-  if (inp) inp.style.display = val === 'pick' ? '' : 'none';
+  _modeKpi = val; if (val !== 'period') { _fromKpi = ''; _toKpi = ''; }
+  const pr = document.getElementById('periodKpi');
+  if (pr) pr.style.display = val === 'period' ? '' : 'none';
   renderDash(curFilter);
 }
-function setKpiYm(ym) { _ymKpi = ym; renderDash(curFilter); }
+function setKpiPeriod(which, val) {
+  if (which === 'from') _fromKpi = val; else _toKpi = val;
+  renderDash(curFilter);
+}
+function setActionMode(val) {
+  _modeAction = val; if (val !== 'period') { _fromAction = ''; _toAction = ''; }
+  const pr = document.getElementById('periodAction');
+  if (pr) pr.style.display = val === 'period' ? '' : 'none';
+  _jngPage = 0; _notesDashPage = 0;
+  const rdR = refDate(); const yr2 = rdR.getFullYear(); const mo2 = rdR.getMonth() + 1;
+  const ym2 = `${yr2}-${String(mo2).padStart(2,'0')}`;
+  renderJngSection(ym2, `${yr2}년 ${mo2}월 기준`);
+  renderNotesSection(curFilter);
+}
+function setActionPeriod(which, val) {
+  if (which === 'from') _fromAction = val; else _toAction = val;
+  const rdR = refDate(); const yr2 = rdR.getFullYear(); const mo2 = rdR.getMonth() + 1;
+  const ym2 = `${yr2}-${String(mo2).padStart(2,'0')}`;
+  renderJngSection(ym2, `${yr2}년 ${mo2}월 기준`);
+  renderNotesSection(curFilter);
+}
 
 // ── 등급 순위판 정보 팝업 ──────────────────────────
 let __gradeInfoEl = null;
@@ -992,8 +1089,9 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
   const board = document.getElementById('gradeBoard');
   if (!board) return;
 
-  const isPick = _modeGrade === 'pick';
-  const ym     = (isPick && _ymGrade) ? _ymGrade : `${refDate().getFullYear()}-${String(refDate().getMonth()+1).padStart(2,'0')}`;
+  const refYm2  = `${refDate().getFullYear()}-${String(refDate().getMonth()+1).padStart(2,'0')}`;
+  const ym     = (_modeGrade === 'acc' || _modeGrade === 'mon') ? refYm2 :
+                 _modeGrade === 'period' ? (_toGrade || _fromGrade || refYm2) : _modeGrade;
   const [yr, mo] = ym.split('-').map(Number);
   const isAcc  = _modeGrade === 'acc';
   const lbl    = isAcc ? `${yr}년 ${mo}월 누적 기준` : `${yr}년 ${mo}월 기준`;
@@ -1059,12 +1157,7 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
 
 let _jngPage = 0;
 
-function onJngModeChange() {
-  _jngPage = 0;
-  const rd = refDate(), yr = rd.getFullYear(), mo = rd.getMonth() + 1;
-  const ym = `${yr}-${String(mo).padStart(2,'0')}`;
-  renderJngSection(ym, `${yr}년 ${mo}월 기준`);
-}
+function onJngModeChange() { /* 레거시 - setActionMode 사용 */ }
 
 function setJngPage(dir) {
   _jngPage += dir;
@@ -1074,16 +1167,30 @@ function setJngPage(dir) {
 }
 
 function renderJngSection(ym, lbl) {
-  const jngYm   = document.getElementById('jngYm');
-  const modeSel = document.getElementById('jngModeSel');
-  const mode    = modeSel ? modeSel.value : 'acc';
-  const brands  = isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b));
+  const jngYm  = document.getElementById('jngYm');
+  const mode   = _modeAction;
+  const brands = isAdmin() ? BRANDS : userBrands().filter(b => BRANDS.includes(b));
 
   let jngRecs;
   if (mode === 'mon') {
-    jngRecs = records.filter(r => r.type === '감사' && r.date.startsWith(ym) && brands.includes(r.brand));
+    jngRecs = records.filter(r => r.type === '감사' && r.date && r.date.startsWith(ym) && brands.includes(r.brand));
     if (jngYm) jngYm.textContent = lbl;
+  } else if (mode === 'period') {
+    jngRecs = records.filter(r => {
+      if (r.type !== '감사' || !r.date || !brands.includes(r.brand)) return false;
+      const ym2 = r.date.slice(0,7);
+      return (!_fromAction || ym2 >= _fromAction) && (!_toAction || ym2 <= _toAction);
+    });
+    const fLbl = _fromAction ? _fromAction.replace('-','년 ') + '월' : '?';
+    const tLbl = _toAction ? _toAction.replace('-','년 ') + '월' : '?';
+    if (jngYm) jngYm.textContent = `${fLbl} ~ ${tLbl}`;
+  } else if (mode !== 'acc' && /^\d{4}-\d{2}$/.test(mode)) {
+    // 특정 월 직접 선택
+    jngRecs = records.filter(r => r.type === '감사' && r.date && r.date.startsWith(mode) && brands.includes(r.brand));
+    const [y2, m2] = mode.split('-').map(Number);
+    if (jngYm) jngYm.textContent = `${y2}년 ${m2}월`;
   } else {
+    // acc: 연 누적
     const [yr, mo] = ym.split('-').map(Number);
     jngRecs = records.filter(r => {
       if (r.type !== '감사' || !r.date || !brands.includes(r.brand)) return false;
@@ -1100,7 +1207,7 @@ function renderJngSection(ym, lbl) {
   if (!wrap) return;
 
   if (!jngRecs.length) {
-    wrap.innerHTML = `<span class="jng-empty">${mode === 'mon' ? '해당 월' : '해당 기간'} 징계 현황 없음</span>`;
+    wrap.innerHTML = `<span class="jng-empty">해당 기간 징계 현황 없음</span>`;
     if (pager) pager.style.display = 'none';
     return;
   }
@@ -1128,12 +1235,14 @@ function renderJngSection(ym, lbl) {
     </tr>`;
   };
   const singleHtml = pageRecs.map(makeJngRow).join('');
-  const jcg = `<colgroup><col style="width:7%"><col style="width:9%"><col style="width:10%"><col style="width:9%"><col style="width:9%"><col style="width:19%"><col style="width:27%"><col style="width:10%"></colgroup>`;
+  const jcg = `<colgroup><col style="width:7%"><col style="width:9%"><col style="width:10%"><col style="width:8%"><col style="width:8%"><col style="width:12%"><col style="width:38%"><col style="width:8%"></colgroup>`;
   const jHead = `<thead><tr><th>날짜</th><th>브랜드</th><th>상세유형</th><th>징계유형</th><th>성명</th><th>양형</th><th>비고</th><th>상태</th></tr></thead>`;
   wrap.innerHTML = `
-    <table class="jng-tbl jng-tbl-hdr">${jcg}${jHead}</table>
-    <div class="jng-port" id="jngPort">
-      <table class="jng-tbl jng-tbl-bdy">${jcg}<tbody id="jngBtbl">${singleHtml}</tbody></table>
+    <div class="jng-tbl-wrap">
+      <table class="jng-tbl jng-tbl-hdr">${jcg}${jHead}</table>
+      <div class="jng-port" id="jngPort">
+        <table class="jng-tbl jng-tbl-bdy">${jcg}<tbody id="jngBtbl">${singleHtml}</tbody></table>
+      </div>
     </div>`;
 
   setTimeout(() => {
