@@ -739,6 +739,7 @@ function renderDash(k) {
         // 영역 수가 적은 분류뷰: 측정판과 조치사항을 좌우 배치
         const isSide = !brandOnlyView && k === 'all' && (curDashCat === '부정/부실 제거' || curDashCat === '매장 운영 관리');
         board.classList.toggle('layout-side', isSide);
+        board.classList.toggle('layout-side-fraud', isSide && curDashCat === '부정/부실 제거');
         renderLeaderboard(visibleAreas, showOverall, brandOnlyView);
       }
     }
