@@ -207,7 +207,7 @@ function toggleSlaPopup(target, ev) {
 }
 function showSlaPopup(target) {
   hideSlaPopup();
-  const list = getFRM(curFilter).filter(isSlaOver)
+  const list = getFR(curFilter).filter(isSlaOver)
     .map(r => ({ ...r, days: daysSince(r.date) }))
     .sort((a, b) => b.days - a.days);
   if (!list.length) return;
