@@ -858,12 +858,13 @@ function renderNotesSection(k) {
 }
 
 // ── 차트 누적/당월 모드 ─────────────────────────────
-let _modeRight = 'acc', _modeBar = 'acc', _modeHeat = 'acc';
+let _modeRight = 'acc', _modeBar = 'acc', _modeHeat = 'acc', _modeGrade = 'mon';
 let _recentData = [];
 function setChartMode(id, val) {
   if (id === 'right') _modeRight = val;
   if (id === 'bar')   _modeBar   = val;
   if (id === 'heat')  _modeHeat  = val;
+  if (id === 'grade') _modeGrade = val;
   renderDash(curFilter);
 }
 
@@ -908,8 +909,10 @@ const GRADE_SCORE   = { A:10, B:8, C:5, D:3, F:0 };
 const RANK_EXCLUDE  = new Set(['광주ck','기흥ck','주안ck','CX팀','상권','본부']);
 
 // 등급 + 위반 건수를 함께 반환
-function calcGradeDetail(type, brand, ym) {
-  const recs = records.filter(r => r.brand === brand && r.type === type && r.date.startsWith(ym));
+function calcGradeDetail(type, brand, ym, acc) {
+  const recs = acc
+    ? records.filter(r => r.brand === brand && r.type === type && r.date && r.date.slice(0,7) >= ym.slice(0,4) + '-01' && r.date.slice(0,7) <= ym)
+    : records.filter(r => r.brand === brand && r.type === type && r.date && r.date.startsWith(ym));
 
   if (type === '부실채권') {
     // F: 2개월 초과 미입금 액 > 1억
@@ -960,14 +963,17 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
   const board = document.getElementById('gradeBoard');
   if (!board) return;
 
-  const rd  = refDate();
-  const yr  = rd.getFullYear();
-  const mo  = rd.getMonth() + 1;
-  const ym  = `${yr}-${String(mo).padStart(2,'0')}`;
-  const lbl = `${yr}년 ${mo}월 기준`;
+  const rd    = refDate();
+  const yr    = rd.getFullYear();
+  const mo    = rd.getMonth() + 1;
+  const ym    = `${yr}-${String(mo).padStart(2,'0')}`;
+  const isAcc = _modeGrade === 'acc';
+  const lbl   = isAcc ? `${yr}년 ${mo}월 누적 기준` : `${yr}년 ${mo}월 기준`;
 
   const ymEl = document.getElementById('gradeYm');
   if (ymEl) ymEl.textContent = lbl;
+  const modeGradeEl = document.getElementById('modeGrade');
+  if (modeGradeEl) modeGradeEl.value = _modeGrade;
 
   // 헤더 동적 갱신
   const headTr = document.getElementById('gradeHead');
@@ -986,7 +992,7 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
   let ranked = brands.map(brand => {
     const details = {};
     GRADE_AREAS.forEach(type => {
-      const d = calcGradeDetail(type, brand, ym);
+      const d = calcGradeDetail(type, brand, ym, isAcc);
       details[type] = d;
     });
     let total = 0;
