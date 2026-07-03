@@ -12,6 +12,13 @@ function aiOptAll(checked) {
   document.querySelectorAll('.ai-opt-cb').forEach(cb => { cb.checked = checked; });
 }
 
+function aiPeriodClear() {
+  const f = document.getElementById('aiDateFrom');
+  const t = document.getElementById('aiDateTo');
+  if (f) f.value = '';
+  if (t) t.value = '';
+}
+
 function renderBrandPicker() {
   const grid = document.getElementById('aiBrandGrid');
   if (!grid) return;
@@ -48,8 +55,18 @@ async function runAI() {
   document.getElementById('aiResult').style.display = 'none';
   document.getElementById('aiEmpty').style.display = 'none';
 
-  // 선택된 브랜드로 데이터 필터링 — 모든 분석 항목이 이 부분집합 위에서 동작한다
-  const scoped = isAllBrands ? records : records.filter(r => targetBrands.includes(r.brand));
+  // 분석 기간 필터
+  const dateFrom = document.getElementById('aiDateFrom')?.value || '';
+  const dateTo   = document.getElementById('aiDateTo')?.value   || '';
+
+  // 선택된 브랜드 + 기간으로 데이터 필터링
+  const scoped = (isAllBrands ? records : records.filter(r => targetBrands.includes(r.brand)))
+    .filter(r => {
+      if (!r.date) return true;
+      if (dateFrom && r.date < dateFrom) return false;
+      if (dateTo   && r.date > dateTo)   return false;
+      return true;
+    });
 
   const tot  = scoped.reduce((s, r) => s + r.count, 0);
   const byT  = TYPES.map(t => ({ type: t, cnt: scoped.filter(r => r.type === t).reduce((s, r) => s + r.count, 0) }));
@@ -82,6 +99,9 @@ async function runAI() {
 
   // 분석 항목별 지시사항. 분석 대상 브랜드 컨텍스트를 모든 항목에 적용하도록 명시한다.
   const brandScopeNote = isAllBrands ? '전체 브랜드' : `지정 ${targetBrands.length}개 브랜드 (${targetBrands.join(', ')})`;
+  const periodNote = (dateFrom || dateTo)
+    ? `${dateFrom || '전체'} ~ ${dateTo || '전체'}`
+    : '전체 기간';
   const sectionList = selected.map((k, i) =>
     `${i+1}. **${AI_SECTIONS[k].label}** — ${AI_SECTIONS[k].instr}`
   ).join('\n');
@@ -99,6 +119,7 @@ async function runAI() {
     + ctxSection
     + `## 분석 대상 브랜드 (반드시 이 범위 안에서만 분석)\n${brandScopeNote}\n`
     + '※ 모든 분석 항목은 위 브랜드의 데이터에 한정해 작성하세요. 범위 밖 브랜드는 언급하지 마세요.\n\n'
+    + `## 분석 기간\n${periodNote}\n\n`
     + '## 전체 현황 (분석 대상 브랜드 기준)\n'
     + '- 총 모니터링: ' + tot + '건 | 위반(처리중): ' + vio + '건 | 완료: ' + done + '건\n'
     + '- 위반율: ' + (tot ? (((vio+done)/tot)*100).toFixed(1) : 0) + '% | 처리완료율: ' + ((vio+done) ? ((done/(vio+done))*100).toFixed(1) : 0) + '%\n\n'

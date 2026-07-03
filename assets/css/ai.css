@@ -35,6 +35,12 @@
 .ai-brand-opt input[type="checkbox"] { accent-color: #1e3a8a; cursor: pointer; width: 13px; height: 13px; }
 .ai-brand-opt:has(input:checked) { background: #eff6ff; border-color: #1e3a8a; color: #1e3a8a; font-weight: 500; }
 
+/* 분석 기간 설정 */
+.ai-period-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.ai-date-inp { height: 34px; padding: 0 10px; border: 1.5px solid #c7d2e3; border-radius: 8px; background: #f8fafc; font-size: 13px; color: #0f172a; outline: none; transition: all 0.15s; }
+.ai-date-inp:focus { border-color: #1e3a8a; background: #fff; box-shadow: 0 0 0 3px rgba(30,58,138,0.10); }
+.ai-period-sep { font-size: 13px; color: #94a3b8; }
+
 /* 로딩 / 빈 상태 */
 .ai-load { display: none; text-align: center; padding: 3rem; }
 .ai-load .spin { width: 32px; height: 32px; border-width: 3px; margin: 0 auto 1rem; }
