@@ -755,14 +755,16 @@ function renderDash(k) {
   runKpiCountUp();
   _kpiRepeat = setInterval(runKpiCountUp, 5000);
 
+  const gbRow = document.getElementById('gbRow');
   const board = document.getElementById('gradeBoard');
-  if (board) {
+  const actionBoard = document.getElementById('actionBoard');
+  if (gbRow && board && actionBoard) {
     // 브랜드 단독 선택 (분류·영역 필터 없음): 본인 브랜드 측정판 표시
     const brandOnlyView = curBrand !== 'all' && k === 'all' && (!curDashCat || curDashCat === 'all');
+    let isSide = false;
     if (curBrand !== 'all' && !brandOnlyView) {
-      // 브랜드 + 분류/영역 동시 선택: 기존대로 측정판 숨김
-      board.style.display = 'none';
-      board.classList.remove('layout-side');
+      // 브랜드 + 분류/영역 동시 선택: 기존대로 측정판·조치사항 숨김
+      gbRow.style.display = 'none';
     } else {
       let visibleAreas;
       if (k !== 'all') {
@@ -774,23 +776,29 @@ function renderDash(k) {
       }
       const showOverall = k === 'all';
       if (!visibleAreas.length) {
-        board.style.display = 'none';
-        board.classList.remove('layout-side');
+        gbRow.style.display = 'none';
       } else {
-        board.style.display = '';
-        // 분류뷰(영역 수 적음) 또는 영역별 뷰: 측정판과 조치사항을 좌우 배치
-        const isSide = !brandOnlyView && (
+        gbRow.style.display = '';
+        // 분류뷰(영역 수 적음) 또는 영역별 뷰: 기존처럼 측정판 안에 조치사항을 병합한 한 장의 카드로 표시
+        isSide = !brandOnlyView && (
           (k === 'all' && (curDashCat === '부정/부실 제거' || curDashCat === '매장 운영 관리')) ||
           k !== 'all'
         );
-        board.classList.toggle('layout-side', isSide);
-        // 1.5:3.5 비율: 부정/부실제거 분류뷰 또는 영역별 뷰
-        board.classList.toggle('layout-side-fraud', isSide && (
-          (curDashCat === '부정/부실 제거' && k === 'all') || k !== 'all'
-        ));
         renderLeaderboard(visibleAreas, showOverall, brandOnlyView);
       }
     }
+    // 측정판·조치사항 병합 여부: 분류/영역 필터 뷰는 기존 그대로 하나의 카드(측정판 안에 조치사항 병합),
+    // 완전 전체 뷰·브랜드 단독 뷰만 독립된 두 개의 카드로 분리
+    if (isSide) {
+      if (actionBoard.parentNode !== board) board.appendChild(actionBoard);
+    } else {
+      if (actionBoard.parentNode !== gbRow) gbRow.appendChild(actionBoard);
+    }
+    board.classList.toggle('layout-side', isSide);
+    // 1.5:3.5 비율: 부정/부실제거 분류뷰 또는 영역별 뷰
+    board.classList.toggle('layout-side-fraud', isSide && (
+      (curDashCat === '부정/부실 제거' && k === 'all') || k !== 'all'
+    ));
     // 징계현황: 전체뷰·부정/부실 제거 분류뷰·감사 영역뷰에서만 노출
     const jngPanel = document.getElementById('jngPanel');
     if (jngPanel) {
@@ -804,14 +812,14 @@ function renderDash(k) {
       auditKpiGrid.style.display = showAuditKpi ? '' : 'none';
       if (showAuditKpi) renderAuditKpis(dY);
     }
-    // 메인 KPI 카드(kpi1~4): 완전 전체 뷰에서만 측정판 위로 이동, 그 외 뷰는 원래 위치(측정판 아래) 유지
+    // 메인 KPI 카드(kpi1~4): 완전 전체 뷰에서만 측정판·조치사항 행 위로 이동, 그 외 뷰는 원래 위치(그 아래) 유지
     const mainKpiGrid = document.getElementById('mainKpiGrid');
     if (mainKpiGrid) {
       const isMainView = k === 'all' && curDashCat === 'all';
-      if (isMainView && board.previousElementSibling !== mainKpiGrid) {
-        board.parentNode.insertBefore(mainKpiGrid, board);
-      } else if (!isMainView && board.nextElementSibling !== mainKpiGrid) {
-        board.parentNode.insertBefore(mainKpiGrid, board.nextSibling);
+      if (isMainView && gbRow.previousElementSibling !== mainKpiGrid) {
+        gbRow.parentNode.insertBefore(mainKpiGrid, gbRow);
+      } else if (!isMainView && gbRow.nextElementSibling !== mainKpiGrid) {
+        gbRow.parentNode.insertBefore(mainKpiGrid, gbRow.nextSibling);
       }
     }
   }

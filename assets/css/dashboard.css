@@ -273,22 +273,20 @@
 .gb-sec-hd { display:flex; align-items:center; gap:8px; margin:0 -1.2rem 0.85rem; padding:0.48rem 1.2rem; background:#eef2f8; }
 .gb-sec-tit { font-size:15px; font-weight:700; color:#1e3a8a; letter-spacing:0.2px; }
 
-/* ── 조치사항 섹션 래퍼 ──────────────────────────────── */
-.action-sec { border-top:1.5px solid #e2e8f0; margin-top:1.1rem; padding-top:1rem; }
-
-/* ── 측정판 + 조치사항 나란히 (부정/부실 제거 · 매장 운영 관리 분류뷰) ── */
+/* ── 측정판 + 조치사항 나란히 (부정/부실 제거 · 매장 운영 관리 분류뷰 · 개별 영역뷰)
+   완전 전체 뷰·브랜드 단독 뷰가 아니면 기존처럼 조치사항판을 측정판 안으로 병합해 한 장의 카드로 보여줌 ── */
 .grade-board.layout-side { display:grid; grid-template-columns:minmax(280px, 2fr) 3fr; grid-template-rows:auto auto 1fr; column-gap:1.2rem; }
 .grade-board.layout-side.layout-side-fraud { grid-template-columns:minmax(240px, 1.5fr) 3.5fr; }
 .grade-board.layout-side > .gb-sec-hd  { grid-column:1; margin-right:0; flex-wrap:wrap; row-gap:4px; }
 .grade-board.layout-side > .grade-legend { grid-column:1; }
 .grade-board.layout-side > .grade-tbl-wrap { grid-column:1; grid-row:3; margin-bottom:0; }
-.grade-board.layout-side > .action-sec { grid-column:2; grid-row:1 / -1; border-top:none; margin-top:0; padding-top:0; border-left:1.5px solid #e2e8f0; padding-left:1.2rem; overflow:hidden; }
+.grade-board.layout-side > #actionBoard { grid-column:2; grid-row:1 / -1; background:none; border:none; box-shadow:none; padding:0 0 0 1.2rem; border-radius:0; margin-bottom:0; border-left:1.5px solid #e2e8f0; overflow:hidden; }
 @media (max-width:860px) {
   .grade-board.layout-side { grid-template-columns:1fr; grid-template-rows:auto; }
   .grade-board.layout-side > .gb-sec-hd  { grid-column:1 / -1; margin-right:-1.2rem; flex-wrap:nowrap; row-gap:0; }
   .grade-board.layout-side > .grade-legend { grid-column:1 / -1; }
   .grade-board.layout-side > .grade-tbl-wrap { grid-column:1; grid-row:auto; }
-  .grade-board.layout-side > .action-sec { grid-column:1; grid-row:auto; border-left:none; padding-left:0; border-top:1.5px solid #e2e8f0; margin-top:1rem; padding-top:1rem; }
+  .grade-board.layout-side > #actionBoard { grid-column:1; grid-row:auto; border-left:none; padding:1rem 0 0; border-top:1.5px solid #e2e8f0; margin-top:1rem; }
 }
 
 /* ── 영역별 특이사항 패널 (대시보드) ────────────────── */
