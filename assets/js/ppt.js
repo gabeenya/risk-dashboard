@@ -198,6 +198,157 @@ function buildBrandSummaryPage(pres, ctx, mode) {
   addVioNote(s, 0.85 + totalRows * rowH + 0.05, true);
 }
 
+// ── 리스크 노출/측정판 · 조치사항 (대시보드와 동일 기준 — 연 누적/당월 각 1장) ──
+const GRADE_PPT_COLOR = { A:'16a34a', B:'2563eb', C:'d97706', D:'dc2626', F:'334155' };
+
+function buildGradeBoardSlide(pres, ctx, mode) {
+  const { prevYr, prevMonthName, prevYm } = ctx;
+  const isAcc = mode === 'acc';
+  const s = pres.addSlide();
+  addPptHeader(pres, s, '리스크 노출/측정판 (' + (isAcc ? '연 누적' : '당월') + ')',
+               prevYr + '년 ' + String(prevMonthName).padStart(2,'0') + '월 기준');
+
+  const brands = BRANDS.filter(b => !RANK_EXCLUDE.has(b));
+  const ranked = brands.map(brand => {
+    const details = {};
+    GRADE_AREAS.forEach(type => { details[type] = calcGradeDetail(type, brand, prevYm, isAcc); });
+    let total = 0;
+    GRADE_AREAS.forEach(type => { total += GRADE_SCORE[details[type].grade] ?? 0; });
+    const avg   = total / GRADE_AREAS.length;
+    const score = parseFloat((avg * 10).toFixed(1));
+    const overallGrade = avg >= 9 ? 'A' : avg >= 7 ? 'B' : avg >= 4 ? 'C' : avg >= 1 ? 'D' : 'F';
+    return { brand, details, score, overallGrade };
+  }).sort((a, b) => b.score - a.score || a.brand.localeCompare(b.brand));
+
+  const data = [[
+    { text:'순위',     options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:7, align:'center', valign:'middle' } },
+    { text:'브랜드',   options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:7, align:'center', valign:'middle' } },
+    { text:'종합등급', options:{ bold:true, fill:{color:'334155'}, color:PPT_WHITE, fontSize:7, align:'center', valign:'middle' } },
+    ...GRADE_AREAS.map(type => ({ text:type, options:{ bold:true, fill:{color:'1a3270'}, color:PPT_WHITE, fontSize:6.5, align:'center', valign:'middle' } }))
+  ]];
+
+  ranked.forEach(({ brand, details, score, overallGrade }, idx) => {
+    const bg = idx % 2 === 0 ? 'f8fafc' : PPT_WHITE;
+    const scoreTxt = Number.isInteger(score) ? score : score.toFixed(1);
+    const row = [
+      { text:String(idx + 1), options:{ fontSize:7, align:'center', valign:'middle', bold:idx < 3, fill:{color:bg} } },
+      { text:brand, options:{ fontSize:7, bold:true, align:'center', valign:'middle', fill:{color:bg} } },
+      { text:overallGrade + ' (' + scoreTxt + '점)', options:{ fontSize:6.5, bold:true, align:'center', valign:'middle', color:GRADE_PPT_COLOR[overallGrade], fill:{color:bg} } }
+    ];
+    GRADE_AREAS.forEach(type => {
+      const dtl = details[type];
+      row.push({ text:dtl.grade + '(' + dtl.cnt + ')', options:{ fontSize:6.5, align:'center', valign:'middle', bold:true, color:GRADE_PPT_COLOR[dtl.grade], fill:{color:bg} } });
+    });
+    data.push(row);
+  });
+
+  const rankCW = 0.45, brandCW = 0.85, overallCW = 0.9;
+  const areaCW = (SLIDE_W - rankCW - brandCW - overallCW) / GRADE_AREAS.length;
+  const totalRows = data.length;
+  const rowH = Math.min(0.28, (5.625 - 0.85 - 0.35) / totalRows);
+  s.addTable(data, {
+    x:TABLE_X, y:0.85, w:SLIDE_W,
+    border:{ pt:0.3, color:'e2e8f0' },
+    colW:[rankCW, brandCW, overallCW, ...GRADE_AREAS.map(() => areaCW)],
+    rowH
+  });
+  s.addText('등급 기준: A ≤3건 · B ≤6건 · C ≤9건 · D 10건↑ (부실채권 A≤3·B≤5·C≤10·D11↑, 2개월초과+1억↑ 즉시 D / 안전 중대재해 발생 즉시 F)', {
+    x:TABLE_X, y:0.85 + totalRows * rowH + 0.08, w:SLIDE_W, h:0.3,
+    fontSize:7, color:'64748b', fontFace:'Calibri'
+  });
+}
+
+function buildActionBoardSlide(pres, ctx, mode) {
+  const { prevYr, prevMonthName, prevYm } = ctx;
+  const isAcc = mode === 'acc';
+  const [pYr, pMo] = prevYm.split('-').map(Number);
+  const s = pres.addSlide();
+  addPptHeader(pres, s, '조치사항 (' + (isAcc ? '연 누적' : '당월') + ')',
+               prevYr + '년 ' + String(prevMonthName).padStart(2,'0') + '월 기준');
+
+  // ── 징계 현황 (감사 영역) ──
+  const jngRecs = isAcc
+    ? records.filter(r => { if (r.type !== '감사' || !r.date) return false; const [ry, rm] = r.date.split('-').map(Number); return ry === pYr && rm <= pMo; })
+    : records.filter(r => r.type === '감사' && r.date && r.date.startsWith(prevYm));
+
+  const jngY = 0.85;
+  s.addText('징계 현황', { x:TABLE_X, y:jngY-0.03, w:4, h:0.24, fontSize:12, bold:true, color:'0f172a', fontFace:'Calibri' });
+  s.addText(jngRecs.length + '건', { x:SLIDE_W-1.15, y:jngY-0.03, w:1.3, h:0.24, fontSize:9, color:'94a3b8', align:'right', fontFace:'Calibri' });
+
+  const JNG_MAX = 9;
+  const jngHead = ['날짜','브랜드','상세유형','징계유형','성명','양형','비고','상태'].map(t =>
+    ({ text:t, options:{ bold:true, fill:{color:PPT_NAVY}, color:PPT_WHITE, fontSize:7, align:'center', valign:'middle' } }));
+  const jngData = [jngHead];
+  if (!jngRecs.length) {
+    jngData.push([{ text:'해당 기간 징계 현황 없음', options:{ fontSize:8, align:'center', color:'94a3b8', colspan:8 } }]);
+  } else {
+    jngRecs.slice(0, JNG_MAX).forEach((r, idx) => {
+      const bg = idx % 2 === 0 ? 'f8fafc' : PPT_WHITE;
+      let name = r.jg_name || '', sent = r.jg_sent || '';
+      if (!name && !sent) { const p = parseJgRecord(r); if (p) { name = p.name; sent = p.sent; } }
+      const noteText = r.jg_name != null ? (r.note || '') : (parseJgRecord(r)?.note || r.note || '');
+      jngData.push([
+        { text:r.date ? r.date.slice(5).replace('-','/') : '-', options:{ fontSize:7, align:'center', valign:'middle', fill:{color:bg} } },
+        { text:r.brand || '-', options:{ fontSize:7, align:'center', valign:'middle', fill:{color:bg} } },
+        { text:r.subtype && r.subtype !== '-' ? r.subtype : '-', options:{ fontSize:6.5, align:'center', valign:'middle', fill:{color:bg} } },
+        { text:r.jng_type || '-', options:{ fontSize:6.5, align:'center', valign:'middle', fill:{color:bg} } },
+        { text:name || '-', options:{ fontSize:7, align:'center', valign:'middle', fill:{color:bg} } },
+        { text:sent || '-', options:{ fontSize:6.5, align:'center', valign:'middle', fill:{color:bg} } },
+        { text:noteText || '-', options:{ fontSize:6.5, valign:'middle', fill:{color:bg} } },
+        { text:statLbl(r.status, '감사'), options:{ fontSize:6.5, align:'center', valign:'middle', fill:{color:bg} } }
+      ]);
+    });
+    if (jngRecs.length > JNG_MAX) {
+      jngData.push([{ text:'외 ' + (jngRecs.length - JNG_MAX) + '건 더', options:{ fontSize:7, align:'center', color:'94a3b8', colspan:8 } }]);
+    }
+  }
+  const jngTblY = jngY + 0.25;
+  const notesY  = 3.35;
+  const jngRowH = Math.min(0.24, (notesY - jngTblY - 0.1) / jngData.length);
+  s.addTable(jngData, {
+    x:TABLE_X, y:jngTblY, w:SLIDE_W, border:{ pt:0.3, color:'e2e8f0' },
+    colW:[0.7, 0.85, 1.15, 0.85, 0.85, 1.1, 3.1, 1.1], rowH:jngRowH
+  });
+
+  // ── 영역별 특이사항 (전체 영역) ──
+  const noteRecs = isAcc
+    ? notes.filter(n => { if (!n.date) return false; const [ny, nm] = n.date.split('-').map(Number); return ny === pYr && nm <= pMo; })
+    : notes.filter(n => n.date && n.date.startsWith(prevYm));
+
+  s.addText('영역별 특이사항', { x:TABLE_X, y:notesY-0.03, w:4, h:0.24, fontSize:12, bold:true, color:'0f172a', fontFace:'Calibri' });
+  s.addText(noteRecs.length + '건', { x:SLIDE_W-1.15, y:notesY-0.03, w:1.3, h:0.24, fontSize:9, color:'94a3b8', align:'right', fontFace:'Calibri' });
+
+  const NOTE_MAX = 8;
+  const noteHead = ['날짜','영역','브랜드','주요이슈','이슈상세','조치완료'].map(t =>
+    ({ text:t, options:{ bold:true, fill:{color:'6366f1'}, color:PPT_WHITE, fontSize:7, align:'center', valign:'middle' } }));
+  const noteData = [noteHead];
+  if (!noteRecs.length) {
+    noteData.push([{ text:'해당 기간 특이사항 없음', options:{ fontSize:8, align:'center', color:'94a3b8', colspan:6 } }]);
+  } else {
+    noteRecs.slice(0, NOTE_MAX).forEach((n, idx) => {
+      const bg = idx % 2 === 0 ? 'f5f3ff' : PPT_WHITE;
+      const p = parseNoteContent(n.content);
+      noteData.push([
+        { text:n.date ? n.date.slice(5).replace('-','/') : '-', options:{ fontSize:7, align:'center', valign:'middle', fill:{color:bg} } },
+        { text:n.type || '-', options:{ fontSize:6.5, align:'center', valign:'middle', fill:{color:bg} } },
+        { text:n.brand || '-', options:{ fontSize:7, align:'center', valign:'middle', fill:{color:bg} } },
+        { text:p.m || '-', options:{ fontSize:6.5, valign:'middle', fill:{color:bg} } },
+        { text:p.d || '-', options:{ fontSize:6.5, valign:'middle', fill:{color:bg} } },
+        { text:p.a || '-', options:{ fontSize:6.5, valign:'middle', fill:{color:bg} } }
+      ]);
+    });
+    if (noteRecs.length > NOTE_MAX) {
+      noteData.push([{ text:'외 ' + (noteRecs.length - NOTE_MAX) + '건 더', options:{ fontSize:7, align:'center', color:'94a3b8', colspan:6 } }]);
+    }
+  }
+  const noteTblY = notesY + 0.25;
+  const noteRowH = Math.min(0.24, (5.55 - noteTblY) / noteData.length);
+  s.addTable(noteData, {
+    x:TABLE_X, y:noteTblY, w:SLIDE_W, border:{ pt:0.3, color:'e2e8f0' },
+    colW:[0.7, 0.85, 0.85, 1.9, 2.9, 2.5], rowH:noteRowH
+  });
+}
+
 // ── 슬라이드 4~: 영역별 상세 ─────────────────────────
 function buildTypeDetailSlide(pres, ctx, type, typeIdx) {
   const { d, prevYr, prevMonthName, prevYm } = ctx;
@@ -725,6 +876,10 @@ async function generatePPT() {
 
     buildCoverSlide(pres, ctx);
     buildFixedSlide(pres, ctx);
+    buildGradeBoardSlide(pres, ctx, 'acc');
+    buildGradeBoardSlide(pres, ctx, 'mon');
+    buildActionBoardSlide(pres, ctx, 'acc');
+    buildActionBoardSlide(pres, ctx, 'mon');
     buildOverviewSlide(pres, ctx);
     buildBrandSummarySlide(pres, ctx);
     TYPES.forEach((type, idx) => buildTypeDetailSlide(pres, ctx, type, idx));
