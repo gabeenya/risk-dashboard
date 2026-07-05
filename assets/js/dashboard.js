@@ -477,6 +477,7 @@ function renderDash(k) {
   const isJng      = k === '감사';
   const isBc       = k === '부실채권';
   const isCatNoMon = catAllNoMon;
+  const isStoreOps = k === 'all' && curDashCat === '매장 운영 관리';
   const isNoMon    = isJng || isBc || isCatNoMon;
   const lblMon  = isClm ? '접수'   : isAn ? '발생'     : isNoMon ? '전체'       : '모니터링';
   const lblVio  = isClm ? '처리'   : isAn ? '조치완료' : isJng   ? '적발'       : isBc ? '발생' : isCatNoMon ? '처리(완료)' : '위반';
@@ -585,6 +586,42 @@ function renderDash(k) {
     document.getElementById('kpi4Str').textContent = '징계 조치완료율';
     document.getElementById('kpi4').textContent    = jngRate + '%';
     k4s.textContent = `조치완료 ${jngDone.toLocaleString()} / 적발 ${jngVio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
+  } else if (isStoreOps) {
+    // 매장 운영 관리 분류 전체 뷰 — 안전+클레임 합산 (위생은 체계 개편 예정으로 집계 제외)
+    const stOps   = r => r.type === '안전' || r.type === '클레임';
+    const dYSt    = dY.filter(stOps);
+    const dmSt    = dmKpi.filter(stOps);
+    const doneSt  = dYSt.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
+    const totSt   = dYSt.reduce((s, r) => s + r.count, 0);
+    const actSt   = dYSt.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);
+    const mDoneSt = dmSt.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
+    const mTotSt  = dmSt.reduce((s, r) => s + r.count, 0);
+    const stRate  = totSt  ? (doneSt  / totSt  * 100).toFixed(1) : 0;
+    const stMRate = mTotSt ? (mDoneSt / mTotSt * 100).toFixed(1) : 0;
+    const slaOverSt = dYSt.filter(isSlaOver).reduce((s, r) => s + r.count, 0);
+
+    document.getElementById('kpi1Str').textContent = '해결 / 발생';
+    document.getElementById('kpi1').textContent    = `${doneSt.toLocaleString()} / ${totSt.toLocaleString()}`;
+    document.getElementById('kpi1r').textContent   = totSt ? `해결율 ${stRate}%` : '-';
+    document.getElementById('kpi1s').textContent   = `${yr}년 ${mo}월까지 누적`;
+
+    document.getElementById('kpi2Str').textContent = '해결 / 발생';
+    document.getElementById('kpi2').textContent    = `${mDoneSt.toLocaleString()} / ${mTotSt.toLocaleString()}`;
+    document.getElementById('kpi2r').textContent   = mTotSt ? `해결율 ${stMRate}%` : '-';
+    document.getElementById('kpi2s').textContent   = `${kpiYr}년 ${kpiMo}월 기준`;
+
+    document.getElementById('kpi3Str').textContent = '해결율';
+    document.getElementById('kpi3').textContent    = stRate + '%';
+    k3s.textContent = `해결 ${doneSt.toLocaleString()} / 발생 ${totSt.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
+
+    if (k4Lbl) k4Lbl.textContent = '현재';
+    document.getElementById('kpi4Str').textContent = '조치중 건수';
+    document.getElementById('kpi4').textContent    = actSt.toLocaleString();
+    if (slaOverSt > 0) {
+      k4s.innerHTML = `조치중 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()" onclick="toggleSlaPopup(this, event)">${SLA_DAYS}일 초과 ${slaOverSt.toLocaleString()}건</span>`;
+    } else {
+      k4s.textContent = '조치중 상태 건수';
+    }
   } else if (isClm) {
     // 클레임 뷰 — 처리완료/접수·처리중 기준 (안전과 동일 구조)
     const mDone   = dmKpiB.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
@@ -654,23 +691,14 @@ function renderDash(k) {
       k3s.textContent = `${doneLbl} ${done.toLocaleString()} / ${lblVio} ${vio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
     }
 
-    // KPI4: 분류 없이 전체 영역 뷰일 때만 징계 건수 카드 / 그 외(분류 선택 포함)는 조치중 카드
-    if (k === 'all' && curDashCat === 'all') {
-      const jngCur = dm.filter(r => r.type === '감사').reduce((s, r) => s + r.count, 0);
-      const jngAcc = dY.filter(r => r.type === '감사').reduce((s, r) => s + r.count, 0);
-      if (k4Lbl) k4Lbl.textContent = '징계';
-      document.getElementById('kpi4Str').textContent = '누적 징계 건수';
-      document.getElementById('kpi4').textContent    = jngAcc.toLocaleString();
-      k4s.textContent = `당월 ${jngCur.toLocaleString()}건`;
+    // KPI4: 조치중 건수 (누적 기준)
+    if (k4Lbl) k4Lbl.textContent = '현재';
+    document.getElementById('kpi4Str').textContent = isClm ? '처리중 건수' : '조치중 건수';
+    document.getElementById('kpi4').textContent    = act.toLocaleString();
+    if (slaOver > 0) {
+      k4s.innerHTML = `${lblIng} 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()" onclick="toggleSlaPopup(this, event)">${SLA_DAYS}일 초과 ${slaOver.toLocaleString()}건</span>`;
     } else {
-      if (k4Lbl) k4Lbl.textContent = '현재';
-      document.getElementById('kpi4Str').textContent = isClm ? '처리중 건수' : '조치중 건수';
-      document.getElementById('kpi4').textContent    = act.toLocaleString();
-      if (slaOver > 0) {
-        k4s.innerHTML = `${lblIng} 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()" onclick="toggleSlaPopup(this, event)">${SLA_DAYS}일 초과 ${slaOver.toLocaleString()}건</span>`;
-      } else {
-        k4s.textContent = `${lblIng} 상태 건수`;
-      }
+      k4s.textContent = `${lblIng} 상태 건수`;
     }
   }
 
@@ -768,6 +796,23 @@ function renderDash(k) {
     if (jngPanel) {
       const showJng = (k === 'all' && (curDashCat === 'all' || curDashCat === '부정/부실 제거')) || k === '감사';
       jngPanel.style.display = showJng ? '' : 'none';
+    }
+    // 감사 KPI 카드(조치완료/적발·경징계·중징계·형사고발): 완전 전체 뷰에서만 노출
+    const auditKpiGrid = document.getElementById('auditKpiGrid');
+    if (auditKpiGrid) {
+      const showAuditKpi = k === 'all' && curDashCat === 'all';
+      auditKpiGrid.style.display = showAuditKpi ? '' : 'none';
+      if (showAuditKpi) renderAuditKpis(dY);
+    }
+    // 메인 KPI 카드(kpi1~4): 완전 전체 뷰에서만 측정판 위로 이동, 그 외 뷰는 원래 위치(측정판 아래) 유지
+    const mainKpiGrid = document.getElementById('mainKpiGrid');
+    if (mainKpiGrid) {
+      const isMainView = k === 'all' && curDashCat === 'all';
+      if (isMainView && board.previousElementSibling !== mainKpiGrid) {
+        board.parentNode.insertBefore(mainKpiGrid, board);
+      } else if (!isMainView && board.nextElementSibling !== mainKpiGrid) {
+        board.parentNode.insertBefore(mainKpiGrid, board.nextSibling);
+      }
     }
   }
   renderNotesSection(k);
@@ -1155,6 +1200,28 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
 
   renderJngSection(ym, lbl);
   scheduleRankAnim();
+}
+
+// 감사 KPI 카드(조치완료/적발·경징계·중징계·형사고발) — 연 누적, 브랜드 필터 반영
+function renderAuditKpis(dY) {
+  const recs = dY.filter(r => r.type === '감사');
+  const done = recs.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
+  const tot  = recs.reduce((s, r) => s + r.count, 0);
+  const rate = tot ? (done / tot * 100).toFixed(1) : 0;
+  const cntByJngType = jt => recs.filter(r => r.jng_type === jt).reduce((s, r) => s + r.count, 0);
+  const rd = refDate();
+  const sub = `${rd.getFullYear()}년 ${rd.getMonth() + 1}월까지 누적`;
+
+  document.getElementById('auditKpi1').textContent  = `${done.toLocaleString()} / ${tot.toLocaleString()}`;
+  document.getElementById('auditKpi1r').textContent = tot ? `조치완료율 ${rate}%` : '-';
+  document.getElementById('auditKpi1s').textContent = sub;
+
+  document.getElementById('auditKpi2').textContent  = cntByJngType('경징계').toLocaleString();
+  document.getElementById('auditKpi2s').textContent = sub;
+  document.getElementById('auditKpi3').textContent  = cntByJngType('중징계').toLocaleString();
+  document.getElementById('auditKpi3s').textContent = sub;
+  document.getElementById('auditKpi4').textContent  = cntByJngType('형사고발').toLocaleString();
+  document.getElementById('auditKpi4s').textContent = sub;
 }
 
 let _jngPage = 0;

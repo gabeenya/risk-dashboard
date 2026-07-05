@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -17,36 +17,36 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때마다 v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260703t';</script>
+<script>window.__ASSET_V = '20260705b';</script>
 
 <!-- ?�폰?? Pretendard (?��? UI ?��? ?�트) -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 
 <!-- ?��???(?�이지�?분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260703t">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260703t">
-<link rel="stylesheet" href="assets/css/input.css?v=20260703t">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260703t">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260703t">
-<link rel="stylesheet" href="assets/css/help.css?v=20260703t">
+<link rel="stylesheet" href="assets/css/base.css?v=20260705b">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260705b">
+<link rel="stylesheet" href="assets/css/input.css?v=20260705b">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260705b">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260705b">
+<link rel="stylesheet" href="assets/css/help.css?v=20260705b">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
                   → dashboard → input → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260703t"     defer></script>
-<script src="assets/js/constants.js?v=20260703t"  defer></script>
-<script src="assets/js/state.js?v=20260703t"      defer></script>
-<script src="assets/js/utils.js?v=20260703t"      defer></script>
-<script src="assets/js/auth.js?v=20260703t"       defer></script>
-<script src="assets/js/nav.js?v=20260703t"        defer></script>
-<script src="assets/js/dashboard.js?v=20260703t"  defer></script>
-<script src="assets/js/input.js?v=20260703t"      defer></script>
-<script src="assets/js/admin.js?v=20260703t"      defer></script>
-<script src="assets/js/ai.js?v=20260703t"         defer></script>
-<script src="assets/js/ppt.js?v=20260703t"        defer></script>
-<script src="assets/js/main.js?v=20260703t"       defer></script>
+<script src="assets/js/config.js?v=20260705b"     defer></script>
+<script src="assets/js/constants.js?v=20260705b"  defer></script>
+<script src="assets/js/state.js?v=20260705b"      defer></script>
+<script src="assets/js/utils.js?v=20260705b"      defer></script>
+<script src="assets/js/auth.js?v=20260705b"       defer></script>
+<script src="assets/js/nav.js?v=20260705b"        defer></script>
+<script src="assets/js/dashboard.js?v=20260705b"  defer></script>
+<script src="assets/js/input.js?v=20260705b"      defer></script>
+<script src="assets/js/admin.js?v=20260705b"      defer></script>
+<script src="assets/js/ai.js?v=20260705b"         defer></script>
+<script src="assets/js/ppt.js?v=20260705b"        defer></script>
+<script src="assets/js/main.js?v=20260705b"       defer></script>
 </head>
 <body>
 
@@ -55,7 +55,7 @@
   <!-- ?�?� 좌측 ?�이?�바 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
   <aside class="sidebar" id="sidebar">
     <a class="side-logo" onclick="goHome()">
-      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260703t" alt="Elandeats" />
+      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260705b" alt="Elandeats" />
     </a>
     <div class="side-scroll">
       <p class="side-sec">메뉴</p>
@@ -272,12 +272,18 @@
       </div>
     </div>
 
-
-    <div class="kpi-grid">
+    <div class="kpi-grid" id="mainKpiGrid">
       <div class="kpi"><p class="kpi-lbl">누적</p><p class="kpi-str" id="kpi1Str">위반 / 모니터링</p><p class="kpi-val" id="kpi1">-</p><p class="kpi-rate" id="kpi1r">-</p><p class="kpi-sub" id="kpi1s">-</p></div>
       <div class="kpi kpi2-wrap"><div class="kpi2-hd"><p class="kpi-lbl">당월</p><div class="kpi-hd-right"><select class="chart-mode-sel kpi-mode-sel" id="modeKpi" onchange="setKpiMode(this.value)"><option value="mon">당월</option></select><span class="chart-period-row" id="periodKpi" style="display:none"><select class="chart-ym-sel" id="fromKpi" onchange="setKpiPeriod('from',this.value)"></select><span class="period-sep">~</span><select class="chart-ym-sel" id="toKpi" onchange="setKpiPeriod('to',this.value)"></select></span></div></div><p class="kpi-str" id="kpi2Str">위반 / 모니터링</p><p class="kpi-val" id="kpi2">-</p><p class="kpi-rate" id="kpi2r">-</p><p class="kpi-sub" id="kpi2s">-</p></div>
       <div class="kpi dim"><p class="kpi-lbl">처리</p><p class="kpi-str" id="kpi3Str">완료율</p><p class="kpi-val" id="kpi3">-</p><p class="kpi-sub" id="kpi3s">-</p></div>
       <div class="kpi dim"><p class="kpi-lbl" id="kpi4Lbl">현재</p><p class="kpi-str" id="kpi4Str">조치중 건수</p><p class="kpi-val" id="kpi4">-</p><p class="kpi-sub" id="kpi4s">-</p></div>
+    </div>
+
+    <div class="kpi-grid" id="auditKpiGrid" style="display:none">
+      <div class="kpi"><p class="kpi-lbl">누적</p><p class="kpi-str">조치완료 / 적발</p><p class="kpi-val" id="auditKpi1">-</p><p class="kpi-rate" id="auditKpi1r">-</p><p class="kpi-sub" id="auditKpi1s">-</p></div>
+      <div class="kpi dim"><p class="kpi-lbl">누적</p><p class="kpi-str">경징계 건수</p><p class="kpi-val" id="auditKpi2">-</p><p class="kpi-sub" id="auditKpi2s">-</p></div>
+      <div class="kpi dim"><p class="kpi-lbl">누적</p><p class="kpi-str">중징계 건수</p><p class="kpi-val" id="auditKpi3">-</p><p class="kpi-sub" id="auditKpi3s">-</p></div>
+      <div class="kpi dim"><p class="kpi-lbl">누적</p><p class="kpi-str">형사고발 건수</p><p class="kpi-val" id="auditKpi4">-</p><p class="kpi-sub" id="auditKpi4s">-</p></div>
     </div>
 
     <div class="charts-row">
