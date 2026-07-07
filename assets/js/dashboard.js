@@ -477,11 +477,12 @@ function renderDash(k) {
   const isJng      = k === '감사';
   const isBc       = k === '부실채권';
   const isCatNoMon = catAllNoMon;
+  const isCatOps   = k === 'all' && curDashCat === '매장 운영 관리'; // 안전+클레임 집계 (위생 제외)
   const isNoMon    = isJng || isBc || isCatNoMon;
-  const lblMon  = isClm ? '접수'   : isAn ? '발생'     : isNoMon ? '전체'       : '모니터링';
-  const lblVio  = isClm ? '처리'   : isAn ? '조치완료' : isJng   ? '적발'       : isBc ? '발생' : isCatNoMon ? '처리(완료)' : '위반';
-  const lblIng  = isClm ? '처리중' : isAn ? '발생'     : isJng   ? '적발'       : isBc ? '발생' : isCatNoMon ? '조치중'     : '위반(처리중)';
-  const lblRate = isClm ? '처리율' : isAn ? '조치율'   : isJng   ? '조치완료율' : isBc ? '해결율' : isCatNoMon ? '완료율'   : '위반율';
+  const lblMon  = isClm ? '접수'   : isAn ? '발생'     : isNoMon ? '전체'       : isCatOps ? '발생'      : '모니터링';
+  const lblVio  = isClm ? '처리'   : isAn ? '조치완료' : isJng   ? '적발'       : isBc ? '발생' : isCatNoMon ? '처리(완료)' : isCatOps ? '처리완료' : '위반';
+  const lblIng  = isClm ? '처리중' : isAn ? '발생'     : isJng   ? '적발'       : isBc ? '발생' : isCatNoMon ? '조치중'     : isCatOps ? '처리중'   : '위반(처리중)';
+  const lblRate = isClm ? '처리율' : isAn ? '조치율'   : isJng   ? '조치완료율' : isBc ? '해결율' : isCatNoMon ? '완료율'   : isCatOps ? '해결율'   : '위반율';
 
   // KPI 카드 라벨/서브 동적 갱신
   // kpi3Str/kpi3: 부실채권은 아래 isBc 블록에서 '회수금액'으로 덮어씀
@@ -634,6 +635,36 @@ function renderDash(k) {
     } else {
       k4s.textContent = '발생 상태 건수';
     }
+  } else if (isCatOps) {
+    // 매장 운영 관리 분류 전체 뷰 — 안전+클레임 합산 (위생 집계 제외)
+    const dYops    = dY.filter(r => ['안전','클레임'].includes(r.type));
+    const dmKpiOps = dmKpi.filter(r => ['안전','클레임'].includes(r.type));
+    const opsTot   = dYops.reduce((s,r) => s+r.count, 0);
+    const opsDone  = dYops.filter(r => r.status === '완료').reduce((s,r) => s+r.count, 0);
+    const opsAct   = dYops.filter(r => r.status === '위반(처리중)').reduce((s,r) => s+r.count, 0);
+    const opsRate  = opsTot ? (opsDone / opsTot * 100).toFixed(1) : 0;
+    const mOpsTot  = dmKpiOps.reduce((s,r) => s+r.count, 0);
+    const mOpsDone = dmKpiOps.filter(r => r.status === '완료').reduce((s,r) => s+r.count, 0);
+    const mOpsRate = mOpsTot ? (mOpsDone / mOpsTot * 100).toFixed(1) : 0;
+
+    document.getElementById('kpi1Str').textContent = '누적 해결 / 발생';
+    document.getElementById('kpi1').textContent    = `${opsDone.toLocaleString()} / ${opsTot.toLocaleString()}`;
+    document.getElementById('kpi1r').textContent   = opsTot ? `해결율 ${opsRate}%` : '-';
+    document.getElementById('kpi1s').textContent   = `${yr}년 ${mo}월까지 누적 · 안전+클레임`;
+
+    document.getElementById('kpi2Str').textContent = '당월 해결 / 발생';
+    document.getElementById('kpi2').textContent    = `${mOpsDone.toLocaleString()} / ${mOpsTot.toLocaleString()}`;
+    document.getElementById('kpi2r').textContent   = mOpsTot ? `해결율 ${mOpsRate}%` : '-';
+    document.getElementById('kpi2s').textContent   = `${kpiYr}년 ${kpiMo}월 기준 · 안전+클레임`;
+
+    document.getElementById('kpi3Str').textContent = '누적 해결율';
+    document.getElementById('kpi3').textContent    = opsRate + '%';
+    k3s.textContent = `해결 ${opsDone.toLocaleString()} / 발생 ${opsTot.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
+
+    if (k4Lbl) k4Lbl.textContent = '현재';
+    document.getElementById('kpi4Str').textContent = '조치중 건수';
+    document.getElementById('kpi4').textContent    = opsAct.toLocaleString();
+    k4s.textContent = '접수/처리중 상태 건수 · 안전+클레임';
   } else {
     // 일반 뷰
     document.getElementById('kpi1Str').textContent = `${lblVio} / ${lblMon}`;
@@ -654,23 +685,14 @@ function renderDash(k) {
       k3s.textContent = `${doneLbl} ${done.toLocaleString()} / ${lblVio} ${vio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
     }
 
-    // KPI4: 분류 없이 전체 영역 뷰일 때만 징계 건수 카드 / 그 외(분류 선택 포함)는 조치중 카드
-    if (k === 'all' && curDashCat === 'all') {
-      const jngCur = dm.filter(r => r.type === '감사').reduce((s, r) => s + r.count, 0);
-      const jngAcc = dY.filter(r => r.type === '감사').reduce((s, r) => s + r.count, 0);
-      if (k4Lbl) k4Lbl.textContent = '징계';
-      document.getElementById('kpi4Str').textContent = '누적 징계 건수';
-      document.getElementById('kpi4').textContent    = jngAcc.toLocaleString();
-      k4s.textContent = `당월 ${jngCur.toLocaleString()}건`;
+    // KPI4: 전체뷰(k=all, cat=all) → 조치중 건수 / 그 외 → 조치중 카드
+    if (k4Lbl) k4Lbl.textContent = '현재';
+    document.getElementById('kpi4Str').textContent = isClm ? '처리중 건수' : '조치중 건수';
+    document.getElementById('kpi4').textContent    = act.toLocaleString();
+    if (slaOver > 0) {
+      k4s.innerHTML = `${lblIng} 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()" onclick="toggleSlaPopup(this, event)">${SLA_DAYS}일 초과 ${slaOver.toLocaleString()}건</span>`;
     } else {
-      if (k4Lbl) k4Lbl.textContent = '현재';
-      document.getElementById('kpi4Str').textContent = isClm ? '처리중 건수' : '조치중 건수';
-      document.getElementById('kpi4').textContent    = act.toLocaleString();
-      if (slaOver > 0) {
-        k4s.innerHTML = `${lblIng} 상태 · <span class="sla-alert" onmouseenter="showSlaPopup(this)" onmouseleave="hideSlaPopup()" onclick="toggleSlaPopup(this, event)">${SLA_DAYS}일 초과 ${slaOver.toLocaleString()}건</span>`;
-      } else {
-        k4s.textContent = `${lblIng} 상태 건수`;
-      }
+      k4s.textContent = `${lblIng} 상태 건수`;
     }
   }
 
@@ -745,11 +767,22 @@ function renderDash(k) {
         visibleAreas = GRADE_AREAS;
       }
       const showOverall = k === 'all';
+      // 등급표 관련 요소 (GRADE_AREAS에 없는 영역: 클레임·감사·위생 등)
+      const _gbHd   = board.querySelector(':scope > .gb-sec-hd');
+      const _gbLeg  = board.querySelector('.grade-legend');
+      const _gbTbl  = board.querySelector('.grade-tbl-wrap');
       if (!visibleAreas.length) {
-        board.style.display = 'none';
-        board.classList.remove('layout-side');
+        // 등급표 없는 뷰: KPI 카드·조치사항은 표시하되 측정판 콘텐츠만 숨김
+        board.style.display = '';
+        board.classList.remove('layout-side', 'layout-side-fraud');
+        if (_gbHd)  _gbHd.style.display  = 'none';
+        if (_gbLeg) _gbLeg.style.display = 'none';
+        if (_gbTbl) _gbTbl.style.display = 'none';
       } else {
         board.style.display = '';
+        if (_gbHd)  _gbHd.style.removeProperty('display');
+        if (_gbLeg) _gbLeg.style.removeProperty('display');
+        if (_gbTbl) _gbTbl.style.removeProperty('display');
         // 분류뷰(영역 수 적음) 또는 영역별 뷰: 측정판과 조치사항을 좌우 배치
         const isSide = !brandOnlyView && (
           (k === 'all' && (curDashCat === '부정/부실 제거' || curDashCat === '매장 운영 관리')) ||
@@ -768,6 +801,29 @@ function renderDash(k) {
     if (jngPanel) {
       const showJng = (k === 'all' && (curDashCat === 'all' || curDashCat === '부정/부실 제거')) || k === '감사';
       jngPanel.style.display = showJng ? '' : 'none';
+    }
+    // 조치사항 KPI 그리드: 전체뷰(분류 미선택)에서만 표시
+    const actionKpiGrid = document.getElementById('actionKpiGrid');
+    if (actionKpiGrid) {
+      const showAKpi = k === 'all' && (!curDashCat || curDashCat === 'all');
+      actionKpiGrid.style.display = showAKpi ? '' : 'none';
+      if (showAKpi) {
+        const jngRecs  = dY.filter(r => r.type === '감사');
+        const akpiDone = jngRecs.filter(r => r.status === '완료').reduce((s,r) => s+r.count, 0);
+        const akpiTot  = jngRecs.reduce((s,r) => s+r.count, 0);
+        const akpiLt   = jngRecs.filter(r => r.jng_type === '경징계').reduce((s,r) => s+r.count, 0);
+        const akpiHv   = jngRecs.filter(r => r.jng_type === '중징계').reduce((s,r) => s+r.count, 0);
+        const akpiCr   = jngRecs.filter(r => r.jng_type === '형사고발').reduce((s,r) => s+r.count, 0);
+        const akpiSub  = `${yr}년 ${mo}월까지 누적`;
+        document.getElementById('akpi1').textContent  = `${akpiDone.toLocaleString()} / ${akpiTot.toLocaleString()}`;
+        document.getElementById('akpi1s').textContent = akpiSub;
+        document.getElementById('akpi2').textContent  = akpiLt.toLocaleString();
+        document.getElementById('akpi2s').textContent = akpiSub;
+        document.getElementById('akpi3').textContent  = akpiHv.toLocaleString();
+        document.getElementById('akpi3s').textContent = akpiSub;
+        document.getElementById('akpi4').textContent  = akpiCr.toLocaleString();
+        document.getElementById('akpi4s').textContent = akpiSub;
+      }
     }
   }
   renderNotesSection(k);
@@ -1005,16 +1061,21 @@ function showGradeInfo(target) {
     ? (CAT_TYPES[curDashCat] || []).filter(t => GRADE_AREAS.includes(t))
     : GRADE_AREAS;
   const areaStr = areaList.join(', ');
+  const isAcc = _modeGrade === 'acc';
   __gradeInfoEl = document.createElement('div');
   __gradeInfoEl.className = 'grade-info-popup';
   __gradeInfoEl.innerHTML =
     `<div class="gip-tit">순위 산정 기준</div>` +
     `<div class="gip-sec">평가 영역 (${areaList.length}개)</div>` +
     `<div class="gip-val">${esc(areaStr)}</div>` +
-    `<div class="gip-sec">영역별 등급 기준 (당월 위반 건수)</div>` +
+    `<div class="gip-sec">월별 등급 기준 (해당 월 위반 건수)</div>` +
     `<div class="gip-val">A ≤3건 · B ≤6건 · C ≤9건 · D 10건↑<br>부실채권: A ≤3 · B ≤5 · C ≤10 · D 11↑<br>(2개월초과+금액≤1억 → 즉시 D)</div>` +
     `<div class="gip-sec">등급 점수</div>` +
     `<div class="gip-val">A=10점 · B=8점 · C=5점 · D=3점 · F=0점</div>` +
+    (isAcc
+      ? `<div class="gip-sec">영역별 누적 등급</div>` +
+        `<div class="gip-val">시작월~기준월 매월 등급 점수의 평균으로 산정<br>(안전 1월~ · 그 외 영역 3월~, 단순 누적 건수 아님)</div>`
+      : '') +
     `<div class="gip-sec">종합등급 기준 (평균점수)</div>` +
     `<div class="gip-val">A 9-10 · B 7-8 · C 4-6 · D 1-3 · F 0</div>` +
     `<div class="gip-sec">100점 환산</div>` +
@@ -1036,11 +1097,34 @@ const GRADE_AREAS   = ['불법파견','표시광고','가맹','IP','노무','영
 const GRADE_SCORE   = { A:10, B:8, C:5, D:3, F:0 };
 const RANK_EXCLUDE  = new Set(['광주ck','기흥ck','주안ck','CX팀','상권','본부']);
 
+// 평균 점수 → 등급 문자 (종합등급과 동일 기준)
+function gradeFromScore(avg) {
+  return avg >= 9 ? 'A' : avg >= 7 ? 'B' : avg >= 4 ? 'C' : avg >= 1 ? 'D' : 'F';
+}
+
+// 영역별 누적 평균 시작월 (그 외 영역은 데이터 입력이 대부분 3월부터 시작됨)
+const GRADE_ACC_START_MONTH = { 안전: 1 };
+const GRADE_ACC_DEFAULT_START = 3;
+
 // 등급 + 위반 건수를 함께 반환
+// acc=true면 영역별 시작월(안전=1월, 그 외=3월)~ym까지 "매월 등급 점수의 평균"으로 등급을 산정한다.
+// (단순 누적 건수로 매기면 개월 수가 쌓일수록 결국 모두 D/F로 수렴하므로,
+//  월별로 계산한 등급의 평균 점수를 다시 등급으로 환산하는 방식을 쓴다.)
+// cnt/mon은 평균이 아니라 시작월~ym까지의 실제 누적 합산값이다.
 function calcGradeDetail(type, brand, ym, acc) {
-  const recs = acc
-    ? records.filter(r => r.brand === brand && r.type === type && r.date && r.date.slice(0,7) >= ym.slice(0,4) + '-01' && r.date.slice(0,7) <= ym)
-    : records.filter(r => r.brand === brand && r.type === type && r.date && r.date.startsWith(ym));
+  if (acc) {
+    const [yr, mo] = ym.split('-').map(Number);
+    const startMo = Math.min(GRADE_ACC_START_MONTH[type] ?? GRADE_ACC_DEFAULT_START, mo);
+    const months = [];
+    for (let m = startMo; m <= mo; m++) months.push(`${yr}-${String(m).padStart(2,'0')}`);
+    const monthly = months.map(m => calcGradeDetail(type, brand, m, false));
+    const cnt = monthly.reduce((s, d) => s + d.cnt, 0);
+    const mon = monthly.reduce((s, d) => s + d.mon, 0);
+    const avg = monthly.reduce((s, d) => s + (GRADE_SCORE[d.grade] ?? 0), 0) / monthly.length;
+    return { grade: gradeFromScore(avg), cnt, mon };
+  }
+
+  const recs = records.filter(r => r.brand === brand && r.type === type && r.date && r.date.startsWith(ym));
 
   if (type === '부실채권') {
     // F: 2개월 초과 미입금 액 > 1억
@@ -1127,7 +1211,7 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
     scoreAreas.forEach(type => { total += GRADE_SCORE[details[type].grade] ?? 0; });
     const avg   = scoreAreas.length ? total / scoreAreas.length : 0;
     const score = parseFloat((avg * 10).toFixed(1));
-    const overallGrade = avg >= 9 ? 'A' : avg >= 7 ? 'B' : avg >= 4 ? 'C' : avg >= 1 ? 'D' : 'F';
+    const overallGrade = gradeFromScore(avg);
     return { brand, details, total, score, overallGrade };
   }).sort((a, b) => b.score - a.score || a.brand.localeCompare(b.brand));
   if (brandOnly) ranked = ranked.filter(r => r.brand === curBrand);

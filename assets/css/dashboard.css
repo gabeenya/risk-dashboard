@@ -276,6 +276,18 @@
 /* ── 조치사항 섹션 래퍼 ──────────────────────────────── */
 .action-sec { border-top:1.5px solid #e2e8f0; margin-top:1.1rem; padding-top:1rem; }
 
+/* ── 측정판 KPI · 조치사항 KPI 공통 compact 스타일 ────── */
+.kpi-grid.kpi-sm { gap: 8px; margin-bottom: 1rem; }
+.kpi-grid.kpi-sm .kpi { padding: 0.6rem 0.9rem; }
+.kpi-grid.kpi-sm .kpi-lbl { font-size: 11px; margin-bottom: 2px; }
+.kpi-grid.kpi-sm .kpi-str { font-size: 12px; margin-bottom: 3px; }
+.kpi-grid.kpi-sm .kpi-val { font-size: 1.35rem; margin-bottom: 2px; }
+.kpi-grid.kpi-sm .kpi-rate { font-size: 11px; margin-bottom: 1px; }
+.kpi-grid.kpi-sm .kpi-sub { font-size: 11px; }
+
+/* ── 조치사항 KPI 그리드 (조치사항 헤더 위, 전체뷰) ─────── */
+.action-kpi-grid { margin-bottom: 0.8rem; }
+
 /* ── 측정판 + 조치사항 나란히 (부정/부실 제거 · 매장 운영 관리 분류뷰) ── */
 .grade-board.layout-side { display:grid; grid-template-columns:minmax(280px, 2fr) 3fr; grid-template-rows:auto auto 1fr; column-gap:1.2rem; }
 .grade-board.layout-side.layout-side-fraud { grid-template-columns:minmax(240px, 1.5fr) 3.5fr; }
