@@ -414,7 +414,7 @@ function renderInputTable() {
         if (_jg) { _name = _jg.name; _sent = _jg.sent; _noteText = _jg.note; }
       }
       const _jt = r.jng_type || '';
-      const _jtOpts = ['금전회수','경징계','중징계','형사고발'].map(v => `<option value="${v}"${_jt===v?' selected':''}>${v}</option>`).join('');
+      const _jtOpts = JNG_TYPES.map(v => `<option value="${v}"${_jt===v?' selected':''}>${v}</option>`).join('');
       specialCols = `
         <td><select class="st-sel" onchange="updJngType(${rid},this.value)"><option value="">-</option>${_jtOpts}</select></td>
         <td><div class="note-wrap"><input type="text" class="note-inp" id="jgname-inp-${rid}" value="${esc(_name)}" placeholder="-"
@@ -592,7 +592,7 @@ async function downloadExcelTemplate() {
   // ── 헤더 / 열 너비 ──────────────────────
   const headers = ['날짜','영역','상세유형','브랜드','건수','상태','비고','노출여부'];
   const widths  = [12,    10,    24,       14,    7,    12,   30,   10   ];
-  if (isJg) { headers.push('성명','양형'); widths.push(14, 14); }
+  if (isJg) { headers.push('징계유형','성명','양형'); widths.push(14, 14, 14); }
   if (isBc) { headers.push('금액');       widths.push(12);      }
 
   // ── 시트1: 데이터 ─────────────────────────
@@ -603,28 +603,37 @@ async function downloadExcelTemplate() {
   const exSub  = aSubs[0] || '';
   const exStat = aStats[0];
   const exRow  = [today, aType, exSub, '애슐리', 1, exStat, '예시 행 — 삭제 후 입력하세요', ''];
-  if (isJg) exRow.push('', '');
+  if (isJg) exRow.push(JNG_TYPES[0], '', '');
   if (isBc) exRow.push('');
   ws1.addRow(exRow);
   ws1.getRow(1).font = { bold: true };
   ws1.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } };
 
   // ── 시트2: 참고_유효값 ──────────────────
-  // A=상세유형, B=브랜드, C=상태
+  // A=상세유형, B=브랜드, C=상태, D=징계유형(감사 영역만)
   const ws2 = wb.addWorksheet('참고_유효값');
-  ws2.addRow(['상세유형', '브랜드', '상태']);
+  const refHeaders = ['상세유형', '브랜드', '상태'];
+  if (isJg) refHeaders.push('징계유형');
+  ws2.addRow(refHeaders);
   ws2.getRow(1).font = { bold: true };
-  const refLen = Math.max(aSubs.length, BRANDS.length, aStats.length);
+  const refLen = Math.max(aSubs.length, BRANDS.length, aStats.length, isJg ? JNG_TYPES.length : 0);
   for (let i = 0; i < refLen; i++) {
-    ws2.addRow([aSubs[i] || '', BRANDS[i] || '', aStats[i] || '']);
+    const refRow = [aSubs[i] || '', BRANDS[i] || '', aStats[i] || ''];
+    if (isJg) refRow.push(JNG_TYPES[i] || '');
+    ws2.addRow(refRow);
   }
-  ws2.columns = [{ width: 24 }, { width: 14 }, { width: 16 }];
+  ws2.columns = isJg
+    ? [{ width: 24 }, { width: 14 }, { width: 16 }, { width: 14 }]
+    : [{ width: 24 }, { width: 14 }, { width: 16 }];
 
   if (aSubs.length > 0) {
     wb.definedNames.add(`참고_유효값!$A$2:$A$${1 + aSubs.length}`, aType);
   }
   wb.definedNames.add(`참고_유효값!$B$2:$B$${1 + BRANDS.length}`, '브랜드목록');
   wb.definedNames.add(`참고_유효값!$C$2:$C$${1 + aStats.length}`, '상태목록');
+  if (isJg) {
+    wb.definedNames.add(`참고_유효값!$D$2:$D$${1 + JNG_TYPES.length}`, '징계유형목록');
+  }
 
   // ── 데이터 유효성 검사 ───────────────────
   const lastRow = 1 + MAX_ROWS;
@@ -654,6 +663,13 @@ async function downloadExcelTemplate() {
       type: 'list', allowBlank: true, showErrorMessage: false,
       formulae: ['"O"']
     };
+    if (isJg) {
+      ws1.getCell(`I${r}`).dataValidation = {
+        type: 'list', allowBlank: true, showErrorMessage: true,
+        errorStyle: 'warning', errorTitle: '징계유형', error: '목록에서 선택하세요. (필수)',
+        formulae: [`참고_유효값!$D$2:$D$${1 + JNG_TYPES.length}`]
+      };
+    }
     if (isBc) {
       ws1.getCell(`I${r}`).dataValidation = {
         type: 'decimal', allowBlank: true, showErrorMessage: true,
@@ -768,6 +784,12 @@ function validateXlRow(row, lineNo) {
   // 징계 전용
   const jg_name = type === '감사' ? String(row['성명'] || '').trim() || null : null;
   const jg_sent = type === '감사' ? String(row['양형'] || '').trim() || null : null;
+  let jng_type = null;
+  if (type === '감사') {
+    jng_type = String(row['징계유형'] || '').trim();
+    if (!jng_type) errs.push('징계유형 필수');
+    else if (!JNG_TYPES.includes(jng_type)) errs.push(`징계유형 (${jng_type}) 알 수 없음`);
+  }
   // 부실채권 금액 전용
   const _amtStr = String(row['금액'] || '').replace(/[,원\s]/g, '');
   const _amtVal = parseInt(_amtStr);
@@ -775,7 +797,7 @@ function validateXlRow(row, lineNo) {
 
   return {
     lineNo, date, type, subtype, brand, count: count || 0, status, note, exposed,
-    jg_name, jg_sent, bc_amount,
+    jg_name, jg_sent, jng_type, bc_amount,
     errs, ok: errs.length === 0
   };
 }
@@ -815,7 +837,7 @@ function renderXlPreview(rows) {
     <td>${esc(r.status ? statLbl(r.status, r.type) : '-')}</td>
     <td>${esc(r.note||'')}</td>
     <td>${r.exposed ? 'O' : ''}</td>
-    ${isJg ? `<td>${esc(r.jg_name||'')}</td><td>${esc(r.jg_sent||'')}</td>` : ''}
+    ${isJg ? `<td>${esc(r.jng_type||'')}</td><td>${esc(r.jg_name||'')}</td><td>${esc(r.jg_sent||'')}</td>` : ''}
     ${isBc ? `<td>${r.bc_amount != null ? r.bc_amount.toLocaleString() : ''}</td>` : ''}
     <td>${r.ok?'<span class="xl-badge xl-badge-ok">유효</span>':`<span class="xl-badge xl-badge-err" title="${esc(errsTxt)}">${esc(errsTxt)}</span>`}</td>
   </tr>`;
@@ -842,7 +864,7 @@ async function confirmBulkUpload() {
     date: r.date, type: r.type, subtype: r.subtype,
     brand: r.brand, count: r.count, status: r.status, note: r.note,
     exposed: r.exposed || false,
-    jg_name: r.jg_name || null, jg_sent: r.jg_sent || null, bc_amount: r.bc_amount || null,
+    jg_name: r.jg_name || null, jg_sent: r.jg_sent || null, jng_type: r.jng_type || null, bc_amount: r.bc_amount || null,
     author: user.name
   }));
 

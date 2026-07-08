@@ -75,6 +75,9 @@ function parseJgRecord(r) {
 // 부실채권 금액 입력 대상 상세유형
 const BC_AMT_SUBS = ['미입금', '2개월 초과 미입금'];
 
+// 감사(징계) 영역 징계유형 선택지
+const JNG_TYPES = ['금전회수', '경징계', '중징계', '형사고발'];
+
 // 부실채권 금액 레코드 파서 — note 필드에 '_amt:{숫자}' 형식으로 임시 저장
 function parseBcAmt(r) {
   if (r.type !== '부실채권' || !BC_AMT_SUBS.includes(r.subtype)) return null;
