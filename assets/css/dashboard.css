@@ -183,6 +183,7 @@
 @keyframes gc-d-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0)} 55%{box-shadow:0 0 0 3px rgba(239,68,68,0.3)} }
 .gc.D { animation:gc-d-pulse 1.6s ease-in-out infinite; }
 .gc.F { background:#334155; color:#e2e8f0; border:1.5px solid #475569; }
+.gc.na { background:#f1f5f9; color:#94a3b8; border:1.5px solid #e2e8f0; }
 .gc-cell { display:flex; align-items:center; gap:4px; }
 .gc { flex-shrink:0; }
 .gc-cnt { font-size:11px; color:#94a3b8; font-weight:500; white-space:nowrap; }

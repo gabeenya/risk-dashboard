@@ -1204,9 +1204,11 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
       const d = calcGradeDetail(type, brand, ym, isAcc);
       details[type] = d;
     });
+    const brandScoreAreas = scoreAreas.filter(t => !(t === '가맹' && FRANCHISE_GRADE_EXCLUDE.includes(brand)));
+    const effAreas = brandScoreAreas.length ? brandScoreAreas : scoreAreas;
     let total = 0;
-    scoreAreas.forEach(type => { total += GRADE_SCORE[details[type].grade] ?? 0; });
-    const avg   = scoreAreas.length ? total / scoreAreas.length : 0;
+    effAreas.forEach(type => { total += GRADE_SCORE[details[type].grade] ?? 0; });
+    const avg   = effAreas.length ? total / effAreas.length : 0;
     const score = parseFloat((avg * 10).toFixed(1));
     const overallGrade = gradeFromScore(avg);
     return { brand, details, total, score, overallGrade };
@@ -1227,8 +1229,10 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
       `<td class="gt-brand">${esc(brand)}</td>` +
       (showOverall ? `<td class="gt-overall"><div class="gt-overall-wrap"><span class="gc ${overallGrade}">${overallGrade}</span><span class="gt-overall-score">${scoreTxt}점</span></div></td><td class="gt-sep"></td>` : '') +
       visibleAreas.map(t =>
-        `<td class="gt-area"><div class="gc-cell"><span class="gc ${details[t].grade}">${details[t].grade}</span>` +
-        `<span class="gc-cnt"><span class="gc-vio">${details[t].cnt}</span>/<span class="gc-mon">${details[t].cnt + details[t].mon}</span></span></div></td>`
+        (t === '가맹' && FRANCHISE_GRADE_EXCLUDE.includes(brand))
+          ? `<td class="gt-area"><div class="gc-cell"><span class="gc na">-</span></div></td>`
+          : `<td class="gt-area"><div class="gc-cell"><span class="gc ${details[t].grade}">${details[t].grade}</span>` +
+            `<span class="gc-cnt"><span class="gc-vio">${details[t].cnt}</span>/<span class="gc-mon">${details[t].cnt + details[t].mon}</span></span></div></td>`
       ).join('');
     tbody.appendChild(tr);
     setTimeout(() => tr.classList.add('gb-in'), 40 + idx * 500);

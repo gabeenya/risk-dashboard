@@ -212,9 +212,10 @@ function buildGradeBoardSlide(pres, ctx, mode) {
   const ranked = brands.map(brand => {
     const details = {};
     GRADE_AREAS.forEach(type => { details[type] = calcGradeDetail(type, brand, prevYm, isAcc); });
+    const scoreAreas = GRADE_AREAS.filter(t => !(t === '가맹' && FRANCHISE_GRADE_EXCLUDE.includes(brand)));
     let total = 0;
-    GRADE_AREAS.forEach(type => { total += GRADE_SCORE[details[type].grade] ?? 0; });
-    const avg   = total / GRADE_AREAS.length;
+    scoreAreas.forEach(type => { total += GRADE_SCORE[details[type].grade] ?? 0; });
+    const avg   = total / scoreAreas.length;
     const score = parseFloat((avg * 10).toFixed(1));
     const overallGrade = avg >= 9 ? 'A' : avg >= 7 ? 'B' : avg >= 4 ? 'C' : avg >= 1 ? 'D' : 'F';
     return { brand, details, score, overallGrade };
@@ -236,6 +237,10 @@ function buildGradeBoardSlide(pres, ctx, mode) {
       { text:overallGrade + ' (' + scoreTxt + '점)', options:{ fontSize:6.5, bold:true, align:'center', valign:'middle', color:GRADE_PPT_COLOR[overallGrade], fill:{color:bg} } }
     ];
     GRADE_AREAS.forEach(type => {
+      if (type === '가맹' && FRANCHISE_GRADE_EXCLUDE.includes(brand)) {
+        row.push({ text:'-', options:{ fontSize:6.5, align:'center', valign:'middle', bold:true, color:'94a3b8', fill:{color:bg} } });
+        return;
+      }
       const dtl = details[type];
       row.push({ text:dtl.grade + '(' + dtl.cnt + ')', options:{ fontSize:6.5, align:'center', valign:'middle', bold:true, color:GRADE_PPT_COLOR[dtl.grade], fill:{color:bg} } });
     });
