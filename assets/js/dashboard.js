@@ -451,8 +451,8 @@ function renderDash(k) {
   });
 
   // 누적(연 누적) — dY / 당월·처리·현재 — dm
-  // 징계·부실채권은 모니터링 개념이 없어 위반율 집계에서 제외 (전체 필터 시 분자·분모 모두 제외)
-  const NO_MON = ['감사', '부실채권'];
+  // 징계·부실채권은 모니터링 개념이 없어, 클레임은 별도 영역 KPI로만 노출하기 위해 완전 전체 뷰 집계에서 제외 (전체 필터 시 분자·분모 모두 제외)
+  const NO_MON = ['감사', '부실채권', '클레임'];
   const excNoMon = r => !NO_MON.includes(r.type);
   // 분류 전체 뷰에서 해당 분류의 모든 영역이 NO_MON이면 excNoMon 필터를 건너뜀 (부정/부실 제거 분류)
   const catAllNoMon = k === 'all' && curDashCat !== 'all' &&
