@@ -1,6 +1,12 @@
 ﻿// ── KPI 숫자 카운트업 애니메이션 ────────────────────
 let _kpiRepeat = null;
-const _kpiTok  = {};   // 카드별 취소 토큰 — 새 애니메이션 시작 시 구 rAF 루프 종료
+const _kpiTok   = {};   // 카드별 취소 토큰 — 새 애니메이션 시작 시 구 rAF 루프 종료
+// 카드별 "진짜" 목표 문자열 캐시. renderDash가 실제 데이터로 textContent를 세팅한 직후 1회만
+// DOM에서 캡처해 여기 저장하고, 이후 반복 카운트업은 항상 이 캐시값만 목표로 삼는다.
+// (DOM textContent를 매번 다시 읽어 목표로 삼으면, 백그라운드 탭에서 rAF가 멈춰 애니메이션이
+//  "0 / 0" 같은 중간값에 멈춘 순간을 다음 주기가 그대로 읽어들여 0/0에 영구 고정되는
+//  피드백 루프가 생긴다 — 이게 반복됐던 "00/00" 현상의 근본 원인이었음)
+const _kpiFinal = {};
 
 function _kpiAnim(id, el, target, suffix, isFloat) {
   const tok = Symbol();
@@ -19,12 +25,21 @@ function _kpiAnim(id, el, target, suffix, isFloat) {
   requestAnimationFrame(tick);
 }
 
-function runKpiCountUp() {
+// capture=true: renderDash 직후 최초 호출 — DOM에 방금 세팅된 실제 값을 캡처해 캐시에 저장.
+// capture=false(생략): setInterval 반복 호출 — DOM을 다시 읽지 않고 캐시된 값만 사용.
+function runKpiCountUp(capture) {
   ['kpi1','kpi2','kpi3','kpi4'].forEach((id, i) => {
     const el  = document.getElementById(id);
     if (!el) return;
-    const raw = el.textContent.trim();
-    if (!raw || raw === '-') return;
+
+    if (capture) {
+      const domRaw = el.textContent.trim();
+      if (!domRaw || domRaw === '-') { delete _kpiFinal[id]; return; }
+      _kpiFinal[id] = domRaw;
+    }
+
+    const raw = _kpiFinal[id];
+    if (!raw) return;
 
     setTimeout(() => {
       // "X / Y" 형식 (위반 / 모니터링) — 양쪽 모두 카운트업
@@ -750,10 +765,10 @@ function renderDash(k) {
   if (bNote) bNote.style.display = showNote;
   if (lNote) lNote.style.display = (k === '영업비밀') ? '' : 'none';
 
-  // KPI 카운트업: 렌더 직후 + 8초 주기 반복
+  // KPI 카운트업: 렌더 직후 실제 값을 캐시에 캡처(capture=true) + 5초 주기 반복(캐시값만 사용, DOM 재읽기 없음)
   clearInterval(_kpiRepeat);
-  runKpiCountUp();
-  _kpiRepeat = setInterval(runKpiCountUp, 5000);
+  runKpiCountUp(true);
+  _kpiRepeat = setInterval(() => runKpiCountUp(false), 5000);
 
   const gbRow = document.getElementById('gbRow');
   const board = document.getElementById('gradeBoard');
