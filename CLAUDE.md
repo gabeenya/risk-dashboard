@@ -22,14 +22,17 @@ risk_dashboard/
 ├─ assets/
 │  ├─ css/   base.css · dashboard.css · input.css · admin.css · ai.css
 │  └─ js/    config · constants · state · utils · auth · nav
-│            · dashboard · input · admin · ai · ppt · main
+│            · dashboard · input · adwatch · admin · ai · ppt · main
 └─ supabase/
    ├─ config.toml
-   └─ functions/ai-analyze/index.ts   # Anthropic API 프록시 (Edge Function)
+   ├─ migrations/                       # ALTER/CREATE 문서화용 (실제 적용은 콘솔에서)
+   └─ functions/
+      ├─ ai-analyze/index.ts            # Anthropic API 프록시 (Edge Function)
+      └─ ad-watch-scan/index.ts         # 표시광고 뒷광고 의심 자동 모니터링 (검색+본문수집+AI판별)
 ```
 
 **스크립트 로드 순서** (index.html:32-43, 모두 `defer`):
-`config → constants → state → utils → auth → nav → dashboard → input → admin → ai → ppt → main`
+`config → constants → state → utils → auth → nav → dashboard → input → adwatch → admin → ai → ppt → main`
 
 각 JS 파일은 IIFE/모듈 시스템 없이 **전역 함수·전역 변수**로 동작합니다. 새 함수를 추가할 때 전역 네임스페이스에 그대로 노출되며, 다른 파일에서 호출 가능합니다 — 이름 충돌에 주의.
 
@@ -44,7 +47,7 @@ risk_dashboard/
 
 **백엔드**:
 - **Supabase REST API** (SDK 미사용) — `records`/`users` 테이블 CRUD. `sbGet`/`sbIns`/`sbUpd`/`sbDel` 헬퍼가 `fetch`로 직접 호출 (assets/js/config.js).
-- **Supabase Edge Function `ai-analyze`** — Anthropic API 호출 프록시. 클라이언트는 prompt만 POST하고, Edge Function이 시크릿에 보관된 `ANTHROPIC_API_KEY`로 Anthropic을 호출합니다 (supabase/functions/ai-analyze/index.ts). 호출 모델은 `claude-sonnet-4-5`, `max_tokens: 2000`.
+- **Supabase Edge Function `ai-analyze`** — Anthropic API 호출 프록시. 클라이언트는 prompt만 POST하고, Edge Function이 시크릿에 보관된 `ANTHROPIC_API_KEY`로 Anthropic을 호출합니다 (supabase/functions/ai-analyze/index.ts). 호출 모델은 `claude-sonnet-4-6`.
 
 ## 데이터 모델
 

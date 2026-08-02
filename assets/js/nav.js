@@ -140,6 +140,14 @@ function setInputType(btn, type) {
   if (exposedWrap) exposedWrap.style.display = '';
   const expCb = document.getElementById('f-exposed');
 
+  // 뒷광고 자동 모니터링 패널 — 표시광고 영역에서만 노출
+  const adWatchPanel = document.getElementById('adWatchPanel');
+  if (adWatchPanel) {
+    const showAdWatch = type === '표시광고';
+    adWatchPanel.style.display = showAdWatch ? '' : 'none';
+    if (showAdWatch && typeof renderAdWatchPanel === 'function') renderAdWatchPanel();
+  }
+
   // 상태 select: 영역별 표시 라벨 적용, 징계는 모니터링 옵션 제거
   const stSel = document.getElementById('f-status');
   if (stSel) {

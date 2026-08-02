@@ -161,6 +161,18 @@
 .ni-item-fields { display:flex; flex-direction:column; gap:6px; }
 .ni-item-inp { background:#fff; }
 
+/* ── 뒷광고 의심 자동 모니터링 (표시광고) ────────────── */
+.hg-verdict { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; border: 1px solid; }
+.hg-verdict-high { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.hg-verdict-mid  { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+.hg-verdict-low  { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+.hg-verdict-none { background: #f8fafc; color: #94a3b8; border-color: #e2e8f0; }
+.hg-body-warn { font-size: 9.5px; color: #b45309; white-space: nowrap; }
+.hg-img-badge { font-size: 9.5px; color: #475569; white-space: nowrap; }
+.hg-status-dismiss { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+.hg-reason-cell { font-size: 11.5px; color: #475569; max-width: 260px; white-space: normal; line-height: 1.45; }
+.hg-act-btn { font-size: 11px; padding: 4px 9px; margin-right: 4px; white-space: nowrap; }
+
 /* ── 모바일 대응 ──────────────────────────────────── */
 @media (max-width: 768px) {
   /* 영역 탭 — 가로 스크롤 한 줄 유지 */

@@ -2,3 +2,6 @@ project_id = "acbimacjlslxzzjutqyt"
 
 [functions.ai-analyze]
 verify_jwt = false
+
+[functions.ad-watch-scan]
+verify_jwt = false
