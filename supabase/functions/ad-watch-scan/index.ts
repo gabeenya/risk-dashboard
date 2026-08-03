@@ -2,10 +2,14 @@
 // 표시광고 "뒷광고 의심" 자동 모니터링 — 네이버 검색 API(블로그/카페)로 기간 내
 // 브랜드 언급 게시물을 찾고, 본문을 가져와 Claude로 광고 표시 누락 의심 여부를
 // 1차 판별한 뒤 ad_watch_candidates 테이블에 저장한다. 사람이 검수 후 최종 등록.
+// 스캔이 끝나면 이번 스캔의 등급별 집계 + '의심' 후보 목록을 Resend로 즉시 이메일 발송한다
+// (전체 영역 정기 리포트는 별도 함수 weekly-report 참조).
 //
 // 필요 시크릿: NAVER_CLIENT_ID, NAVER_CLIENT_SECRET,
 //              ANTHROPIC_API_KEY(ai-analyze와 공유),
-//              SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY(Edge Function에 자동 제공)
+//              SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY(Edge Function에 자동 제공),
+//              RESEND_API_KEY, RESEND_SENDER_EMAIL(선택, 기본 onboarding@resend.dev — Resend 샌드박스 발신 주소),
+//              RESEND_SENDER_NAME(선택), REPORT_RECIPIENTS(콤마 구분 수신자 목록)
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -211,6 +215,73 @@ ${text.slice(0, 4000)}
   }
 }
 
+function esc(s: unknown) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]!));
+}
+
+// Resend 샌드박스 모드는 계정 가입 이메일로만 수신 가능 — 도메인 인증 전까지는
+// RESEND_SENDER_EMAIL을 onboarding@resend.dev로 두고 REPORT_RECIPIENTS에 그 주소만 넣어 사용.
+async function sendResendEmail(subject: string, html: string): Promise<{ sent: boolean; reason?: string }> {
+  const apiKey = Deno.env.get('RESEND_API_KEY');
+  const senderEmail = Deno.env.get('RESEND_SENDER_EMAIL') || 'onboarding@resend.dev';
+  const senderName = Deno.env.get('RESEND_SENDER_NAME') || '외식BG RO실 리스크 대시보드';
+  const recipients = (Deno.env.get('REPORT_RECIPIENTS') || '').split(',').map(s => s.trim()).filter(Boolean);
+
+  if (!apiKey) return { sent: false, reason: 'RESEND_API_KEY not configured' };
+  if (!recipients.length) return { sent: false, reason: 'REPORT_RECIPIENTS not configured (콤마로 구분된 이메일 목록 필요)' };
+
+  const r = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({ from: `${senderName} <${senderEmail}>`, to: recipients, subject, html }),
+  });
+  if (!r.ok) return { sent: false, reason: `Resend 발송 실패: HTTP ${r.status} — ${await r.text()}` };
+  return { sent: true };
+}
+
+function buildScanEmailHtml(d: {
+  from: string; to: string; brands: string[]; totalFound: number; savedCnt: number; truncated: boolean;
+  byVerdict: Record<string, number>;
+  suspects: { brand: string; title: string; link: string; reason: string }[];
+}) {
+  const verdictBox = (label: string, key: string, color: string) => `
+    <td style="padding:10px 14px;text-align:center;border-radius:8px;background:#f8fafc;">
+      <div style="font-size:12px;color:#64748b;margin-bottom:4px;">${label}</div>
+      <div style="font-size:20px;font-weight:700;color:${color};">${d.byVerdict[key] || 0}</div>
+    </td>`;
+
+  const suspectList = d.suspects.length
+    ? `<ul style="margin:8px 0;padding-left:20px;">${d.suspects.map(s =>
+        `<li><strong>${esc(s.brand)}</strong> — <a href="${esc(s.link)}" style="color:#4f86c6;">${esc(s.title)}</a><br><span style="color:#64748b;font-size:13px;">${esc(s.reason)}</span></li>`
+      ).join('')}</ul>`
+    : `<p style="color:#64748b;margin:8px 0;">'의심' 등급 후보 없음</p>`;
+
+  return `
+  <div style="max-width:640px;margin:0 auto;font-family:-apple-system,'Segoe UI',sans-serif;color:#1e293b;">
+    <div style="padding:24px 0 16px;border-bottom:2px solid #1e3a5f;">
+      <h2 style="margin:0;font-size:20px;color:#1e3a5f;">표시광고 뒷광고 모니터링 스캔 결과</h2>
+      <p style="margin:4px 0 0;color:#64748b;font-size:13px;">기간: ${d.from} ~ ${d.to} · 브랜드: ${esc(d.brands.join(', '))}</p>
+    </div>
+
+    <p style="margin:16px 0;">검색된 게시물 <strong>${d.totalFound}건</strong> 중 <strong>${d.savedCnt}건</strong> 저장${d.truncated ? ' (처리 상한 초과 — 기간/브랜드를 좁혀 재스캔 권장)' : ''}</p>
+
+    <table style="width:100%;border-collapse:separate;border-spacing:8px;margin:16px 0;">
+      <tr>
+        ${verdictBox('의심', '의심', '#d95757')}
+        ${verdictBox('주의', '주의', '#e0a83a')}
+        ${verdictBox('낮음', '낮음', '#5eba8a')}
+      </tr>
+    </table>
+
+    <h3 style="font-size:15px;color:#1e3a5f;border-left:4px solid #1e3a5f;padding-left:8px;">'의심' 등급 후보</h3>
+    ${suspectList}
+
+    <p style="margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:12px;">
+      검수는 대시보드 '표시광고 모니터링' 탭에서 진행하세요.
+    </p>
+  </div>`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405);
@@ -318,8 +389,31 @@ Deno.serve(async (req) => {
   }
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
 
+  const byVerdict: Record<string, number> = {};
+  for (const r of results) {
+    const v = (r.ai_verdict as string | null) || '미분류';
+    byVerdict[v] = (byVerdict[v] || 0) + 1;
+  }
+  const suspects = results
+    .filter(r => r.ai_verdict === '의심')
+    .slice(0, 10)
+    .map(r => ({ brand: r.brand as string, title: r.title as string, link: r.link as string, reason: r.ai_reason as string }));
+
+  async function notifyByEmail(savedCnt: number): Promise<boolean> {
+    try {
+      const html = buildScanEmailHtml({ from: from!, to: to!, brands: brands!, totalFound, savedCnt, truncated, byVerdict, suspects });
+      const er = await sendResendEmail(`[외식BG RO실] 표시광고 모니터링 스캔 결과 (${to})`, html);
+      if (!er.sent) console.error('[ad-watch-scan] email not sent:', er.reason);
+      return er.sent;
+    } catch (e) {
+      console.error('[ad-watch-scan] email send error', e);
+      return false;
+    }
+  }
+
   if (!results.length) {
-    return json({ ok: true, scanId, inserted: [], totalFound, truncated });
+    const emailSent = await notifyByEmail(0);
+    return json({ ok: true, scanId, inserted: [], totalFound, truncated, emailSent });
   }
 
   const insRes = await fetch(`${SUPABASE_URL}/rest/v1/ad_watch_candidates`, {
@@ -334,8 +428,9 @@ Deno.serve(async (req) => {
     return json({ error: `저장 실패: HTTP ${insRes.status} — ${await insRes.text()}` }, 502);
   }
   const inserted = await insRes.json();
+  const emailSent = await notifyByEmail(results.length);
 
-  return json({ ok: true, scanId, inserted, totalFound, truncated });
+  return json({ ok: true, scanId, inserted, totalFound, truncated, emailSent });
   } catch (e) {
     console.error('[ad-watch-scan] unhandled error', e);
     return json({ error: `처리 중 오류: ${String(e)}` }, 500);

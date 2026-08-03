@@ -28,7 +28,8 @@ risk_dashboard/
    ├─ migrations/                       # ALTER/CREATE 문서화용 (실제 적용은 콘솔에서)
    └─ functions/
       ├─ ai-analyze/index.ts            # Anthropic API 프록시 (Edge Function)
-      └─ ad-watch-scan/index.ts         # 표시광고 뒷광고 의심 자동 모니터링 (검색+본문수집+AI판별)
+      ├─ ad-watch-scan/index.ts         # 표시광고 뒷광고 의심 자동 모니터링 (검색+본문수집+AI판별) — 스캔 직후 Resend 이메일 발송
+      └─ weekly-report/index.ts         # 전체 11개 영역 주간 진단 리포트: KPI표·추이·SLA·급증경보·반복고위험·영역별 권고 (pg_cron → Claude 요약 → Resend 발송)
 ```
 
 **스크립트 로드 순서** (index.html:32-43, 모두 `defer`):
@@ -48,6 +49,8 @@ risk_dashboard/
 **백엔드**:
 - **Supabase REST API** (SDK 미사용) — `records`/`users` 테이블 CRUD. `sbGet`/`sbIns`/`sbUpd`/`sbDel` 헬퍼가 `fetch`로 직접 호출 (assets/js/config.js).
 - **Supabase Edge Function `ai-analyze`** — Anthropic API 호출 프록시. 클라이언트는 prompt만 POST하고, Edge Function이 시크릿에 보관된 `ANTHROPIC_API_KEY`로 Anthropic을 호출합니다 (supabase/functions/ai-analyze/index.ts). 호출 모델은 `claude-sonnet-4-6`.
+- **Supabase Edge Function `ad-watch-scan`** — 스캔이 끝나면 등급별(의심/주의/낮음) 집계와 '의심' 후보 목록을 Resend로 즉시 이메일 발송합니다(스캔 직후 알림형). 표시광고 영역에 국한된 알림이며, 전체 영역 정기 리포트(`weekly-report`)와는 별개.
+- **Supabase Edge Function `weekly-report`** — 매주 금요일 15:00 KST에 pg_cron(`supabase/migrations/20260803_weekly_report_cron.sql`)이 트리거. `records` 전체 11개 영역에 대해 영역별 KPI 표·전주 대비 추이(막대 비교)·SLA 초과(14일 이상 미해결)·전월 대비 임계치 경보·최근 60일 반복/고위험 항목(같은 영역·브랜드 조합이 반복되거나 누적 건수가 많은 경우)을 집계하고, Claude로 진단 요약 + 영역별(11개 전체, 각 최소 1개) 권고 조치를 생성해 Resend로 이메일 발송 (supabase/functions/weekly-report/index.ts). 표시광고 검토대기 큐는 이 리포트에 포함하지 않음(스캔 직후 알림으로 별도 커버). 필요 시크릿(두 함수 공통): `RESEND_API_KEY`, `RESEND_SENDER_EMAIL`(선택, 기본 `onboarding@resend.dev` — Resend 샌드박스 발신 주소), `RESEND_SENDER_NAME`(선택), `REPORT_RECIPIENTS`(콤마 구분 수신자 목록 — 샌드박스 모드에서는 Resend 가입 이메일만 가능). `ANTHROPIC_API_KEY`는 `ai-analyze`와 공유.
 
 ## 데이터 모델
 
