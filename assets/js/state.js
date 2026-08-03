@@ -19,3 +19,4 @@ let inpSelected = new Set(); // 데이터 입력 목록 — 다중 선택된 레
 let curDashCat  = 'all';    // 대시보드 분류 필터: 'all' | 카테고리명
 let curInputCat = 'all';    // 데이터 입력 분류 필터: 'all' | 카테고리명
 let adWatchCandidates = []; // 표시광고 뒷광고 의심 자동 모니터링 — 스캔 후보 목록
+let hgSelected = new Set(); // 자동 모니터링 후보 목록 — 다중 선택된 id 집합 (다중 삭제용)

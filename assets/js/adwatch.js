@@ -1,6 +1,7 @@
 // ── 표시광고 "뒷광고 의심" 자동 모니터링 ───────────────
 // 네이버 검색 API + Claude 1차 판별(Edge Function ad-watch-scan) 결과를
-// 검수 큐로 보여주고, 사람이 확인 후 '적발 등록'(records 생성) / '오탐 제외' 처리한다.
+// 검수 큐로 보여주고, 사람이 확인 후 '적발등록'(records를 위반(처리중)으로 생성) /
+// '모니터링'(records를 모니터링으로 생성) 처리한다.
 
 function renderAdWatchPanel() {
   renderHgBrandGrid();
@@ -36,6 +37,8 @@ async function loadAdWatchCandidates() {
     console.error('[loadAdWatchCandidates]', e);
     adWatchCandidates = [];
   }
+  const liveIds = new Set(adWatchCandidates.map(c => Number(c.id) || 0));
+  hgSelected.forEach(id => { if (!liveIds.has(id)) hgSelected.delete(id); });
   renderAdWatchList();
 }
 
@@ -102,16 +105,18 @@ function renderAdWatchList() {
   const tb = document.getElementById('adWatchTbody');
   if (!tb) return;
   if (!adWatchCandidates.length) {
-    tb.innerHTML = '<tr><td colspan="8"><div class="empty">스캔 결과가 없습니다</div></td></tr>';
+    tb.innerHTML = '<tr><td colspan="9"><div class="empty">스캔 결과가 없습니다</div></td></tr>';
+    updHgBulkUI();
     return;
   }
   tb.innerHTML = adWatchCandidates.map(c => {
     const rid = Number(c.id) || 0;
     const actions = c.status === '검토대기'
-      ? `<button class="btn-sec hg-act-btn" onclick="registerAdWatchAsRecord(${rid})">적발 등록</button>
-         <button class="btn-sec hg-act-btn" onclick="dismissAdWatchCandidate(${rid})">오탐 제외</button>`
+      ? `<button class="btn-sec hg-act-btn" onclick="registerAdWatchAsRecord(${rid})">적발등록</button>
+         <button class="btn-sec hg-act-btn" onclick="dismissAdWatchCandidate(${rid})">모니터링</button>`
       : '<span class="cell-muted">-</span>';
     return `<tr>
+      <td class="chk-cell"><input type="checkbox" class="inp-chk"${hgSelected.has(rid) ? ' checked' : ''} onchange="toggleHgSel(${rid},this.checked)"></td>
       <td>${esc(c.brand)}</td>
       <td>${esc(c.platform)}</td>
       <td><a href="${esc(c.link)}" target="_blank" rel="noopener noreferrer">${esc(c.title)}</a></td>
@@ -122,6 +127,7 @@ function renderAdWatchList() {
       <td>${actions}</td>
     </tr>`;
   }).join('');
+  updHgBulkUI();
 }
 
 async function registerAdWatchAsRecord(id) {
@@ -149,11 +155,75 @@ async function registerAdWatchAsRecord(id) {
 }
 
 async function dismissAdWatchCandidate(id) {
-  if (!confirm('이 게시물을 오탐(광고 표시 문제 없음)으로 제외하시겠습니까?')) return;
+  const cand = adWatchCandidates.find(c => Number(c.id) === Number(id));
+  if (!cand) return;
+  if (!confirm(`이 게시물을 모니터링 건으로 등록하시겠습니까?(적발 아님)\n\n${cand.title}`)) return;
+
+  setInputType(null, '표시광고');
+  document.getElementById('f-date').value = cand.post_date || td();
+  const subSel = document.getElementById('f-subtype');
+  if (subSel) subSel.value = '뒷광고';
+  const brandSel = document.getElementById('f-brand');
+  if (brandSel && BRANDS.includes(cand.brand)) brandSel.value = cand.brand;
+  document.getElementById('f-status').value = '모니터링';
+  document.getElementById('f-count').value = 1;
+  document.getElementById('f-note').value = `[자동탐지] ${cand.link}\n${cand.ai_reason || ''}`.trim();
+
+  await addRecord();
+
   const ok = await sbUpd('ad_watch_candidates', id, { status: '오탐제외', reviewed_by: user?.name || null });
   if (!ok) { toast('처리 실패'); return; }
-  const cand = adWatchCandidates.find(c => Number(c.id) === Number(id));
-  if (cand) cand.status = '오탐제외';
+  cand.status = '오탐제외';
   renderAdWatchList();
-  toast('오탐 제외 처리되었습니다.');
+  toast('모니터링 건으로 등록되었습니다.');
+}
+
+// ── 다중 선택 / 다중 삭제 ─────────────────────────
+function toggleHgSel(id, checked) {
+  const rid = Number(id) || 0;
+  if (checked) hgSelected.add(rid); else hgSelected.delete(rid);
+  updHgBulkUI();
+}
+
+function toggleHgSelAll(checked) {
+  adWatchCandidates.forEach(c => {
+    const rid = Number(c.id) || 0;
+    if (checked) hgSelected.add(rid); else hgSelected.delete(rid);
+  });
+  renderAdWatchList();
+}
+
+function updHgBulkUI() {
+  const selCnt = adWatchCandidates.reduce((n, c) => n + (hgSelected.has(Number(c.id) || 0) ? 1 : 0), 0);
+  const cnt = document.getElementById('hgBulkCnt');
+  const btn = document.getElementById('hgBulkDelBtn');
+  const all = document.getElementById('hgChkAll');
+  if (cnt) cnt.textContent = `${selCnt}개 선택됨`;
+  if (btn) btn.disabled = selCnt === 0;
+  if (all) {
+    all.checked = adWatchCandidates.length > 0 && selCnt === adWatchCandidates.length;
+    all.indeterminate = selCnt > 0 && selCnt < adWatchCandidates.length;
+  }
+}
+
+async function bulkDelHgSelected() {
+  const ids = adWatchCandidates.map(c => Number(c.id) || 0).filter(rid => rid && hgSelected.has(rid));
+  if (!ids.length) { toast('선택된 항목이 없습니다.'); return; }
+  if (!confirm(`선택한 ${ids.length}건을 삭제합니다.\n이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?`)) return;
+
+  const btn = document.getElementById('hgBulkDelBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '삭제 중...'; }
+
+  const ok = await sbDelMany('ad_watch_candidates', ids);
+
+  if (btn) btn.textContent = '선택 삭제';
+  if (!ok) {
+    if (btn) btn.disabled = false;
+    toast('삭제 중 오류가 발생했습니다.');
+    return;
+  }
+  ids.forEach(id => hgSelected.delete(id));
+  adWatchCandidates = adWatchCandidates.filter(c => !ids.includes(Number(c.id) || 0));
+  renderAdWatchList();
+  toast(`${ids.length}건이 삭제되었습니다.`);
 }

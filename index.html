@@ -17,37 +17,37 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때마다 v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260731b';</script>
+<script>window.__ASSET_V = '20260803b';</script>
 
 <!-- ?�폰?? Pretendard (?��? UI ?��? ?�트) -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 
 <!-- ?��???(?�이지�?분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260731b">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260731b">
-<link rel="stylesheet" href="assets/css/input.css?v=20260731b">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260731b">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260731b">
-<link rel="stylesheet" href="assets/css/help.css?v=20260731b">
+<link rel="stylesheet" href="assets/css/base.css?v=20260803b">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260803b">
+<link rel="stylesheet" href="assets/css/input.css?v=20260803b">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260803b">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260803b">
+<link rel="stylesheet" href="assets/css/help.css?v=20260803b">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
                   → dashboard → input → adwatch → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260731b"     defer></script>
-<script src="assets/js/constants.js?v=20260731b"  defer></script>
-<script src="assets/js/state.js?v=20260731b"      defer></script>
-<script src="assets/js/utils.js?v=20260731b"      defer></script>
-<script src="assets/js/auth.js?v=20260731b"       defer></script>
-<script src="assets/js/nav.js?v=20260731b"        defer></script>
-<script src="assets/js/dashboard.js?v=20260731b"  defer></script>
-<script src="assets/js/input.js?v=20260731b"      defer></script>
-<script src="assets/js/adwatch.js?v=20260731b"    defer></script>
-<script src="assets/js/admin.js?v=20260731b"      defer></script>
-<script src="assets/js/ai.js?v=20260731b"         defer></script>
-<script src="assets/js/ppt.js?v=20260731b"        defer></script>
-<script src="assets/js/main.js?v=20260731b"       defer></script>
+<script src="assets/js/config.js?v=20260803b"     defer></script>
+<script src="assets/js/constants.js?v=20260803b"  defer></script>
+<script src="assets/js/state.js?v=20260803b"      defer></script>
+<script src="assets/js/utils.js?v=20260803b"      defer></script>
+<script src="assets/js/auth.js?v=20260803b"       defer></script>
+<script src="assets/js/nav.js?v=20260803b"        defer></script>
+<script src="assets/js/dashboard.js?v=20260803b"  defer></script>
+<script src="assets/js/input.js?v=20260803b"      defer></script>
+<script src="assets/js/adwatch.js?v=20260803b"    defer></script>
+<script src="assets/js/admin.js?v=20260803b"      defer></script>
+<script src="assets/js/ai.js?v=20260803b"         defer></script>
+<script src="assets/js/ppt.js?v=20260803b"        defer></script>
+<script src="assets/js/main.js?v=20260803b"       defer></script>
 </head>
 <body>
 
@@ -56,7 +56,7 @@
   <!-- ?�?� 좌측 ?�이?�바 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
   <aside class="sidebar" id="sidebar">
     <a class="side-logo" onclick="goHome()">
-      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260731b" alt="Elandeats" />
+      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260803b" alt="Elandeats" />
     </a>
     <div class="side-scroll">
       <p class="side-sec">메뉴</p>
@@ -471,7 +471,7 @@
         </div>
       </div>
       <div class="fsec" id="adWatchPanel" style="display:none">
-        <p class="fsec-tit">뒷광고 의심 자동 모니터링 <span class="fsec-tit-note">— 네이버 검색 기반 1차 스크리닝(AI 판정), 최종 확인 후 "적발 등록"하세요</span></p>
+        <p class="fsec-tit">뒷광고 의심 자동 모니터링 <span class="fsec-tit-note">— 네이버 검색 기반 1차 스크리닝(AI 판정), 최종 확인 후 "적발등록"하세요</span></p>
         <div class="ai-brand-picker">
           <p class="ai-brand-picker-hint">스캔 대상 브랜드 (선택 안 하면 전체)</p>
           <div class="ai-brand-grid" id="hgBrandGrid"></div>
@@ -488,10 +488,14 @@
           <div class="sav" id="hgScanInd"><div class="spin"></div>스캔 중.. (수 분 소요될 수 있습니다)</div>
         </div>
         <p class="xl-hint" id="hgScanSummary"></p>
+        <div class="inp-bulk-bar">
+          <span class="inp-bulk-cnt" id="hgBulkCnt">0개 선택됨</span>
+          <button class="inp-bulk-del" id="hgBulkDelBtn" onclick="bulkDelHgSelected()" disabled>선택 삭제</button>
+        </div>
         <div class="recs">
           <table>
-            <thead><tr><th>브랜드</th><th>플랫폼</th><th>제목</th><th>게시일</th><th>AI 의심도</th><th>사유</th><th>상태</th><th>액션</th></tr></thead>
-            <tbody id="adWatchTbody"><tr><td colspan="8"><div class="empty">스캔 결과가 없습니다</div></td></tr></tbody>
+            <thead><tr><th class="chk-col"><input type="checkbox" id="hgChkAll" class="inp-chk" title="현재 목록 전체 선택" onchange="toggleHgSelAll(this.checked)"></th><th>브랜드</th><th>플랫폼</th><th>제목</th><th>게시일</th><th>AI 의심도</th><th>사유</th><th>상태</th><th>액션</th></tr></thead>
+            <tbody id="adWatchTbody"><tr><td colspan="9"><div class="empty">스캔 결과가 없습니다</div></td></tr></tbody>
           </table>
         </div>
       </div>
