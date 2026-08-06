@@ -47,6 +47,12 @@
 .inp-bulk-del { font-size: 11px; padding: 5px 12px; border-radius: 6px; border: 1px solid #fecaca; background: #fff; color: #dc2626; cursor: pointer; font-weight: 600; transition: all 0.15s; }
 .inp-bulk-del:hover:not(:disabled) { background: #dc2626; color: #fff; border-color: #dc2626; }
 .inp-bulk-del:disabled { opacity: 0.5; cursor: default; }
+.inp-bulk-reg { font-size: 11px; padding: 5px 12px; border-radius: 6px; border: 1px solid #bbf7d0; background: #fff; color: #15803d; cursor: pointer; font-weight: 600; transition: all 0.15s; }
+.inp-bulk-reg:hover:not(:disabled) { background: #15803d; color: #fff; border-color: #15803d; }
+.inp-bulk-reg:disabled { opacity: 0.5; cursor: default; }
+.inp-bulk-mon { font-size: 11px; padding: 5px 12px; border-radius: 6px; border: 1px solid #dbeafe; background: #fff; color: #1e40af; cursor: pointer; font-weight: 600; transition: all 0.15s; }
+.inp-bulk-mon:hover:not(:disabled) { background: #1e40af; color: #fff; border-color: #1e40af; }
+.inp-bulk-mon:disabled { opacity: 0.5; cursor: default; }
 .inp-bulk-stat { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
 .inp-bulk-sel { font-size: 11px; padding: 5px 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #334155; cursor: pointer; outline: none; }
 .inp-bulk-sel:focus { border-color: #1e3a8a; }
@@ -247,5 +253,5 @@
   /* 일괄 처리 바 — 세로 스택 */
   .inp-bulk-bar { flex-direction: column; align-items: stretch; }
   .inp-bulk-stat { flex-direction: column; gap: 4px; }
-  .inp-bulk-sel, .inp-bulk-stat-btn, .inp-bulk-del { width: 100%; box-sizing: border-box; text-align: center; }
+  .inp-bulk-sel, .inp-bulk-stat-btn, .inp-bulk-del, .inp-bulk-reg, .inp-bulk-mon { width: 100%; box-sizing: border-box; text-align: center; }
 }
