@@ -32,7 +32,10 @@ function hgBrandAll(checked) {
 async function loadAdWatchCandidates() {
   try {
     const rows = await sbGet('ad_watch_candidates');
-    adWatchCandidates = (rows || []).sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+    // 검수 큐이므로 이미 처리된 건(적발등록/오탐제외)은 재조회 시 다시 채워지지 않도록 제외
+    adWatchCandidates = (rows || [])
+      .filter(c => c.status === '검토대기')
+      .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
   } catch (e) {
     console.error('[loadAdWatchCandidates]', e);
     adWatchCandidates = [];
