@@ -69,7 +69,16 @@ async function runAI() {
     });
 
   const tot  = scoped.reduce((s, r) => s + r.count, 0);
-  const byT  = TYPES.map(t => ({ type: t, cnt: scoped.filter(r => r.type === t).reduce((s, r) => s + r.count, 0) }));
+  const byT  = TYPES.map(t => {
+    const rs = scoped.filter(r => r.type === t);
+    return {
+      type: t,
+      cnt:  rs.reduce((s, r) => s + r.count, 0),
+      mon:  rs.filter(r => r.status === '모니터링').reduce((s, r) => s + r.count, 0),
+      vio:  rs.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0),
+      done: rs.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0)
+    };
+  });
   const byB  = targetBrands.map(b => ({ brand: b, cnt: scoped.filter(r => r.brand === b).reduce((s, r) => s + r.count, 0) })).filter(b => b.cnt > 0);
   const vio  = scoped.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);
   const done = scoped.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
@@ -91,10 +100,14 @@ async function runAI() {
     const v   = rs.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);
     const dn  = rs.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
     const tBy = TYPES.map(t2 => {
-      const c = rs.filter(r => r.type === t2).reduce((s, r) => s + r.count, 0);
-      return c > 0 ? `${t2} ${c}` : null;
+      const rs2 = rs.filter(r => r.type === t2);
+      const c = rs2.reduce((s, r) => s + r.count, 0);
+      if (c <= 0) return null;
+      const v2 = rs2.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);
+      const dn2 = rs2.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
+      return `${t2} 전체${c}(위반${v2}·완료${dn2})`;
     }).filter(Boolean).join(', ');
-    return `- ${b}: 총 ${t}건 (위반(처리중) ${v}, 완료 ${dn}) — 영역: ${tBy || '없음'}`;
+    return `- ${b}: 총 ${t}건 (위반(처리중) ${v}, 완료 ${dn}) — 영역별 전체(위반·완료): ${tBy || '없음'}`;
   }).join('\n');
 
   // 분석 항목별 지시사항. 분석 대상 브랜드 컨텍스트를 모든 항목에 적용하도록 명시한다.
@@ -122,8 +135,10 @@ async function runAI() {
     + `## 분석 기간\n${periodNote}\n\n`
     + '## 전체 현황 (분석 대상 브랜드 기준)\n'
     + '- 총 모니터링: ' + tot + '건 | 위반(처리중): ' + vio + '건 | 완료: ' + done + '건\n'
-    + '- 위반율: ' + (tot ? (((vio+done)/tot)*100).toFixed(1) : 0) + '% | 처리완료율: ' + ((vio+done) ? ((done/(vio+done))*100).toFixed(1) : 0) + '%\n\n'
-    + '## 영역별\n' + byT.map(t => '- ' + t.type + ': ' + t.cnt + '건').join('\n') + '\n\n'
+    + '- 위반율: ' + (tot ? (((vio+done)/tot)*100).toFixed(1) : 0) + '% | 처리완료율: ' + ((vio+done) ? ((done/(vio+done))*100).toFixed(1) : 0) + '%\n'
+    + '※ 용어 주의: "위반" 또는 "위반 건수"는 반드시 위반(처리중)+완료 합계만 가리킵니다. "전체"·"모니터링 대상" 총계에는 아직 위반으로 확정되지 않은 모니터링 건이 포함되어 있으니 이를 위반 건수로 서술하지 마세요.\n\n'
+    + '## 영역별 (전체 = 모니터링(미확정) + 위반(처리중) + 완료 — "전체" 건수를 위반 건수로 혼동하지 말 것)\n'
+    + byT.map(t => `- ${t.type}: 전체 ${t.cnt}건 (모니터링 ${t.mon} · 위반(처리중) ${t.vio} · 완료 ${t.done})`).join('\n') + '\n\n'
     + '## 브랜드별 상세\n' + (brandDetail || '데이터 없음') + '\n\n'
     + '## 월별 추이\n' + (monthly.length ? monthly.map(m => '- ' + m.m + '월: 모니터링 ' + m.t + '건, 위반 ' + m.v + '건').join('\n') : '데이터 없음') + '\n\n'
     + '다음 항목들에 대해서만 한국어로 분석해주세요. 선택되지 않은 항목은 다루지 마세요:\n'
@@ -161,7 +176,7 @@ async function runAI() {
     document.getElementById('aiResult').innerHTML =
       `<div class="ai-result-body"><div class="ai-md theme-${theme}" id="aiStreamContent"></div></div>` +
       `<div class="ai-result-foot" id="aiResultFoot" style="display:none">` +
-      `<p class="ai-meta">분석 기준: ${now.toLocaleDateString('ko-KR')}</p>` +
+      `<p class="ai-meta">분석 기준: ${now.toLocaleDateString('ko-KR')} · 집계 범위: ${brandScopeNote} · ${periodNote} (총 ${tot.toLocaleString()}건 — 대시보드 '연 누적' KPI와 기간·영역 범위가 다를 수 있습니다)</p>` +
       `<button class="ai-copy-btn" onclick="copyAI()">복사</button></div>`;
     document.getElementById('aiLoad').style.display  = 'none';
     document.getElementById('aiResult').style.display = 'block';
