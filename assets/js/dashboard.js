@@ -1598,6 +1598,104 @@ function renderLine(d, ref) {
   });
 }
 
+// 도넛 조각 숫자 라벨: 비중이 충분한 조각은 안쪽에 흰 숫자로, 작은 조각은
+// 겹치거나 잘려 안 보이므로 바깥으로 리더라인(꺾은선)을 빼서 꼬리표로 표시.
+const calloutLabelsPlugin = {
+  id: 'calloutLabels',
+  afterDatasetsDraw(chart, _args, opts) {
+    const meta = chart.getDatasetMeta(0);
+    const arc0 = meta.data[0];
+    if (!arc0) return;
+    const ds    = chart.data.datasets[0];
+    const data  = ds.data;
+    const total = data.reduce((a, b) => a + b, 0);
+    if (!total) return;
+
+    const { ctx, chartArea } = chart;
+    const cx = arc0.x, cy = arc0.y;
+    const outerR    = arc0.outerRadius;
+    const threshold = opts.threshold || 0.06;
+
+    ctx.save();
+    ctx.font = "700 11px Pretendard, -apple-system, sans-serif";
+    ctx.textBaseline = 'middle';
+
+    // 1) 충분히 큰 조각: 안쪽 중앙에 흰 숫자
+    meta.data.forEach((arc, i) => {
+      const v = data[i];
+      if (!v || v / total < threshold) return;
+      const angle = (arc.startAngle + arc.endAngle) / 2;
+      const r = (arc.innerRadius + arc.outerRadius) / 2;
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(v), cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+    });
+
+    // 2) 작은 조각: 바깥으로 리더라인을 빼서 꼬리표 표시 (좌/우로 분리, 겹치면 세로로 밀어냄)
+    const small = [];
+    meta.data.forEach((arc, i) => {
+      const v = data[i];
+      if (!v || v / total >= threshold) return;
+      const angle = (arc.startAngle + arc.endAngle) / 2;
+      small.push({
+        v, angle,
+        ax: cx + Math.cos(angle) * outerR,
+        ay: cy + Math.sin(angle) * outerR,
+        color: Array.isArray(ds.backgroundColor) ? ds.backgroundColor[i] : ds.backgroundColor
+      });
+    });
+
+    if (small.length) {
+      const MAX_GAP = 14, MIN_GAP = 10;
+      const labelR = outerR + 20;
+      const minY   = chartArea.top + 8, maxY = chartArea.bottom - 8;
+
+      // 라벨 개수가 많아 세로 공간이 부족하면 간격을 MIN_GAP까지 줄여서라도 겹치지 않게 유지
+      const place = arr => {
+        if (!arr.length) return;
+        arr.sort((a, b) => a.ay - b.ay);
+        const gap = arr.length > 1
+          ? Math.max(MIN_GAP, Math.min(MAX_GAP, (maxY - minY) / (arr.length - 1)))
+          : MAX_GAP;
+        arr.forEach(s => { s.ly = s.ay; });
+        for (let k = 1; k < arr.length; k++) {
+          if (arr[k].ly - arr[k - 1].ly < gap) arr[k].ly = arr[k - 1].ly + gap;
+        }
+        const overflow = arr[arr.length - 1].ly - maxY;
+        if (overflow > 0) arr.forEach(s => { s.ly -= overflow; });
+        if (arr[0].ly < minY) {
+          const shift = minY - arr[0].ly;
+          arr.forEach(s => { s.ly += shift; });
+        }
+      };
+      const draw = (arr, side) => {
+        arr.forEach(s => {
+          const lx     = cx + (side === 'right' ? labelR : -labelR);
+          const elbowX = cx + Math.cos(s.angle) * (outerR + 8);
+          const elbowY = cy + Math.sin(s.angle) * (outerR + 8);
+          ctx.strokeStyle = '#cbd5e1';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(s.ax, s.ay);
+          ctx.lineTo(elbowX, elbowY);
+          ctx.lineTo(lx, s.ly);
+          ctx.stroke();
+          ctx.fillStyle = s.color || '#475569';
+          ctx.textAlign = side === 'right' ? 'left' : 'right';
+          ctx.fillText(String(s.v), lx + (side === 'right' ? 4 : -4), s.ly);
+        });
+      };
+
+      const leftArr  = small.filter(s => Math.cos(s.angle) < 0);
+      const rightArr = small.filter(s => Math.cos(s.angle) >= 0);
+      place(leftArr); place(rightArr);
+      draw(leftArr, 'left'); draw(rightArr, 'right');
+    }
+
+    ctx.restore();
+  }
+};
+
 function renderRight(d, k, ref) {
   if (rChart) { rChart.destroy(); rChart = null; }
   const lg  = document.getElementById('rChartLeg');
@@ -1616,10 +1714,12 @@ function renderRight(d, k, ref) {
     rChart = new Chart(document.getElementById('rightChart'), {
       type: 'doughnut',
       data: { labels: TYPES, datasets: [{ data: cnt, backgroundColor: TC, borderWidth: 3, borderColor: '#fff' }] },
+      plugins: [calloutLabelsPlugin],
       options: {
         responsive:true, maintainAspectRatio:false, cutout:'65%',
+        layout: { padding: { left: 34, right: 34, top: 8, bottom: 8 } },
         animation: { duration: 1800, easing: 'easeInOutQuart' },
-        plugins:{legend:{display:false}},
+        plugins:{ legend:{display:false}, calloutLabels:{ threshold: 0.06 } },
         onClick: (_, els) => { if (els.length) openDrill('type', TYPES[els[0].index]); }
       }
     });
@@ -1639,10 +1739,12 @@ function renderRight(d, k, ref) {
     rChart = new Chart(document.getElementById('rightChart'), {
       type: 'doughnut',
       data: { labels: subs, datasets: [{ data: cnt, backgroundColor: subs.map((_,i) => SC[i%SC.length]), borderWidth: 3, borderColor: '#fff' }] },
+      plugins: [calloutLabelsPlugin],
       options: {
         responsive:true, maintainAspectRatio:false, cutout:'65%',
+        layout: { padding: { left: 34, right: 34, top: 8, bottom: 8 } },
         animation: { duration: 1800, easing: 'easeInOutQuart' },
-        plugins:{legend:{display:false}},
+        plugins:{ legend:{display:false}, calloutLabels:{ threshold: 0.06 } },
         onClick: (_, els) => { if (els.length) openDrill('subtype', k, subs[els[0].index]); }
       }
     });

@@ -42,6 +42,15 @@ function addVioNote(slide, y, compact) {
 
 // 영업비밀 행은 모니터링 합계 시 10:1 환산 (위반은 원값)
 function pptMonCnt(r) { return r.type === '영업비밀' ? r.count / 10 : r.count; }
+// 연 누적 컷오프 — 대시보드 dY 로직(dashboard.js)과 동일: 기준 연도 1월 ~ 기준 월까지만 포함
+// (기준월 이후에 입력된 최신 데이터가 "연누적"에 섞여 들어가지 않도록 함)
+function pptAccCutoff(recs, yr, mo) {
+  return recs.filter(r => {
+    if (!r.date) return false;
+    const [ry, rm] = r.date.split('-').map(Number);
+    return ry === yr && rm <= mo;
+  });
+}
 // 표 셀 표시용 — 환산값이 소수가 되면 1자리 표시, 정수면 그대로
 function pptFmt(n) {
   if (!n) return '-';
@@ -117,19 +126,19 @@ function buildBrandSummarySlide(pres, ctx) {
 
 function buildBrandSummaryPage(pres, ctx, mode) {
   // mode: 'year' (연누적 전체) | 'month' (전월만)
-  const { prevYr: yr, prevMonthName: monthName, prevYm: ym, d } = ctx;
+  const { prevYr: yr, prevMonthName: monthName, prevYm: ym, d, dAcc } = ctx;
   const s = pres.addSlide();
   const title    = mode === 'year' ? '브랜드별 현황 (연누적)' : '브랜드별 현황 (전월)';
   const hdrColor = mode === 'year' ? '1e3a8a'              : '2563eb';
   const hdrSub   = mode === 'year' ? '1a3270'              : '1d4ed8';
   addPptHeader(pres, s, title, yr + '년 ' + String(monthName).padStart(2,'0') + '월 기준');
 
-  // 한 행의 records 필터 — mode에 따라 연누적/당월
+  // 한 행의 records 필터 — mode에 따라 연누적(기준월까지 컷오프)/당월
   const filterRecs = (brand, type) => mode === 'year'
-    ? d.filter(r => r.brand === brand && r.type === type)
+    ? dAcc.filter(r => r.brand === brand && r.type === type)
     : d.filter(r => r.brand === brand && r.type === type && r.date && r.date.startsWith(ym));
   const filterTypeRecs = (type) => mode === 'year'
-    ? d.filter(r => r.type === type)
+    ? dAcc.filter(r => r.type === type)
     : d.filter(r => r.type === type && r.date && r.date.startsWith(ym));
 
   const data = [];
@@ -859,10 +868,12 @@ async function generatePPT() {
     const monthName  = coverDate.getMonth() + 1;
 
     const d    = records;
-    const tot  = d.reduce((s, r) => s + pptMonCnt(r), 0);
-    const vio  = d.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
-    const done = d.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
-    const act  = d.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);
+    // "연누적" 지표는 기준월(prevYm)까지만 — 기준월 이후 입력분은 제외
+    const dAcc = pptAccCutoff(d, prevYr, prevMonthName);
+    const tot  = dAcc.reduce((s, r) => s + pptMonCnt(r), 0);
+    const vio  = dAcc.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
+    const done = dAcc.filter(r => r.status === '완료').reduce((s, r) => s + r.count, 0);
+    const act  = dAcc.filter(r => r.status === '위반(처리중)').reduce((s, r) => s + r.count, 0);
     const rate = vio ? Math.round(done / vio * 100) : 0;
     const vr   = tot ? Math.round(vio / tot * 100) : 0;
     const mTot = d.filter(r => r.date && r.date.startsWith(ym)).reduce((s, r) => s + pptMonCnt(r), 0);
@@ -877,7 +888,7 @@ async function generatePPT() {
       };
     });
 
-    const ctx = { now, monthName, yr, ym, prevYr, prevMonthName, prevYm, d, tot, vio, mTot, mVio, prevMTot, prevMVio, done, act, rate, vr, mArr };
+    const ctx = { now, monthName, yr, ym, prevYr, prevMonthName, prevYm, d, dAcc, tot, vio, mTot, mVio, prevMTot, prevMVio, done, act, rate, vr, mArr };
 
     buildCoverSlide(pres, ctx);
     buildFixedSlide(pres, ctx);
