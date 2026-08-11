@@ -343,9 +343,26 @@ Deno.serve(async (req) => {
     return json({ error: `검색 단계 오류: ${String(e)}` }, 502);
   }
 
+  // 이미 저장된 링크는 다시 넣지 않음 — 상태(검토대기/적발등록/오탐제외)와 무관하게 확인.
+  // (주의) 사람이 '선택 삭제'로 후보를 지우면 이 표에서 이력이 완전히 사라지므로,
+  // 같은 게시물이 다음 스캔에서 새 후보로 다시 나타날 수 있음 — 재등장을 막으려면
+  // 삭제 대신 '모니터링'(오탐제외) 처리로 이력을 남겨둘 것.
+  let existingLinks = new Set<string>();
+  try {
+    const linkRes = await fetch(`${SUPABASE_URL}/rest/v1/ad_watch_candidates?select=link`, {
+      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+    });
+    if (linkRes.ok) {
+      const rows: { link: string }[] = await linkRes.json();
+      existingLinks = new Set(rows.map(r => r.link));
+    }
+  } catch { /* 조회 실패 시 dedup 없이 기존 동작대로 진행 */ }
+
+  const newItems = allItems.filter(it => !existingLinks.has(it.link));
+
   const totalFound = allItems.length;
-  const truncated = totalFound > MAX_CANDIDATES;
-  const candidates = allItems.slice(0, MAX_CANDIDATES);
+  const truncated = newItems.length > MAX_CANDIDATES;
+  const candidates = newItems.slice(0, MAX_CANDIDATES);
 
   const results: Record<string, unknown>[] = [];
   let idx = 0;
