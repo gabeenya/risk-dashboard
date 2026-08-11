@@ -19,10 +19,13 @@ git commit 및 push 는 마음대로 하지 말고 사용자에게 맡기기.
 ```
 risk_dashboard/
 ├─ index.html              # 마크업 + CDN/자산 로드만
+├─ manifest.json           # PWA 매니페스트 (홈 화면 설치용 이름/아이콘/테마색)
+├─ sw.js                   # PWA 서비스워커 — 같은 출처 정적 자산만 캐시, Supabase/CDN은 항상 네트워크
 ├─ assets/
 │  ├─ css/   base.css · dashboard.css · input.css · admin.css · ai.css
-│  └─ js/    config · constants · state · utils · auth · nav
-│            · dashboard · input · adwatch · admin · ai · ppt · main
+│  ├─ js/    config · constants · state · utils · auth · nav
+│  │         · dashboard · input · adwatch · admin · ai · ppt · main
+│  └─ img/   로고 + PWA 아이콘(icon-192/512, icon-maskable-512, apple-touch-icon)
 └─ supabase/
    ├─ config.toml
    ├─ migrations/                       # ALTER/CREATE 문서화용 (실제 적용은 콘솔에서)
@@ -39,7 +42,9 @@ risk_dashboard/
 
 **캐시 버스터**: `index.html` 상단의 `window.__ASSET_V`(index.html:18)와 모든 `<link>/<script>`의 `?v=YYYYMMDD<suffix>`(예: `?v=20260428m`)는 **같은 값**으로 일괄 갱신해야 합니다. CSS·JS를 수정해 배포할 때마다 새 값으로 바꿔주세요 — 그래야 사용자 브라우저가 옛 캐시를 버립니다. 같은 날 두 번 배포하면 `m → n → o` 식으로 접미사만 올리면 됩니다.
 
-> **자동 갱신**: 프로젝트 루트에서 `powershell -ExecutionPolicy Bypass -File .\tools\update-cache-buster.ps1` 실행하면 `__ASSET_V`와 모든 `?v=` 값을 한 번에 새 버전으로 바꿔줍니다(같은 날이면 접미사 한 칸 증가, 날짜가 바뀌면 `a`부터 재시작). CSS·JS·index.html을 수정했다면 커밋 직전 이 스크립트를 돌리세요.
+> **자동 갱신**: 프로젝트 루트에서 `powershell -ExecutionPolicy Bypass -File .\tools\update-cache-buster.ps1` 실행하면 `__ASSET_V`와 모든 `?v=` 값을 한 번에 새 버전으로 바꿔줍니다(같은 날이면 접미사 한 칸 증가, 날짜가 바뀌면 `a`부터 재시작). CSS·JS·index.html을 수정했다면 커밋 직전 이 스크립트를 돌리세요. `sw.js`의 `CACHE_VERSION`도 이 스크립트가 같은 값으로 함께 갱신합니다.
+
+**PWA**: `manifest.json` + `sw.js`로 홈 화면 설치(Add to Home Screen)를 지원합니다. 서비스워커는 같은 출처의 정적 자산(css/js/이미지)만 캐시하고, Supabase REST/Edge Function 호출과 외부 CDN은 그대로 네트워크로 흘려보내 항상 최신 데이터를 받습니다(assets/js/main.js에서 등록). 아이콘은 PowerShell(`System.Drawing`)로 생성한 정적 PNG라 로고를 바꾸면 재생성 필요.
 
 **외부 의존성** (CDN 로드, 번들 없음, index.html:10-12):
 - `Chart.js 4.4.1` — 라인/도넛/바 차트

@@ -20,3 +20,10 @@ async function init() {
 
 // 모든 스크립트가 defer로 로드되므로 DOMContentLoaded 시점에 실행됨
 document.addEventListener('DOMContentLoaded', init);
+
+// PWA 서비스워커 등록 — 실패해도 앱 동작에는 영향 없음(설치/오프라인 캐싱만 담당)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}

@@ -6,6 +6,8 @@ body {
   color: #0f172a;
   min-height: 100vh;
   overflow-x: hidden;
+  word-break: keep-all;   /* 한글 단어 중간에서 한 글자씩 줄바꿈되는 것 방지(좁은 화면에서 특히 두드러짐) */
+  overflow-wrap: break-word;
 }
 
 /* ── App shell (사이드바 + 본문) ──────────────────── */
@@ -496,9 +498,8 @@ body {
   th { font-size: 8.5px; padding: 4px 5px; letter-spacing: 0.2px; }
   td { padding: 5px 5px; }
 
-  /* 최근 모니터링 — 비고 컬럼 숨김 (좁은 화면에서 가독성 우선) */
-  .btm-row .recs th:nth-child(6), .btm-row .recs td:nth-child(6) { display: none; }
-  .btm-row .recs th:nth-child(3), .btm-row .recs td:nth-child(3) { width: auto; }
+  /* 최근 모니터링 표 반응형 규칙은 assets/css/dashboard.css의 .recs-htbl/.recs-btbl 쪽에 있음
+     (여기 .recs 선택자는 dashboard.css의 동일 특이도 규칙에 로드 순서상 덮어써져 무효했음) */
 
   /* Pager */
   .pg-btn { font-size: 10px; min-width: 24px; height: 24px; padding: 0 6px; }
@@ -537,9 +538,6 @@ body {
   .chart-box-line { height: 165px; }
   .chart-box-right { height: 165px; }
   .chart-box-bar { height: 230px; }
-
-  /* 표 — 상세 컬럼까지 숨김 (가장 좁은 화면) */
-  .btm-row .recs th:nth-child(3), .btm-row .recs td:nth-child(3) { display: none; }
 
   /* 페이지 제목 */
   .pg-title { font-size: 13.5px; }

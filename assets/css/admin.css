@@ -44,4 +44,8 @@
   .adm-badge { font-size: 9px; padding: 1px 6px; }
   .brand-pick-grid { grid-template-columns: repeat(2, 1fr); }
   .modal-wide { max-width: 92%; }
+
+  /* 사용자/가입대기 표 — 열이 많아 압축되면 이름·영역 텍스트가 글자 단위로 세로 줄바꿈되던 것 방지 */
+  #page-admin .recs table { min-width: 640px; }
+  .name-edit-btn { white-space: nowrap; }
 }

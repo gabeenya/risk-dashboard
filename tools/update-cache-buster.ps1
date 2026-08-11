@@ -12,6 +12,7 @@ $ErrorActionPreference = 'Stop'
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $indexPath = Resolve-Path (Join-Path $scriptDir '..\index.html')
+$swPath    = Resolve-Path (Join-Path $scriptDir '..\sw.js')
 
 $content = [System.IO.File]::ReadAllText($indexPath, [System.Text.UTF8Encoding]::new($false))
 
@@ -54,5 +55,9 @@ if ($oldValue -eq $newValue) {
 # 전체 치환 (정확히 같은 옛 값만 바꾸도록 escape 적용)
 $updated = [regex]::Replace($content, [regex]::Escape($oldValue), $newValue)
 [System.IO.File]::WriteAllText($indexPath, $updated, [System.Text.UTF8Encoding]::new($false))
+
+$swContent = [System.IO.File]::ReadAllText($swPath, [System.Text.UTF8Encoding]::new($false))
+$swUpdated = [regex]::Replace($swContent, [regex]::Escape($oldValue), $newValue)
+[System.IO.File]::WriteAllText($swPath, $swUpdated, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host "Cache buster updated: $oldValue -> $newValue"

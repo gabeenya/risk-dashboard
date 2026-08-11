@@ -370,6 +370,25 @@ tr.sla-over:hover td { background: #fee2e2; }
   .fb { font-size: 10.5px; padding: 4px 8px; }
   .rf-btn { display: none; }   /* 새로고침 버튼 숨김 — pull-to-refresh 또는 새로고침 제스처로 충분 */
 }
+@media (max-width: 500px) {
+  /* 최근 모니터링 — 비고 컬럼 숨김 (좁은 화면 가독성 우선, 전체 내용은 행 클릭 팝업으로 확인)
+     남은 5개 컬럼 폭을 명시적으로 재분배 — '상태' 배지("위반(처리중)")가 잘리지 않도록 min-width 확보 */
+  .btm-row .recs-htbl th:nth-child(6), .btm-row .recs-btbl td:nth-child(6) { display: none; }
+  .btm-row .recs-htbl th:nth-child(1), .btm-row .recs-btbl td:nth-child(1) { width: 15%; min-width: 54px; }
+  .btm-row .recs-htbl th:nth-child(2), .btm-row .recs-btbl td:nth-child(2) { width: 17%; min-width: 60px; }
+  .btm-row .recs-htbl th:nth-child(3), .btm-row .recs-btbl td:nth-child(3) { width: 22%; min-width: 0; }
+  .btm-row .recs-htbl th:nth-child(4), .btm-row .recs-btbl td:nth-child(4) { width: 17%; min-width: 60px; }
+  .btm-row .recs-htbl th:nth-child(5), .btm-row .recs-btbl td:nth-child(5) { width: 29%; min-width: 96px; }
+  .btm-row .recs-btbl .st { padding: 3px 6px; font-size: 9.5px; }
+}
+@media (max-width: 380px) {
+  /* 표 — 상세 컬럼까지 숨김 (가장 좁은 화면), 남은 4개 컬럼 재분배 */
+  .btm-row .recs-htbl th:nth-child(3), .btm-row .recs-btbl td:nth-child(3) { display: none; }
+  .btm-row .recs-htbl th:nth-child(1), .btm-row .recs-btbl td:nth-child(1) { width: 20%; }
+  .btm-row .recs-htbl th:nth-child(2), .btm-row .recs-btbl td:nth-child(2) { width: 22%; }
+  .btm-row .recs-htbl th:nth-child(4), .btm-row .recs-btbl td:nth-child(4) { width: 22%; }
+  .btm-row .recs-htbl th:nth-child(5), .btm-row .recs-btbl td:nth-child(5) { width: 36%; }
+}
 .pg-btn { font-size: 11px; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; color: #475569; cursor: pointer; transition: all 0.15s; }
 .pg-btn:hover:not(:disabled) { border-color: #1e3a8a; color: #1e3a8a; }
 .pg-btn.on { background: #1e3a8a; color: #fff; border-color: #1e3a8a; font-weight: 600; }

@@ -210,6 +210,14 @@
 
   /* 데이터 목록 — 가로 스크롤 강제 (열이 많아 width:100% 압축 방지) */
   #page-input .recs table { min-width: 700px; }
+  /* '유형' 칸은 폭이 좁으면 브라우저가 글자 단위로 세로 줄바꿈해버려서 강제로 한 줄 유지 */
+  #inputTbody td:nth-child(3) { white-space: nowrap; }
+
+  /* 자동 모니터링 검토 큐 — 열이 9개라 min-width를 더 넉넉히 (같은 .recs table 규칙보다 뒤에 와야 우선 적용) */
+  #adWatchPanel .recs table { min-width: 920px; }
+  #adWatchTbody td:nth-child(2),
+  #adWatchTbody td:nth-child(3),
+  #adWatchTbody td:nth-child(5) { white-space: nowrap; }
 
   /* 데이터 목록 — 인라인 컨트롤 */
   .sub-sel, .brand-sel { max-width: 120px; font-size: 10px; padding: 2px 5px; }
