@@ -289,11 +289,14 @@
 .grade-board.layout-side > .grade-tbl-wrap { grid-column:1; grid-row:3; margin-bottom:0; }
 .grade-board.layout-side > #actionBoard { grid-column:2; grid-row:1 / -1; background:none; border:none; box-shadow:none; padding:0 0 0 1.2rem; border-radius:0; margin-bottom:0; border-left:1.5px solid #e2e8f0; overflow:hidden; }
 @media (max-width:860px) {
-  .grade-board.layout-side { grid-template-columns:1fr; grid-template-rows:auto; }
+  /* .layout-side-fraud(클래스 3개)가 .layout-side(클래스 2개)보다 특이도가 높아서
+     미디어 쿼리 안에 있어도 데스크톱용 2단 grid-template-columns가 그대로 이겨버렸던 문제
+     — '부정/부실 제거' 분류뷰·개별 영역뷰(조치사항판이 좁게 눌리던 원인) 모두 여기 포함해 재정의 */
+  .grade-board.layout-side, .grade-board.layout-side.layout-side-fraud { grid-template-columns:1fr; grid-template-rows:auto; }
   .grade-board.layout-side > .gb-sec-hd  { grid-column:1 / -1; margin-right:-1.2rem; flex-wrap:nowrap; row-gap:0; }
   .grade-board.layout-side > .grade-legend { grid-column:1 / -1; }
-  .grade-board.layout-side > .grade-tbl-wrap { grid-column:1; grid-row:auto; }
-  .grade-board.layout-side > #actionBoard { grid-column:1; grid-row:auto; border-left:none; padding:1rem 0 0; border-top:1.5px solid #e2e8f0; margin-top:1rem; }
+  .grade-board.layout-side > .grade-tbl-wrap { grid-column:1 / -1; grid-row:auto; }
+  .grade-board.layout-side > #actionBoard { grid-column:1 / -1; grid-row:auto; border-left:none; padding:1rem 0 0; border-top:1.5px solid #e2e8f0; margin-top:1rem; }
 }
 
 /* ── 영역별 특이사항 패널 (대시보드) ────────────────── */
