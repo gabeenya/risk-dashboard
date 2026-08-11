@@ -213,6 +213,12 @@
 .grade-tbl tbody td { padding:3px 5px; }
 .grade-tbl td.gt-area { padding:3px 5px; }
 .grade-tbl th.gt-area { padding:5px 5px; }
+/* 영역이 많으면(최대 11개) table-layout:fixed가 이 칸들을 등급 배지+건수(예: "15/195")보다도
+   훨씬 좁게 눌러버려 화면(특히 모바일)에서 배지·헤더 텍스트가 서로 겹쳐 보이던 문제.
+   table-layout:fixed에서는 auto 칸에 min-width를 줘도 무시되므로(첫 행 width만 컬럼폭 결정에 반영)
+   반드시 width를 명시해야 함 — 그러면 테이블이 100% 폭을 넘겨 늘어나고 .grade-tbl-wrap의
+   가로 스크롤로 나머지를 보게 됨 */
+.grade-tbl th.gt-area, .grade-tbl td.gt-area { width: 74px; }
 .grade-tbl .gt-brand { text-align:left; font-weight:600; color:#0f172a; font-size:12px; white-space:nowrap; }
 @keyframes gb-rise {
   from { opacity:0; transform:translateY(26px); }
