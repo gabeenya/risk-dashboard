@@ -221,7 +221,7 @@ function buildGradeBoardSlide(pres, ctx, mode) {
   const ranked = brands.map(brand => {
     const details = {};
     GRADE_AREAS.forEach(type => { details[type] = calcGradeDetail(type, brand, prevYm, isAcc); });
-    const scoreAreas = GRADE_AREAS.filter(t => !(t === '가맹' && FRANCHISE_GRADE_EXCLUDE.includes(brand)));
+    const scoreAreas = GRADE_AREAS.filter(t => !isGradeAreaExcluded(t, brand));
     let total = 0;
     scoreAreas.forEach(type => { total += GRADE_SCORE[details[type].grade] ?? 0; });
     const avg   = total / scoreAreas.length;
@@ -246,7 +246,7 @@ function buildGradeBoardSlide(pres, ctx, mode) {
       { text:overallGrade + ' (' + scoreTxt + '점)', options:{ fontSize:6.5, bold:true, align:'center', valign:'middle', color:GRADE_PPT_COLOR[overallGrade], fill:{color:bg} } }
     ];
     GRADE_AREAS.forEach(type => {
-      if (type === '가맹' && FRANCHISE_GRADE_EXCLUDE.includes(brand)) {
+      if (isGradeAreaExcluded(type, brand)) {
         row.push({ text:'-', options:{ fontSize:6.5, align:'center', valign:'middle', bold:true, color:'94a3b8', fill:{color:bg} } });
         return;
       }
@@ -266,7 +266,7 @@ function buildGradeBoardSlide(pres, ctx, mode) {
     colW:[rankCW, brandCW, overallCW, ...GRADE_AREAS.map(() => areaCW)],
     rowH
   });
-  s.addText('등급 기준: A ≤3건 · B ≤6건 · C ≤9건 · D 10건↑ (부실채권 A≤3·B≤5·C≤10·D11↑, 2개월초과+1억↑ 즉시 D / 안전 중대재해 발생 즉시 F)', {
+  s.addText('등급 기준(위반율=위반+완료÷전체): A ≤10% · B ≤20% · C ≤30% · D ≤50% · F 50%초과 (외부노출/중대재해 즉시 F, 부실채권 2개월초과 미입금 1억초과 즉시 F·1억이하 즉시 D)', {
     x:TABLE_X, y:0.85 + totalRows * rowH + 0.08, w:SLIDE_W, h:0.3,
     fontSize:7, color:'64748b', fontFace:'Calibri'
   });

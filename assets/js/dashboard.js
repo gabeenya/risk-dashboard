@@ -1153,8 +1153,8 @@ function showGradeInfo(target) {
     `<div class="gip-tit">순위 산정 기준</div>` +
     `<div class="gip-sec">평가 영역 (${areaList.length}개)</div>` +
     `<div class="gip-val">${esc(areaStr)}</div>` +
-    `<div class="gip-sec">월별 등급 기준 (해당 월 위반 건수)</div>` +
-    `<div class="gip-val">A ≤3건 · B ≤6건 · C ≤9건 · D 10건↑<br>부실채권: A ≤3 · B ≤5 · C ≤10 · D 11↑<br>(2개월초과+금액≤1억 → 즉시 D)</div>` +
+    `<div class="gip-sec">월별 등급 기준 (해당 월 위반율 = 위반+완료 ÷ 모니터링+위반+완료)</div>` +
+    `<div class="gip-val">A ≤10% · B ≤20% · C ≤30% · D ≤50% · F 50%초과<br>즉시 F: 외부노출 1건↑ · 안전 중대재해 1건↑ · 부실채권 2개월초과 미입금 1억초과<br>즉시 D: 부실채권 2개월초과 미입금 1억이하</div>` +
     `<div class="gip-sec">등급 점수</div>` +
     `<div class="gip-val">A=10점 · B=8점 · C=5점 · D=3점 · F=0점</div>` +
     (isAcc
@@ -1185,6 +1185,14 @@ const RANK_EXCLUDE  = new Set(['광주ck','기흥ck','주안ck','CX팀','상권'
 // 평균 점수 → 등급 문자 (종합등급과 동일 기준)
 function gradeFromScore(avg) {
   return avg >= 9 ? 'A' : avg >= 7 ? 'B' : avg >= 4 ? 'C' : avg >= 1 ? 'D' : 'F';
+}
+
+// 위반율(위반+완료 ÷ 모니터링+위반+완료) → 등급 문자
+// A ≤10% · B ≤20% · C ≤30% · D ≤50% · F 50%초과
+function gradeFromRate(cnt, mon) {
+  const total = cnt + mon;
+  const rate = total > 0 ? cnt / total : 0;
+  return rate > 0.5 ? 'F' : rate > 0.3 ? 'D' : rate > 0.2 ? 'C' : rate > 0.1 ? 'B' : 'A';
 }
 
 // 영역별 누적 평균 시작월 (그 외 영역은 데이터 입력이 대부분 3월부터 시작됨)
@@ -1226,27 +1234,29 @@ function calcGradeDetail(type, brand, ym, acc) {
       return amt <= 100000000;
     });
     if (over2.length) return { grade:'D', cnt: over2.reduce((s,r) => s+r.count, 0), mon: 0 };
-    // A/B/C: 전체 건수
-    const cnt = recs.reduce((s, r) => s + r.count, 0);
-    const grade = cnt <= 3 ? 'A' : cnt <= 6 ? 'B' : cnt <= 9 ? 'C' : 'D';
-    return { grade, cnt, mon: 0 };
+    // A~D: 위반율 기준 (모니터링+위반+완료 대비 위반+완료)
+    const mon = recs.filter(r => r.status === '모니터링').reduce((s, r) => s + r.count, 0);
+    const cnt = recs.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
+    const grade = gradeFromRate(cnt, mon);
+    return { grade, cnt, mon };
   }
 
   if (type === '안전') {
     // F: 중대재해 발생 1건 이상
     const critical = recs.filter(r => r.subtype === '중대재해 발생');
     if (critical.some(r => r.count > 0)) return { grade:'F', cnt: critical.reduce((s,r)=>s+r.count,0), mon: 0 };
-    // A/B/C/D: 발생+조치완료 전체 건수 (모니터링 제외)
+    // A~D: 위반율 기준 (발생+조치완료 ÷ 모니터링+발생+조치완료)
+    const mon = recs.filter(r => r.status === '모니터링').reduce((s, r) => s + r.count, 0);
     const cnt = recs.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
-    const grade = cnt <= 3 ? 'A' : cnt <= 6 ? 'B' : cnt <= 9 ? 'C' : 'D';
-    return { grade, cnt, mon: 0 };
+    const grade = gradeFromRate(cnt, mon);
+    return { grade, cnt, mon };
   }
 
-  // 컴플라이언스 영역: 외부노출 1건 이상이면 F (우선)
+  // 컴플라이언스 영역: 외부노출 1건 이상이면 F (우선), 그 외엔 위반율 기준
   const mon = recs.filter(r => r.status === '모니터링').reduce((s, r) => s + r.count, 0);
   const cnt = recs.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
   if (recs.some(r => r.exposed)) return { grade:'F', cnt, mon };
-  const grade = cnt <= 3 ? 'A' : cnt <= 6 ? 'B' : cnt <= 9 ? 'C' : 'D';
+  const grade = gradeFromRate(cnt, mon);
   return { grade, cnt, mon };
 }
 
@@ -1292,7 +1302,7 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
       const d = calcGradeDetail(type, brand, ym, isAcc);
       details[type] = d;
     });
-    const brandScoreAreas = scoreAreas.filter(t => !(t === '가맹' && FRANCHISE_GRADE_EXCLUDE.includes(brand)));
+    const brandScoreAreas = scoreAreas.filter(t => !isGradeAreaExcluded(t, brand));
     const effAreas = brandScoreAreas.length ? brandScoreAreas : scoreAreas;
     let total = 0;
     effAreas.forEach(type => { total += GRADE_SCORE[details[type].grade] ?? 0; });
@@ -1317,7 +1327,7 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
       `<td class="gt-brand">${esc(brand)}</td>` +
       (showOverall ? `<td class="gt-overall"><div class="gt-overall-wrap"><span class="gc ${overallGrade}">${overallGrade}</span><span class="gt-overall-score">${scoreTxt}점</span></div></td><td class="gt-sep"></td>` : '') +
       visibleAreas.map(t =>
-        (t === '가맹' && FRANCHISE_GRADE_EXCLUDE.includes(brand))
+        isGradeAreaExcluded(t, brand)
           ? `<td class="gt-area"><div class="gc-cell"><span class="gc na">-</span></div></td>`
           : `<td class="gt-area"><div class="gc-cell"><span class="gc ${details[t].grade}">${details[t].grade}</span>` +
             `<span class="gc-cnt"><span class="gc-vio">${details[t].cnt}</span>/<span class="gc-mon">${details[t].cnt + details[t].mon}</span></span></div></td>`
