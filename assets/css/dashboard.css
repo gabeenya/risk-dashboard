@@ -338,6 +338,14 @@ tr.sla-over:hover td { background: #fee2e2; }
 .btm-row .recs-htbl th:nth-child(4), .btm-row .recs-btbl td:nth-child(4) { width: 12%; min-width: 70px; white-space: nowrap; }   /* 브랜드 */
 .btm-row .recs-htbl th:nth-child(5), .btm-row .recs-btbl td:nth-child(5) { width: 14%; min-width: 80px; white-space: nowrap; }   /* 상태 */
 .btm-row .recs-htbl th:nth-child(6), .btm-row .recs-btbl td:nth-child(6) { width: 20%; word-break: break-word; }                 /* 비고 */
+.cell-note-clip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }              /* 자동탐지 비고(링크+AI 판단사유)가 길어 행 높이를 부풀리지 않도록 한 줄로 고정 — 전체 내용은 행 클릭 시 팝업(.note-popup) */
+.btm-row .recs-btbl tr.recent-row { cursor: pointer; }
+.note-popup { position: fixed; z-index: 100; min-width: 220px; max-width: 420px; max-height: 360px; overflow-y: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 6px 24px rgba(15,23,42,0.12); padding: 10px 12px; font-size: 12px; color: #334155; }
+.note-popup-tbl { width: 100%; border-collapse: collapse; }
+.note-popup-tbl th { width: 62px; text-align: left; font-weight: 600; color: #94a3b8; padding: 4px 6px 4px 0; vertical-align: top; white-space: nowrap; }
+.note-popup-tbl td { padding: 4px 0; color: #1e293b; word-break: break-word; }
+.note-popup-hd { font-size: 11px; font-weight: 700; color: #94a3b8; margin: 8px 0 4px; padding-top: 6px; border-top: 1px solid #f1f5f9; }
+.note-popup-txt { white-space: pre-wrap; word-break: break-word; line-height: 1.5; }
 
 /* ── 모바일 — 띠지(필터바) 가로 스크롤 ─────────────── */
 @media (max-width: 768px) {

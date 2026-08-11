@@ -273,6 +273,79 @@ function hideSlaPopup() {
   if (__slaPopupEl) { __slaPopupEl.remove(); __slaPopupEl = null; }
 }
 
+// 최근 모니터링 표 — 행 클릭 시 해당 레코드 전체 내용을 팝업으로 표시
+let __notePopupEl = null;
+let _recentPageRows = [];
+function toggleNotePopup(target, ev) {
+  if (ev) ev.stopPropagation();
+  if (__notePopupEl) { hideNotePopup(); return; }
+  showNotePopup(target);
+}
+function showNotePopup(target) {
+  hideNotePopup();
+  const r = _recentPageRows[Number(target.dataset.idx)];
+  if (!r) return;
+
+  const fields = [
+    ['날짜', r.date || '-'],
+    ['영역', r.type || '-'],
+    ['상세유형', r.subtype || '-'],
+    ['브랜드', r.brand || '-'],
+    ['상태', statLbl(r.status, r.type)],
+    ['건수', r.count != null ? r.count.toLocaleString() : '-'],
+    ['작성자', r.author || '-'],
+  ];
+
+  __notePopupEl = document.createElement('div');
+  __notePopupEl.className = 'note-popup';
+
+  const tbl = document.createElement('table');
+  tbl.className = 'note-popup-tbl';
+  fields.forEach(([label, val]) => {
+    const row = document.createElement('tr');
+    const th = document.createElement('th'); th.textContent = label;
+    const td = document.createElement('td'); td.textContent = String(val);
+    row.appendChild(th); row.appendChild(td);
+    tbl.appendChild(row);
+  });
+  __notePopupEl.appendChild(tbl);
+
+  const noteVal = (r.note || '').trim();
+  if (noteVal) {
+    const hd = document.createElement('div');
+    hd.className = 'note-popup-hd';
+    hd.textContent = '비고';
+    const txt = document.createElement('div');
+    txt.className = 'note-popup-txt';
+    txt.textContent = noteVal;
+    __notePopupEl.appendChild(hd);
+    __notePopupEl.appendChild(txt);
+  }
+
+  document.body.appendChild(__notePopupEl);
+
+  const rect = target.getBoundingClientRect();
+  const pop  = __notePopupEl.getBoundingClientRect();
+  const margin = 6;
+  let left = rect.left;
+  let top  = rect.bottom + margin;
+  if (left + pop.width > window.innerWidth - 12) left = Math.max(12, window.innerWidth - pop.width - 12);
+  if (top  + pop.height > window.innerHeight - 12) top = Math.max(12, rect.top - pop.height - margin);
+  __notePopupEl.style.left = left + 'px';
+  __notePopupEl.style.top  = top  + 'px';
+
+  setTimeout(() => {
+    document.addEventListener('click', __noteOutsideClick, { once: true });
+  }, 0);
+}
+function __noteOutsideClick(ev) {
+  if (__notePopupEl && !__notePopupEl.contains(ev.target)) hideNotePopup();
+  else if (__notePopupEl) document.addEventListener('click', __noteOutsideClick, { once: true });
+}
+function hideNotePopup() {
+  if (__notePopupEl) { __notePopupEl.remove(); __notePopupEl = null; }
+}
+
 // 임계치(영역별 위반 건수) — 전월 대비 +건수 / 전월 대비 +% 둘 다 검사
 function getThresholds() {
   try { const saved = JSON.parse(localStorage.getItem('riskThresholds') || '{}');
@@ -1780,6 +1853,7 @@ function renderBar(d) {
 }
 
 function renderRecent(d) {
+  hideNotePopup();
   const tb   = document.getElementById('recentTbody');
   const pg   = document.getElementById('recentPager');
   const port = document.getElementById('recsPort');
@@ -1811,16 +1885,19 @@ function renderRecent(d) {
     return;
   }
 
-  const makeRow = r => {
+  _recentPageRows = pageRows;
+
+  const makeRow = (r, i) => {
     const over = isSlaOver(r);
     const ageBadge = over ? ` <span class="sla-badge" title="발생 후 ${daysSince(r.date)}일 경과">${daysSince(r.date)}일</span>` : '';
-    return `<tr${over ? ' class="sla-over"' : ''}>
+    const noteVal = (r.note || '').trim();
+    return `<tr class="recent-row${over ? ' sla-over' : ''}" data-idx="${i}" onclick="toggleNotePopup(this, event)" title="클릭해 전체 내용 보기">
     <td>${esc(r.date.slice(5).replace('-','/'))}</td>
     <td>${esc(r.type)}</td>
     <td class="cell-sub">${esc(r.subtype||'-')}</td>
     <td>${esc(r.brand)}</td>
     <td><span class="st ${sc(r.status)}">${esc(statLbl(r.status, r.type))}</span>${ageBadge}</td>
-    <td class="cell-sub">${esc(r.note||'-')}</td>
+    <td class="cell-sub cell-note-clip">${esc(noteVal || '-')}</td>
   </tr>`;
   };
 
