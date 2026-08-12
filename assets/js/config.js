@@ -43,6 +43,8 @@ const sbIns = async (t, d) => {
   window.__sbLastErr = '';
   return true;
 };
+// RLS가 막으면 PostgREST는 매칭 0건이어도 에러 없이 200을 반환하므로(조용한 실패),
+// return=representation으로 응답 바디를 받아 실제 반영된 행이 있는지 확인해야 한다.
 const sbUpd = async (t, id, d) => {
   const r = await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`, {
     method: 'PATCH',
@@ -50,26 +52,49 @@ const sbUpd = async (t, id, d) => {
     body: JSON.stringify(d)
   });
   if (!r.ok) { const msg = await r.text(); console.error('[sbUpd]', t, id, r.status, msg); window.__sbLastErr = msg; return false; }
+  const rows = await r.json().catch(() => []);
+  if (!Array.isArray(rows) || !rows.length) {
+    console.error('[sbUpd]', t, id, '0 rows affected (RLS?)');
+    window.__sbLastErr = '권한 문제로 반영되지 않았습니다(0건 처리)';
+    return false;
+  }
   window.__sbLastErr = '';
   return true;
 };
 const sbDel = async (t, id) => {
-  const r = await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`, { method: 'DELETE', headers: H });
+  const r = await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: { ...H, 'Prefer': 'return=representation' }
+  });
   if (!r.ok) { const msg = await r.text(); console.error('[sbDel]', t, id, r.status, msg); window.__sbLastErr = msg; return false; }
+  const rows = await r.json().catch(() => []);
+  if (!Array.isArray(rows) || !rows.length) {
+    console.error('[sbDel]', t, id, '0 rows affected (RLS?)');
+    window.__sbLastErr = '권한 문제로 삭제되지 않았습니다(0건 처리)';
+    return false;
+  }
   window.__sbLastErr = '';
   return true;
 };
 // 다중 수정 — id=in.(...) 한 번에 같은 값으로 PATCH. URL 길이 한계 때문에 200개씩 끊어 보낸다.
 const sbUpdMany = async (t, ids, d) => {
   const CHUNK = 200;
+  let affected = 0;
   for (let i = 0; i < ids.length; i += CHUNK) {
     const slice = ids.slice(i, i + CHUNK);
     const r = await fetch(`${SB_URL}/rest/v1/${t}?id=in.(${slice.join(',')})`, {
       method: 'PATCH',
-      headers: { ...H, 'Prefer': 'return=minimal' },
+      headers: { ...H, 'Prefer': 'return=representation' },
       body: JSON.stringify(d)
     });
     if (!r.ok) { const msg = await r.text(); console.error('[sbUpdMany]', t, r.status, msg); window.__sbLastErr = msg; return false; }
+    const rows = await r.json().catch(() => []);
+    affected += Array.isArray(rows) ? rows.length : 0;
+  }
+  if (affected < ids.length) {
+    console.error('[sbUpdMany]', t, `${affected}/${ids.length}건만 반영됨 (RLS?)`);
+    window.__sbLastErr = `일부만 반영되었습니다(${affected}/${ids.length}건)`;
+    return false;
   }
   window.__sbLastErr = '';
   return true;
@@ -77,10 +102,21 @@ const sbUpdMany = async (t, ids, d) => {
 // 다중 삭제 — id=in.(...) 한 번에. URL 길이 한계 때문에 200개씩 끊어 보낸다.
 const sbDelMany = async (t, ids) => {
   const CHUNK = 200;
+  let affected = 0;
   for (let i = 0; i < ids.length; i += CHUNK) {
     const slice = ids.slice(i, i + CHUNK);
-    const r = await fetch(`${SB_URL}/rest/v1/${t}?id=in.(${slice.join(',')})`, { method: 'DELETE', headers: H });
+    const r = await fetch(`${SB_URL}/rest/v1/${t}?id=in.(${slice.join(',')})`, {
+      method: 'DELETE',
+      headers: { ...H, 'Prefer': 'return=representation' }
+    });
     if (!r.ok) { const msg = await r.text(); console.error('[sbDelMany]', t, r.status, msg); window.__sbLastErr = msg; return false; }
+    const rows = await r.json().catch(() => []);
+    affected += Array.isArray(rows) ? rows.length : 0;
+  }
+  if (affected < ids.length) {
+    console.error('[sbDelMany]', t, `${affected}/${ids.length}건만 반영됨 (RLS?)`);
+    window.__sbLastErr = `일부만 삭제되었습니다(${affected}/${ids.length}건)`;
+    return false;
   }
   window.__sbLastErr = '';
   return true;

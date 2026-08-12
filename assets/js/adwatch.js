@@ -166,11 +166,14 @@ async function registerAdWatchAsRecord(id) {
   await addRecord();
 
   const ok = await sbUpd('ad_watch_candidates', id, { status: '적발등록', reviewed_by: user?.name || null });
-  if (ok) {
-    adWatchCandidates = adWatchCandidates.filter(c => Number(c.id) !== Number(id));
-    hgSelected.delete(Number(id));
-    renderAdWatchList();
+  if (!ok) {
+    toast('처리 실패 — 목록을 다시 불러옵니다.');
+    await loadAdWatchCandidates();
+    return;
   }
+  adWatchCandidates = adWatchCandidates.filter(c => Number(c.id) !== Number(id));
+  hgSelected.delete(Number(id));
+  renderAdWatchList();
 }
 
 async function dismissAdWatchCandidate(id) {
@@ -190,7 +193,11 @@ async function dismissAdWatchCandidate(id) {
   await addRecord();
 
   const ok = await sbUpd('ad_watch_candidates', id, { status: '오탐제외', reviewed_by: user?.name || null });
-  if (!ok) { toast('처리 실패'); return; }
+  if (!ok) {
+    toast('처리 실패 — 목록을 다시 불러옵니다.');
+    await loadAdWatchCandidates();
+    return;
+  }
   adWatchCandidates = adWatchCandidates.filter(c => Number(c.id) !== Number(id));
   hgSelected.delete(Number(id));
   renderAdWatchList();
@@ -264,7 +271,11 @@ async function bulkRegisterAdWatch(mode) {
   const ids = targets.map(c => Number(c.id) || 0);
   const ok2 = await sbUpdMany('ad_watch_candidates', ids, { status: candStatus, reviewed_by: user?.name || null });
   if (btn) { btn.textContent = btnLabel; btn.disabled = false; }
-  if (!ok2) { toast('records는 등록되었으나 후보 상태 갱신에 실패했습니다.'); }
+  if (!ok2) {
+    toast('records는 등록되었으나 후보 상태 갱신에 실패했습니다 — 목록을 다시 불러옵니다.');
+    await loadAdWatchCandidates(); // 로컬 상태가 서버와 어긋났을 수 있으니 재조회로 동기화
+    return;
+  }
 
   ids.forEach(id => hgSelected.delete(id));
   adWatchCandidates = adWatchCandidates.filter(c => !ids.includes(Number(c.id) || 0));
@@ -285,7 +296,8 @@ async function bulkDelHgSelected() {
   if (btn) btn.textContent = '선택 삭제';
   if (!ok) {
     if (btn) btn.disabled = false;
-    toast('삭제 중 오류가 발생했습니다.');
+    toast('삭제 중 오류가 발생했습니다 — 목록을 다시 불러옵니다.');
+    await loadAdWatchCandidates(); // 일부만 삭제됐을 수 있으니 재조회로 동기화
     return;
   }
   ids.forEach(id => hgSelected.delete(id));
