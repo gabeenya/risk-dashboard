@@ -229,11 +229,13 @@ function updHgBulkUI() {
   const btn = document.getElementById('hgBulkDelBtn');
   const recBtn = document.getElementById('hgBulkRecBtn');
   const monBtn = document.getElementById('hgBulkMonBtn');
+  const csvBtn = document.getElementById('hgBulkCsvBtn');
   const all = document.getElementById('hgChkAll');
   if (cnt) cnt.textContent = `${selCnt}개 선택됨`;
   if (btn) btn.disabled = selCnt === 0;
   if (recBtn) recBtn.disabled = pendingSelCnt === 0;
   if (monBtn) monBtn.disabled = pendingSelCnt === 0;
+  if (csvBtn) csvBtn.disabled = selCnt === 0;
   if (all) {
     all.checked = fl.length > 0 && selCnt === fl.length;
     all.indeterminate = selCnt > 0 && selCnt < fl.length;
@@ -281,6 +283,34 @@ async function bulkRegisterAdWatch(mode) {
   adWatchCandidates = adWatchCandidates.filter(c => !ids.includes(Number(c.id) || 0));
   renderAdWatchList();
   toast(`${ids.length}건이 ${mode === 'record' ? '적발' : '모니터링'} 건으로 등록되었습니다.`);
+}
+
+// 선택한 항목(현재 필터에 보이는 것 중 선택된 전체, 상태 무관)을 CSV로 다운로드
+function downloadHgSelectedCsv() {
+  const targets = filteredAdWatchCandidates().filter(c => hgSelected.has(Number(c.id) || 0));
+  if (!targets.length) { toast('선택된 항목이 없습니다.'); return; }
+
+  const csvCell = (v) => {
+    const s = String(v ?? '');
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const headers = ['브랜드', '플랫폼', '제목', '링크', '게시일', 'AI 의심도', '사유', '상태'];
+  const lines = [headers.map(csvCell).join(',')];
+  targets.forEach(c => {
+    lines.push([
+      c.brand, c.platform, c.title, c.link, c.post_date || '미상',
+      c.ai_verdict || 'AI 미분류', c.ai_reason || '', c.status
+    ].map(csvCell).join(','));
+  });
+
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `뒷광고의심_${td()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`${targets.length}건을 CSV로 다운로드했습니다.`);
 }
 
 async function bulkDelHgSelected() {
