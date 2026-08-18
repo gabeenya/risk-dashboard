@@ -266,7 +266,7 @@ function buildGradeBoardSlide(pres, ctx, mode) {
     colW:[rankCW, brandCW, overallCW, ...GRADE_AREAS.map(() => areaCW)],
     rowH
   });
-  s.addText('등급 기준(위반율=위반+완료÷전체): A ≤10% · B ≤20% · C ≤30% · D ≤50% · F 50%초과 (외부노출/중대재해 즉시 F, 부실채권 2개월초과 미입금 1억초과 즉시 F·1억이하 즉시 D)', {
+  s.addText('등급 기준(위반율=위반+완료÷전체): A ≤5% · B ≤10% · C ≤15% · D ≤20% · F 20%초과 (외부노출/중대재해 즉시 F, 부실채권 2개월초과 미입금 1억초과 즉시 F·1억이하 즉시 D)', {
     x:TABLE_X, y:0.85 + totalRows * rowH + 0.08, w:SLIDE_W, h:0.3,
     fontSize:7, color:'64748b', fontFace:'Calibri'
   });

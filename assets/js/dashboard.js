@@ -1154,7 +1154,7 @@ function showGradeInfo(target) {
     `<div class="gip-sec">평가 영역 (${areaList.length}개)</div>` +
     `<div class="gip-val">${esc(areaStr)}</div>` +
     `<div class="gip-sec">월별 등급 기준 (해당 월 위반율 = 위반+완료 ÷ 모니터링+위반+완료)</div>` +
-    `<div class="gip-val">A ≤10% · B ≤20% · C ≤30% · D ≤50% · F 50%초과<br>즉시 F: 외부노출 1건↑ · 안전 중대재해 1건↑ · 부실채권 2개월초과 미입금 1억초과<br>즉시 D: 부실채권 2개월초과 미입금 1억이하</div>` +
+    `<div class="gip-val">A ≤5% · B ≤10% · C ≤15% · D ≤20% · F 20%초과<br>즉시 F: 외부노출 1건↑ · 안전 중대재해 1건↑ · 부실채권 2개월초과 미입금 1억초과<br>즉시 D: 부실채권 2개월초과 미입금 1억이하</div>` +
     `<div class="gip-sec">등급 점수</div>` +
     `<div class="gip-val">A=10점 · B=8점 · C=5점 · D=3점 · F=0점</div>` +
     (isAcc
@@ -1188,11 +1188,11 @@ function gradeFromScore(avg) {
 }
 
 // 위반율(위반+완료 ÷ 모니터링+위반+완료) → 등급 문자
-// A ≤10% · B ≤20% · C ≤30% · D ≤50% · F 50%초과
+// A ≤5% · B ≤10% · C ≤15% · D ≤20% · F 20%초과
 function gradeFromRate(cnt, mon) {
   const total = cnt + mon;
   const rate = total > 0 ? cnt / total : 0;
-  return rate > 0.5 ? 'F' : rate > 0.3 ? 'D' : rate > 0.2 ? 'C' : rate > 0.1 ? 'B' : 'A';
+  return rate > 0.2 ? 'F' : rate > 0.15 ? 'D' : rate > 0.1 ? 'C' : rate > 0.05 ? 'B' : 'A';
 }
 
 // 영역별 누적 평균 시작월 (그 외 영역은 데이터 입력이 대부분 3월부터 시작됨)
