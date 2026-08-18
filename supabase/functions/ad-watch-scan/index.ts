@@ -55,8 +55,14 @@ function stripHtmlTags(s: string): string {
 
 // 외부 import 없이 자체적으로 base64 인코딩(대시보드 브라우저 에디터 배포 시
 // 원격 import 해석이 불안정할 수 있어 표준 라이브러리 의존을 없앰).
-// 큰 이미지에서 스택 오버플로우 나지 않도록 청크 단위로 처리.
+// 이미지가 여러 장 겹치면 JS 루프 인코딩이 CPU 시간을 많이 써서 Edge Function이
+// "CPU Time exceeded"(546)로 죽는 사례가 있어, 런타임에 내장된 네이티브 인코더
+// (Uint8Array.prototype.toBase64, V8/Deno 최신 버전)가 있으면 그걸 우선 사용하고
+// 없는 구형 런타임에서만 기존 청크 루프로 폴백한다.
 function bytesToBase64(bytes: Uint8Array): string {
+  const native = (bytes as unknown as { toBase64?: () => string }).toBase64;
+  if (typeof native === 'function') return native.call(bytes);
+
   const CHUNK = 0x8000;
   let binary = '';
   for (let i = 0; i < bytes.length; i += CHUNK) {
