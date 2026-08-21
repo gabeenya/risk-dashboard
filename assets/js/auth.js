@@ -9,16 +9,29 @@ async function loadUsers() {
 // 같은 탭에서의 새로고침은 로그인이 유지됩니다. 창이 열려 있는 동안에도 보안을 위해
 // 로그인 후 3시간이 지나면 자동 로그아웃되며, 만료 5분 전 팝업으로 경고합니다.
 //  · '세션 연장' → 3시간 재설정 / 무응답 → 만료 시 자동 로그아웃
-//  · 비밀번호는 저장하지 않고 사용자 id와 만료시각(exp)만 보관합니다.
+//  · id+만료시각을 그냥 저장하던 예전 방식은 브라우저 콘솔에서 값만 써넣으면 아무 계정으로나
+//    로그인되는 문제가 있었음. 지금은 supabase/functions/auth-login이 서버 시크릿으로 서명한
+//    토큰을 저장하고, 새로고침 시 매번 서버에 검증을 맡긴다(위조 불가) — auth-login 참고.
 const SESSION_KEY  = 'risk_session';
-const SESSION_MS   = 3 * 60 * 60 * 1000;   // 세션 유효 시간: 3시간
 const SESS_WARN_MS = 5 * 60 * 1000;        // 만료 5분 전 경고
 let sessTimer  = null;   // 만료/경고 점검 인터벌
 let sessWarned = false;  // 경고 모달 노출 여부(중복 방지)
 
-function saveSession() {
-  if (!user) return;
-  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ id: user.id, exp: Date.now() + SESSION_MS })); }
+// auth-login Edge Function 호출 헬퍼
+const AUTH_FN_URL = `${SB_URL}/functions/v1/auth-login`;
+async function authCall(action, payload) {
+  try {
+    const r = await fetch(AUTH_FN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+      body: JSON.stringify({ action, ...payload }),
+    });
+    return await r.json();
+  } catch (e) { return { ok: false, error: '네트워크 오류가 발생했습니다.' }; }
+}
+
+function saveSession(token, exp) {
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token, exp })); }
   catch (e) {}
 }
 function clearSession() {
@@ -29,13 +42,13 @@ function readSession() {
   catch (e) { return null; }
 }
 
-// init()에서 호출 — 유효한 세션이 있으면 자동 로그인 후 대시보드로 진입
+// init()에서 호출 — 유효한 세션 토큰이 있으면 서버에 검증을 맡긴 뒤 대시보드로 진입
 async function restoreSession() {
   const s = readSession();
-  if (!s || !s.id || !s.exp || Date.now() >= s.exp) { clearSession(); return false; }
-  const u = users.find(x => x.id === s.id);
-  if (!u || u.status === 'pending') { clearSession(); return false; }
-  user = u;
+  if (!s || !s.token || !s.exp || Date.now() >= s.exp) { clearSession(); return false; }
+  const res = await authCall('verify', { token: s.token });
+  if (!res.ok || !res.profile) { clearSession(); return false; }
+  user = res.profile;
   applyUser();
   showDashboard();
   startSessionTimer();
@@ -85,10 +98,14 @@ function autoLogout() {
   toast('보안을 위해 자동 로그아웃되었습니다. 다시 로그인해 주세요.');
 }
 
-// 만료 경고에서 '세션 연장' — 3시간 재설정
-function extendSession() {
+// 만료 경고에서 '세션 연장' — 서버에서 토큰을 새로 발급받아 3시간 재설정
+async function extendSession() {
   if (!user) return;
-  saveSession();
+  const s = readSession();
+  if (!s || !s.token) return;
+  const res = await authCall('refresh', { token: s.token });
+  if (!res.ok) { toast('세션 연장 실패 — 다시 로그인해 주세요.'); autoLogout(); return; }
+  saveSession(res.token, res.exp);
   sessWarned = false;
   hideSessionWarn();
   toast('세션이 연장되었습니다. (3시간)');
@@ -163,7 +180,7 @@ async function doSignup() {
   if (users.find(u => u.id === id)) { err('signupErr', '이미 사용 중이거나 신청 중인 아이디입니다.'); return; }
 
   const ok = await sbIns('users', {
-    id, name: n, pw: hp(pw), role: 'user', joined: td(), brands, status: 'pending'
+    id, name: n, pw: await strongHash(pw), role: 'user', joined: td(), brands, status: 'pending'
   });
   if (!ok) { err('signupErr', '신청 실패 — ' + (window.__sbLastErr || '잠시 후 다시 시도해 주세요.')); return; }
 
@@ -190,20 +207,18 @@ async function doLogin() {
   const pw = document.getElementById('li-pw').value;
   if (!id || !pw) { err('loginErr', '아이디와 비밀번호를 입력하세요.'); return; }
 
-  await loadUsers();
-  const u = users.find(u => u.id === id && u.pw === hp(pw));
-  if (!u) { err('loginErr', '아이디 또는 비밀번호가 올바르지 않습니다.'); return; }
-  if (u.status === 'pending') { err('loginErr', '관리자 승인 대기 중인 계정입니다.'); return; }
+  const res = await authCall('login', { id, pw });
+  if (!res.ok) { err('loginErr', res.error || '아이디 또는 비밀번호가 올바르지 않습니다.'); return; }
 
-  user = u;
+  user = res.profile;
   document.getElementById('li-id').value = '';
   document.getElementById('li-pw').value = '';
   err('loginErr', '');
   applyUser();
   showDashboard();
-  saveSession();
+  saveSession(res.token, res.exp);
   startSessionTimer();
-  toast(`${u.name}님, 환영합니다!`);
+  toast(`${user.name}님, 환영합니다!`);
   await loadData();
   renderInputPg();
 }
@@ -227,15 +242,13 @@ async function doChangePw() {
   const next = document.getElementById('cp-new').value;
   const conf = document.getElementById('cp-new2').value;
   if (!cur || !next || !conf) { err('changePwErr', '모든 항목을 입력하세요.'); return; }
-  if (user.pw !== hp(cur))    { err('changePwErr', '현재 비밀번호가 올바르지 않습니다.'); return; }
   if (next.length < 4)        { err('changePwErr', '새 비밀번호는 4자 이상이어야 합니다.'); return; }
   if (next !== conf)          { err('changePwErr', '새 비밀번호 확인이 일치하지 않습니다.'); return; }
   if (next === cur)           { err('changePwErr', '현재 비밀번호와 동일합니다.'); return; }
 
-  const newHash = hp(next);
-  const ok = await sbUpd('users', user.id, { pw: newHash });
-  if (!ok) { err('changePwErr', '변경 실패 — ' + (window.__sbLastErr || '잠시 후 다시 시도해 주세요.')); return; }
-  user.pw = newHash;
+  const s = readSession();
+  const res = await authCall('changePassword', { token: s && s.token, curPw: cur, newPw: next });
+  if (!res.ok) { err('changePwErr', res.error || '변경 실패 — 잠시 후 다시 시도해 주세요.'); return; }
   closeChangePw();
   toast('비밀번호가 변경되었습니다.');
 }

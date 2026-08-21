@@ -30,6 +30,7 @@ risk_dashboard/
    ├─ config.toml
    ├─ migrations/                       # ALTER/CREATE 문서화용 (실제 적용은 콘솔에서)
    └─ functions/
+      ├─ auth-login/index.ts            # 로그인 검증·세션 발급/검증/갱신·비밀번호 변경 (service role, 클라이언트로 pw 해시 미노출)
       ├─ ai-analyze/index.ts            # Anthropic API 프록시 (Edge Function)
       ├─ ad-watch-scan/index.ts         # 표시광고 뒷광고 의심 자동 모니터링 (검색+본문수집+AI판별) — 스캔 직후 Resend 이메일 발송
       └─ weekly-report/index.ts         # 전체 11개 영역 주간 진단 리포트: KPI표·추이·SLA·급증경보·반복고위험·영역별 권고 (pg_cron → Claude 요약 → Resend 발송)
@@ -52,7 +53,8 @@ risk_dashboard/
 - `marked@12` — AI 응답 마크다운을 HTML로 렌더링
 
 **백엔드**:
-- **Supabase REST API** (SDK 미사용) — `records`/`users` 테이블 CRUD. `sbGet`/`sbIns`/`sbUpd`/`sbDel` 헬퍼가 `fetch`로 직접 호출 (assets/js/config.js).
+- **Supabase REST API** (SDK 미사용) — `records`/`users` 테이블 CRUD. `sbGet`/`sbIns`/`sbUpd`/`sbDel` 헬퍼가 `fetch`로 직접 호출 (assets/js/config.js). `users` 테이블 자체는 여전히 anon key로 직접 SELECT/UPDATE 가능 — `admin.js`의 사용자 승인/역할변경/권한수정/삭제가 이 경로에 의존하기 때문 (아래 보안 주의사항 참고, 후속 조치 예정).
+- **Supabase Edge Function `auth-login`** — 로그인 비밀번호 검증·세션 토큰(서명된 HMAC) 발급/검증/갱신·비밀번호 변경을 service role로 처리 (supabase/functions/auth-login/index.ts). 클라이언트는 더 이상 `users.pw`를 직접 비교하지 않는다 — `assets/js/auth.js`의 `authCall()`이 이 함수를 호출. 세션은 `sessionStorage`에 `{token, exp}`로 저장하고 새로고침마다 서버에 `verify`로 재검증(위조 불가). 필요 시크릿: `AUTH_TOKEN_SECRET`(신규 — `openssl rand -hex 32` 등으로 생성), `SUPABASE_SERVICE_ROLE_KEY`(자동 제공).
 - **Supabase Edge Function `ai-analyze`** — Anthropic API 호출 프록시. 클라이언트는 prompt만 POST하고, Edge Function이 시크릿에 보관된 `ANTHROPIC_API_KEY`로 Anthropic을 호출합니다 (supabase/functions/ai-analyze/index.ts). 호출 모델은 `claude-sonnet-4-6`.
 - **Supabase Edge Function `ad-watch-scan`** — 스캔이 끝나면 등급별(의심/주의/낮음) 집계와 '의심' 후보 목록을 Resend로 즉시 이메일 발송합니다(스캔 직후 알림형). 표시광고 영역에 국한된 알림이며, 전체 영역 정기 리포트(`weekly-report`)와는 별개.
 - **Supabase Edge Function `weekly-report`** — 매주 금요일 15:00 KST에 pg_cron(`supabase/migrations/20260803_weekly_report_cron.sql`)이 트리거. `records` 전체 11개 영역에 대해 영역별 KPI 표·전주 대비 추이(막대 비교)·SLA 초과(14일 이상 미해결)·전월 대비 임계치 경보·최근 60일 반복/고위험 항목(같은 영역·브랜드 조합이 반복되거나 누적 건수가 많은 경우)을 집계하고, Claude로 진단 요약 + 영역별(11개 전체, 각 최소 1개) 권고 조치를 생성해 Resend로 이메일 발송 (supabase/functions/weekly-report/index.ts). 표시광고 검토대기 큐는 이 리포트에 포함하지 않음(스캔 직후 알림으로 별도 커버). 필요 시크릿(두 함수 공통): `RESEND_API_KEY`, `RESEND_SENDER_EMAIL`(선택, 기본 `onboarding@resend.dev` — Resend 샌드박스 발신 주소), `RESEND_SENDER_NAME`(선택), `REPORT_RECIPIENTS`(콤마 구분 수신자 목록 — 샌드박스 모드에서는 Resend 가입 이메일만 가능). `ANTHROPIC_API_KEY`는 `ai-analyze`와 공유.
@@ -100,16 +102,17 @@ Supabase에 두 개의 테이블이 있습니다:
 - `sb*` = Supabase 헬퍼 (config.js)
 - `l/r/bChart` = line/right(doughnut)/bar 차트 인스턴스 (state.js)
 - `TC` = type colors, `BC` = brand colors, `SC` = subtype colors, `TYPE_COLORS` = PPT용 (`#` 없는 hex)
-- `hp(pw)` = 비밀번호 해시, `td()` = 오늘 날짜 문자열, `sc(s)` = status 클래스 매핑 (utils.js)
+- `strongHash(pw)` = 신규 계정용 비밀번호 해시(PBKDF2), `td()` = 오늘 날짜 문자열, `sc(s)` = status 클래스 매핑 (utils.js)
 
 ## 보안 주의사항
 
 이 코드에는 **데모/내부용** 보안 결정이 여러 개 있습니다. 변경 시 모르고 우회하지 않도록 주의하세요:
 
-1. **Supabase publishable key가 클라이언트에 노출**되어 있습니다 (assets/js/config.js:5). RLS(Row Level Security)와 함께 쓰이도록 설계된 키지만, 현재 스키마의 RLS 설정은 코드에서 확인 불가합니다 — 변경 전 Supabase 콘솔의 RLS 정책을 먼저 확인하세요.
-2. **비밀번호 해시 `hp()`** 는 단순 문자열 해시(djb2 변형)입니다 (assets/js/utils.js:3-10). 암호학적 해시가 아니므로 패스워드 보호용으로 적절하지 않습니다 — 운영 전환 시 Supabase Auth 같은 표준 방식으로 교체 권장.
-3. **관리자 기본 계정**: `admin` / `admin1234`가 `init()`에서 자동 생성됩니다 (assets/js/main.js:6-9).
-4. **Anthropic API 키는 Supabase Edge Function 시크릿에 보관** — 클라이언트 코드에는 없습니다. AI 분석은 `${SB_URL}/functions/v1/ai-analyze`로 prompt만 POST하고 Edge Function이 대신 호출합니다 (assets/js/ai.js:122-132, supabase/functions/ai-analyze/index.ts:32-48). 키를 운영하려면 Supabase 대시보드의 Edge Function 환경변수에서 `ANTHROPIC_API_KEY`를 설정하세요. **절대 클라이언트 코드(`assets/js/*`)에 직접 박지 마세요** — GitHub Pages는 공개 URL입니다.
+1. **Supabase publishable key가 클라이언트에 노출**되어 있습니다 (assets/js/config.js:5). RLS(Row Level Security)와 함께 쓰이도록 설계된 키지만, `records`/`ad_watch_candidates` 등 여러 테이블의 실제 RLS 정책(INSERT/UPDATE/DELETE)은 Supabase 콘솔에만 있어 코드로 확인 불가합니다. 현재 구조상 로그인 여부와 무관하게 이 키만 있으면 `records` REST 엔드포인트를 직접 호출해 읽기/쓰기가 가능합니다(로그인 화면은 UI 게이트일 뿐 DB 레벨 인가가 아님) — 근본적으로 닫으려면 Supabase Auth로 전환하거나 모든 쓰기를 Edge Function(service role) 경유로 옮겨야 합니다. 변경 전 Supabase 콘솔의 RLS 정책을 먼저 확인하세요.
+2. **비밀번호 해시**: 로그인 검증은 `supabase/functions/auth-login`이 서버(service role)에서 처리합니다. 신규 계정은 PBKDF2-SHA256(100,000회, salt) 형식(`pbkdf2:salt:hash`, assets/js/utils.js `strongHash()`)으로 저장되고, 예전에 클라이언트가 직접 비교하던 djb2 변형 해시(`hp()`)는 로그인 경로에서 완전히 제거되었습니다 — 레거시 계정은 다음 로그인 성공 시 자동으로 pbkdf2로 승격됩니다. 다만 `users` 테이블 자체의 anon SELECT/UPDATE는 아직 열려 있어(1번 참고, admin.js의 사용자 승인/역할변경/삭제가 이 경로에 의존) REST로 해시 값을 직접 조회하는 것 자체는 여전히 가능합니다 — admin.js의 사용자 관리 기능까지 Edge Function으로 옮긴 뒤 `users` RLS를 잠그는 후속 작업이 필요합니다.
+3. **관리자 계정은 자동 생성되지 않습니다.** `users` 테이블이 비어 있으면 아무도 로그인할 수 없으므로, 최초 1회는 Supabase 콘솔에서 `id='admin', role='admin'`으로 직접 시드해야 합니다. `pw` 값은 `tools/password-hash.html`(로컬 전용, 네트워크 전송 없음)로 pbkdf2 해시를 만들어 넣으세요.
+4. **세션**: `sessionStorage`에는 `AUTH_TOKEN_SECRET`으로 서명된 토큰(`{token, exp}`)만 저장하고, 새로고침마다 `auth-login`의 `verify` 액션으로 서버에 재검증을 맡깁니다. 클라이언트가 sessionStorage 값을 직접 조작해도(예: 관리자 id로 위조) 서명을 통과하지 못해 로그인되지 않습니다.
+5. **Anthropic API 키는 Supabase Edge Function 시크릿에 보관** — 클라이언트 코드에는 없습니다. AI 분석은 `${SB_URL}/functions/v1/ai-analyze`로 prompt만 POST하고 Edge Function이 대신 호출합니다 (assets/js/ai.js:122-132, supabase/functions/ai-analyze/index.ts:32-48). 키를 운영하려면 Supabase 대시보드의 Edge Function 환경변수에서 `ANTHROPIC_API_KEY`를 설정하세요. **절대 클라이언트 코드(`assets/js/*`)에 직접 박지 마세요** — GitHub Pages는 공개 URL입니다.
 
 ## 개발 / 실행
 

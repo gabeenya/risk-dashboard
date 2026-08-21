@@ -1,12 +1,14 @@
 // ── 작은 헬퍼 ────────────────────────────────────────
-// hp(pw): djb2 변형 해시. 암호학적 해시가 아니므로 데모용.
-function hp(pw) {
-  let h = 0;
-  for (let i = 0; i < pw.length; i++) {
-    h = ((h << 5) - h) + pw.charCodeAt(i);
-    h |= 0;
-  }
-  return h.toString(36);
+// strongHash(pw): PBKDF2-SHA256(100000회, salt 16바이트) → "pbkdf2:salt:hash" 형식.
+// 신규 계정 생성(가입 신청/관리자의 계정 추가)에서만 사용 — 로그인 검증은 supabase/functions/auth-login이
+// 서버(service role)에서 처리하므로 클라이언트는 더 이상 비밀번호 해시를 비교하지 않는다.
+// 기존에 저장된 레거시 djb2 해시 계정은 auth-login이 로그인 성공 시점에 이 형식으로 자동 승격한다.
+async function strongHash(pw) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, keyMaterial, 256);
+  const b64url = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  return `pbkdf2:${b64url(salt)}:${b64url(bits)}`;
 }
 
 // 오늘 날짜 (YYYY-MM-DD)

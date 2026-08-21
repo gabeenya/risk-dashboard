@@ -85,7 +85,7 @@ async function createUser() {
   await loadUsers();
   if (users.find(u => u.id === id)) { toast('이미 사용 중인 아이디입니다.'); return; }
 
-  const ok = await sbIns('users', { id, name: n, pw: hp(pw), role, joined: td(), brands, types, status: 'active' });
+  const ok = await sbIns('users', { id, name: n, pw: await strongHash(pw), role, joined: td(), brands, types, status: 'active' });
   if (!ok) {
     toast('계정 추가 실패 — ' + (window.__sbLastErr || '콘솔(F12) 확인'));
     return;
