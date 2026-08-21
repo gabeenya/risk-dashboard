@@ -1,6 +1,10 @@
 # update-cache-buster.ps1
-# index.html의 __ASSET_V 와 모든 ?v= 값을 오늘 날짜 기준 새 버전으로 일괄 갱신합니다.
+# 1) assets/js/*.js(원본)를 난독화해 assets/js-min/*.js로 재생성하고(obfuscate.ps1),
+# 2) index.html의 __ASSET_V 와 모든 ?v= 값을 오늘 날짜 기준 새 버전으로 일괄 갱신합니다.
 # 형식: YYYYMMDD<letter>  (같은 날 두 번째 배포 시 a -> b -> c ...)
+#
+# CSS·JS를 수정했다면 커밋 직전 이 스크립트 하나만 돌리면 됩니다 — 난독화 재생성과
+# 캐시 버스터 갱신이 함께 처리됩니다.
 #
 # 사용: 프로젝트 루트(risk_dashboard/)에서 실행
 #   pwsh ./tools/update-cache-buster.ps1
@@ -13,6 +17,13 @@ $ErrorActionPreference = 'Stop'
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $indexPath = Resolve-Path (Join-Path $scriptDir '..\index.html')
 $swPath    = Resolve-Path (Join-Path $scriptDir '..\sw.js')
+
+# 1) 난독화 재생성 — assets/js/*.js가 바뀌었을 수 있으므로 매번 다시 만든다.
+# 별도 powershell.exe 프로세스로 분리 실행 — 중첩 스크립트 호출 시 $MyInvocation이
+# 꼬여 obfuscate.ps1이 자기 경로를 못 찾고 조용히 실패(그러면서 $LASTEXITCODE가 $null로
+# 남아 "$null -ne 0"이 $true가 되는 바람에 오탐되는) 문제를 피하기 위함.
+powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir 'obfuscate.ps1')
+if ($LASTEXITCODE -ne 0) { Write-Error 'obfuscate.ps1 실패 — 캐시 버스터 갱신을 중단합니다.'; exit 1 }
 
 $content = [System.IO.File]::ReadAllText($indexPath, [System.Text.UTF8Encoding]::new($false))
 

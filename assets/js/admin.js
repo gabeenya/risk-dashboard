@@ -1,4 +1,25 @@
 // ── 관리자 ───────────────────────────────────────────
+// users 테이블의 승인/역할변경/권한수정/삭제는 anon key로 직접 쓰지 않고 전부
+// admin-users Edge Function을 거친다 — 서버가 세션 토큰으로 isOwner()를 재검증한다.
+// (예전엔 devtools에서 PATCH .../users?id=eq.xxx { role:'admin' } 을 그대로 보내면
+//  막을 방법이 없었음 — RLS가 이를 걸러내지 못하면 클라이언트 권한 검사는 장식일 뿐)
+const ADMIN_FN_URL = `${SB_URL}/functions/v1/admin-users`;
+async function adminCall(action, payload) {
+  const s = (typeof readSession === 'function') ? readSession() : null;
+  try {
+    const r = await fetch(ADMIN_FN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+      body: JSON.stringify({ action, token: s && s.token, ...payload }),
+    });
+    return await r.json();
+  } catch (e) { return { ok: false, error: '네트워크 오류가 발생했습니다.' }; }
+}
+// 관리자 페이지용 전체 사용자 목록 새로고침 (pw 필드는 서버에서 애초에 내려주지 않음)
+async function loadAdminUsers() {
+  const res = await adminCall('list', {});
+  users = (res.ok && Array.isArray(res.users)) ? res.users : [];
+}
 
 // 영역별 알림 임계치 편집 — localStorage('riskThresholds') 저장 (브라우저 단위 공유)
 function renderThresholdTable() {
@@ -82,12 +103,9 @@ async function createUser() {
   if (role === 'user' && !brands.length) { toast('브랜드장 계정은 접근 브랜드를 1개 이상 선택해야 합니다.'); return; }
   if (role === 'user' && !types.length)  { toast('브랜드장 계정은 확인 가능 영역을 1개 이상 선택해야 합니다.'); return; }
 
-  await loadUsers();
-  if (users.find(u => u.id === id)) { toast('이미 사용 중인 아이디입니다.'); return; }
-
-  const ok = await sbIns('users', { id, name: n, pw: await strongHash(pw), role, joined: td(), brands, types, status: 'active' });
-  if (!ok) {
-    toast('계정 추가 실패 — ' + (window.__sbLastErr || '콘솔(F12) 확인'));
+  const res = await adminCall('create', { id, name: n, pw, role, brands, types });
+  if (!res.ok) {
+    toast('계정 추가 실패 — ' + (res.error || '콘솔(F12) 확인'));
     return;
   }
   const roleLabel = role === 'admin'
@@ -103,7 +121,7 @@ async function createUser() {
   newBrandAll(false);
   newTypeAll(false);
 
-  await loadUsers();
+  await loadAdminUsers();
   renderAdmin();
   toast(`${n}님 계정이 추가되었습니다.`);
 }
@@ -118,7 +136,7 @@ async function renderAdmin() {
   renderNewTypePicker();
   toggleNewBrandPicker();
   renderThresholdTable();
-  await loadUsers();
+  await loadAdminUsers();
 
   // 가입 신청 대기 (status='pending') 분리
   const pending = users.filter(u => u.status === 'pending');
@@ -212,18 +230,18 @@ async function confirmApprove() {
   const types  = Array.from(document.querySelectorAll('.appr-type-cb:checked')).map(cb => cb.value);
   if (!brands.length) { toast('접근 브랜드를 1개 이상 선택하세요.'); return; }
   if (!types.length)  { toast('확인 가능 영역을 1개 이상 선택하세요.'); return; }
-  const ok = await sbUpd('users', id, { brands, types, status: 'active' });
-  if (!ok) { toast('승인 저장 실패 — ' + (window.__sbLastErr || '콘솔(F12) 확인')); return; }
+  const res = await adminCall('approve', { id, brands, types });
+  if (!res.ok) { toast('승인 저장 실패 — ' + (res.error || '콘솔(F12) 확인')); return; }
   closeApproveModal();
-  await loadUsers();
+  await loadAdminUsers();
   renderAdmin();
   toast('가입 신청을 승인했습니다.');
 }
 
 async function rejectUser(id) {
   if (!confirm('이 가입 신청을 거절(삭제)할까요?')) return;
-  await sbDel('users', id);
-  await loadUsers();
+  await adminCall('reject', { id });
+  await loadAdminUsers();
   renderAdmin();
   toast('가입 신청을 거절했습니다.');
 }
@@ -245,19 +263,17 @@ async function saveEditName() {
   const id = document.getElementById('editNameModal').dataset.uid;
   const n  = document.getElementById('editNameInput').value.trim();
   if (!n) { toast('이름을 입력하세요.'); return; }
-  await sbUpd('users', id, { name: n });
+  await adminCall('updateName', { id, name: n });
   closeEditName();
-  await loadUsers();
+  await loadAdminUsers();
   renderAdmin();
   toast('이름이 변경되었습니다.');
 }
 
 async function updRole(id, role) {
   if (id === ADMIN) return;
-  // admin으로 바꾸면 brands·types는 비움 (전체 의미)
-  const patch = role === 'admin' ? { role, brands: [], types: [] } : { role };
-  await sbUpd('users', id, patch);
-  await loadUsers();
+  await adminCall('updateRole', { id, role });
+  await loadAdminUsers();
   renderAdmin();
   toast(`권한 → ${role === 'admin' ? '관리자' : '브랜드장'}`);
 }
@@ -288,10 +304,10 @@ async function saveEditBrands() {
   const id = document.getElementById('editBrandsModal').dataset.uid;
   const sel = Array.from(document.querySelectorAll('.edit-brand-cb:checked')).map(cb => cb.value);
   if (!sel.length) { toast('최소 1개 이상의 브랜드를 선택하세요.'); return; }
-  const ok = await sbUpd('users', id, { brands: sel });
-  if (!ok) { toast('저장 실패 — ' + (window.__sbLastErr || '콘솔(F12) 확인')); return; }
+  const res = await adminCall('updateBrands', { id, brands: sel });
+  if (!res.ok) { toast('저장 실패 — ' + (res.error || '콘솔(F12) 확인')); return; }
   closeEditBrands();
-  await loadUsers();
+  await loadAdminUsers();
   renderAdmin();
   toast('브랜드 권한이 저장되었습니다.');
 }
@@ -318,10 +334,10 @@ async function saveEditTypes() {
   const id = document.getElementById('editTypesModal').dataset.uid;
   const sel = Array.from(document.querySelectorAll('.edit-type-cb:checked')).map(cb => cb.value);
   if (!sel.length) { toast('최소 1개 이상의 영역을 선택하세요.'); return; }
-  const ok = await sbUpd('users', id, { types: sel });
-  if (!ok) { toast('저장 실패 — ' + (window.__sbLastErr || '콘솔(F12) 확인')); return; }
+  const res = await adminCall('updateTypes', { id, types: sel });
+  if (!res.ok) { toast('저장 실패 — ' + (res.error || '콘솔(F12) 확인')); return; }
   closeEditTypes();
-  await loadUsers();
+  await loadAdminUsers();
   renderAdmin();
   toast('영역 권한이 저장되었습니다.');
 }
@@ -330,8 +346,9 @@ async function delUser(id) {
   const u = users.find(x => x.id === id);
   const label = u ? `${u.name} (${u.id})` : id;
   if (!confirm(`${label} 계정을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`)) return;
-  await sbDel('users', id);
-  await loadUsers();
+  const res = await adminCall('delete', { id });
+  if (!res.ok) { toast('삭제 실패 — ' + (res.error || '콘솔(F12) 확인')); return; }
+  await loadAdminUsers();
   renderAdmin();
   toast('삭제되었습니다.');
 }

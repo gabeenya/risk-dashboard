@@ -2,7 +2,7 @@
 // Supabase/Naver/CDN 등 다른 출처 요청은 손대지 않고 그대로 네트워크로 흘려보낸다(항상 최신 데이터 필요).
 // CACHE_VERSION은 index.html의 __ASSET_V와 같은 값으로 유지 —
 // tools/update-cache-buster.ps1이 두 파일을 함께 갱신한다.
-const CACHE_VERSION = '20260821i';
+const CACHE_VERSION = '20260821k';
 const CACHE_NAME = `ro-risk-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
@@ -15,19 +15,19 @@ const PRECACHE_URLS = [
   `./assets/css/admin.css?v=${CACHE_VERSION}`,
   `./assets/css/ai.css?v=${CACHE_VERSION}`,
   `./assets/css/help.css?v=${CACHE_VERSION}`,
-  `./assets/js/config.js?v=${CACHE_VERSION}`,
-  `./assets/js/constants.js?v=${CACHE_VERSION}`,
-  `./assets/js/state.js?v=${CACHE_VERSION}`,
-  `./assets/js/utils.js?v=${CACHE_VERSION}`,
-  `./assets/js/auth.js?v=${CACHE_VERSION}`,
-  `./assets/js/nav.js?v=${CACHE_VERSION}`,
-  `./assets/js/dashboard.js?v=${CACHE_VERSION}`,
-  `./assets/js/input.js?v=${CACHE_VERSION}`,
-  `./assets/js/adwatch.js?v=${CACHE_VERSION}`,
-  `./assets/js/admin.js?v=${CACHE_VERSION}`,
-  `./assets/js/ai.js?v=${CACHE_VERSION}`,
-  `./assets/js/ppt.js?v=${CACHE_VERSION}`,
-  `./assets/js/main.js?v=${CACHE_VERSION}`,
+  `./assets/js-min/config.js?v=${CACHE_VERSION}`,
+  `./assets/js-min/constants.js?v=${CACHE_VERSION}`,
+  `./assets/js-min/state.js?v=${CACHE_VERSION}`,
+  `./assets/js-min/utils.js?v=${CACHE_VERSION}`,
+  `./assets/js-min/auth.js?v=${CACHE_VERSION}`,
+  `./assets/js-min/nav.js?v=${CACHE_VERSION}`,
+  `./assets/js-min/dashboard.js?v=${CACHE_VERSION}`,
+  `./assets/js-min/input.js?v=${CACHE_VERSION}`,
+  `./assets/js-min/adwatch.js?v=${CACHE_VERSION}`,
+  `./assets/js-min/admin.js?v=${CACHE_VERSION}`,
+  `./assets/js-min/ai.js?v=${CACHE_VERSION}`,
+  `./assets/js-min/ppt.js?v=${CACHE_VERSION}`,
+  `./assets/js-min/main.js?v=${CACHE_VERSION}`,
   `./assets/img/elandeats-logo.png?v=${CACHE_VERSION}`,
   './assets/img/icon-192.png',
   './assets/img/icon-512.png',

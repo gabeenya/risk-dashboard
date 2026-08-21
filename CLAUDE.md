@@ -13,24 +13,27 @@ git commit 및 push 는 마음대로 하지 말고 사용자에게 맡기기.
 
 ## 아키텍처
 
-**모듈화된 정적 SPA**: `index.html`은 마크업과 외부 라이브러리/스크립트 로드 선언만 담당하고, 실제 로직은 `assets/css/`·`assets/js/` 아래 페이지·기능 단위로 분리되어 있습니다. 빌드 단계는 없습니다 — **GitHub Pages**에서 `main` 브랜치를 그대로 서빙합니다.
+**모듈화된 정적 SPA**: `index.html`은 마크업과 외부 라이브러리/스크립트 로드 선언만 담당하고, 실제 로직은 `assets/css/`·`assets/js/` 아래 페이지·기능 단위로 분리되어 있습니다. CI 빌드는 없습니다 — **GitHub Pages**에서 `main` 브랜치를 그대로 서빙합니다. 단, JS는 커밋 전 로컬에서 난독화를 거칩니다(아래 `assets/js-min/` 참고) — 이 의미에서만 "빌드 단계"가 있습니다.
 
 **파일 레이아웃**:
 ```
 risk_dashboard/
-├─ index.html              # 마크업 + CDN/자산 로드만
+├─ index.html              # 마크업 + CDN/자산 로드만 (script src는 assets/js-min/* 를 가리킴)
 ├─ manifest.json           # PWA 매니페스트 (홈 화면 설치용 이름/아이콘/테마색)
 ├─ sw.js                   # PWA 서비스워커 — 같은 출처 정적 자산만 캐시, Supabase/CDN은 항상 네트워크
 ├─ assets/
-│  ├─ css/   base.css · dashboard.css · input.css · admin.css · ai.css
-│  ├─ js/    config · constants · state · utils · auth · nav
-│  │         · dashboard · input · adwatch · admin · ai · ppt · main
-│  └─ img/   로고 + PWA 아이콘(icon-192/512, icon-maskable-512, apple-touch-icon)
+│  ├─ css/     base.css · dashboard.css · input.css · admin.css · ai.css
+│  ├─ js/      원본 소스 — 실제 편집은 항상 여기서. config · constants · state · utils
+│  │           · auth · nav · dashboard · input · adwatch · admin · ai · ppt · main
+│  ├─ js-min/  난독화된 배포용 산출물 — 직접 편집 금지, tools/obfuscate.ps1이 assets/js/*
+│  │           로부터 자동 생성. index.html/sw.js가 실제로 로드하는 건 이 폴더.
+│  └─ img/     로고 + PWA 아이콘(icon-192/512, icon-maskable-512, apple-touch-icon)
 └─ supabase/
    ├─ config.toml
    ├─ migrations/                       # ALTER/CREATE 문서화용 (실제 적용은 콘솔에서)
    └─ functions/
       ├─ auth-login/index.ts            # 로그인 검증·세션 발급/검증/갱신·비밀번호 변경 (service role, 클라이언트로 pw 해시 미노출)
+      ├─ admin-users/index.ts           # 관리자 페이지의 users 관리(승인/역할변경/권한수정/삭제/신규계정) — 토큰 소유자가 OWNER_IDS인지 서버에서 재검증
       ├─ ai-analyze/index.ts            # Anthropic API 프록시 (Edge Function)
       ├─ ad-watch-scan/index.ts         # 표시광고 뒷광고 의심 자동 모니터링 (검색+본문수집+AI판별) — 스캔 직후 Resend 이메일 발송
       └─ weekly-report/index.ts         # 전체 11개 영역 주간 진단 리포트: KPI표·추이·SLA·급증경보·반복고위험·영역별 권고 (pg_cron → Claude 요약 → Resend 발송)
@@ -41,9 +44,11 @@ risk_dashboard/
 
 각 JS 파일은 IIFE/모듈 시스템 없이 **전역 함수·전역 변수**로 동작합니다. 새 함수를 추가할 때 전역 네임스페이스에 그대로 노출되며, 다른 파일에서 호출 가능합니다 — 이름 충돌에 주의.
 
+**JS 난독화** (`assets/js/` → `assets/js-min/`): `tools/obfuscate.ps1`이 `npx javascript-obfuscator`로 `assets/js/*.js` 각각을 난독화해 `assets/js-min/*.js`에 생성합니다. **`assets/js/`가 유일한 편집 대상**이고, `assets/js-min/`은 매번 통째로 재생성되는 산출물이라 직접 고치면 다음 빌드에서 사라집니다. 전역 스코프 이름(함수/변수)은 절대 바꾸지 않도록 `rename-globals=false`로 고정되어 있습니다 — 각 파일이 `<script defer>`로 개별 로드되며 `esc()`/`SB_URL`/`TYPES` 같은 전역을 파일 간에 그대로 공유하기 때문입니다(모듈 번들이 아님). 콘솔 출력 차단도 켜지 않습니다 — 앱이 에러 토스트에서 "콘솔(F12) 확인"을 안내하므로.
+
 **캐시 버스터**: `index.html` 상단의 `window.__ASSET_V`(index.html:18)와 모든 `<link>/<script>`의 `?v=YYYYMMDD<suffix>`(예: `?v=20260428m`)는 **같은 값**으로 일괄 갱신해야 합니다. CSS·JS를 수정해 배포할 때마다 새 값으로 바꿔주세요 — 그래야 사용자 브라우저가 옛 캐시를 버립니다. 같은 날 두 번 배포하면 `m → n → o` 식으로 접미사만 올리면 됩니다.
 
-> **자동 갱신**: 프로젝트 루트에서 `powershell -ExecutionPolicy Bypass -File .\tools\update-cache-buster.ps1` 실행하면 `__ASSET_V`와 모든 `?v=` 값을 한 번에 새 버전으로 바꿔줍니다(같은 날이면 접미사 한 칸 증가, 날짜가 바뀌면 `a`부터 재시작). CSS·JS·index.html을 수정했다면 커밋 직전 이 스크립트를 돌리세요. `sw.js`의 `CACHE_VERSION`도 이 스크립트가 같은 값으로 함께 갱신합니다.
+> **자동 갱신**: 프로젝트 루트에서 `powershell -ExecutionPolicy Bypass -File .\tools\update-cache-buster.ps1` 실행하면 (1) `tools/obfuscate.ps1`을 먼저 돌려 `assets/js-min/`을 재생성하고 (2) `__ASSET_V`와 모든 `?v=` 값을 한 번에 새 버전으로 바꿔줍니다(같은 날이면 접미사 한 칸 증가, 날짜가 바뀌면 `a`부터 재시작). CSS·JS·index.html을 수정했다면 커밋 직전 이 스크립트 하나만 돌리세요. `sw.js`의 `CACHE_VERSION`도 이 스크립트가 같은 값으로 함께 갱신합니다.
 
 **PWA**: `manifest.json` + `sw.js`로 홈 화면 설치(Add to Home Screen)를 지원합니다. 서비스워커는 같은 출처의 정적 자산(css/js/이미지)만 캐시하고, Supabase REST/Edge Function 호출과 외부 CDN은 그대로 네트워크로 흘려보내 항상 최신 데이터를 받습니다(assets/js/main.js에서 등록). 아이콘은 PowerShell(`System.Drawing`)로 생성한 정적 PNG라 로고를 바꾸면 재생성 필요.
 
@@ -53,8 +58,10 @@ risk_dashboard/
 - `marked@12` — AI 응답 마크다운을 HTML로 렌더링
 
 **백엔드**:
-- **Supabase REST API** (SDK 미사용) — `records`/`users` 테이블 CRUD. `sbGet`/`sbIns`/`sbUpd`/`sbDel` 헬퍼가 `fetch`로 직접 호출 (assets/js/config.js). `users` 테이블 자체는 여전히 anon key로 직접 SELECT/UPDATE 가능 — `admin.js`의 사용자 승인/역할변경/권한수정/삭제가 이 경로에 의존하기 때문 (아래 보안 주의사항 참고, 후속 조치 예정).
-- **Supabase Edge Function `auth-login`** — 로그인 비밀번호 검증·세션 토큰(서명된 HMAC) 발급/검증/갱신·비밀번호 변경을 service role로 처리 (supabase/functions/auth-login/index.ts). 클라이언트는 더 이상 `users.pw`를 직접 비교하지 않는다 — `assets/js/auth.js`의 `authCall()`이 이 함수를 호출. 세션은 `sessionStorage`에 `{token, exp}`로 저장하고 새로고침마다 서버에 `verify`로 재검증(위조 불가). 필요 시크릿: `AUTH_TOKEN_SECRET`(신규 — `openssl rand -hex 32` 등으로 생성), `SUPABASE_SERVICE_ROLE_KEY`(자동 제공).
+- **Supabase REST API** (SDK 미사용) — `records` 테이블 CRUD만 클라이언트가 anon key로 직접 호출한다. `sbGet`/`sbIns`/`sbUpd`/`sbDel` 헬퍼가 `fetch`로 직접 호출 (assets/js/config.js). `users` 테이블은 SELECT/UPDATE/DELETE가 RLS로 완전히 막혀 있고, 가입 신청용 INSERT(status='pending', role='user' 조합만)만 열려 있다 (supabase/migrations/20260821_lock_down_users.sql) — 나머지 users 관련 동작은 전부 아래 두 Edge Function을 거친다.
+- **Supabase Edge Function `auth-login`** — 로그인 비밀번호 검증·세션 토큰(서명된 HMAC) 발급/검증/갱신·비밀번호 변경을 service role로 처리 (supabase/functions/auth-login/index.ts). 클라이언트는 더 이상 `users.pw`를 직접 비교하지 않는다 — `assets/js/auth.js`의 `authCall()`이 이 함수를 호출. 세션은 `sessionStorage`에 `{token, exp}`로 저장하고 새로고침마다 서버에 `verify`로 재검증(위조 불가).
+- **Supabase Edge Function `admin-users`** — 관리자 페이지(가입 승인/거절, 역할·브랜드·영역 권한 수정, 이름 변경, 계정 추가/삭제)의 `users` 쓰기를 service role로 처리 (supabase/functions/admin-users/index.ts). 요청마다 토큰을 검증하고 그 소유자가 `OWNER_IDS`(함수 안에 상수 복제, `assets/js/constants.js`와 반드시 동일하게 유지)에 있는지 서버에서 재확인한다 — `assets/js/admin.js`의 `adminCall()`이 호출.
+  둘 다 필요 시크릿: `AUTH_TOKEN_SECRET`(신규 — `openssl rand -hex 32` 등으로 생성, 프로젝트 시크릿이라 두 함수가 값을 공유), `SUPABASE_SERVICE_ROLE_KEY`(자동 제공).
 - **Supabase Edge Function `ai-analyze`** — Anthropic API 호출 프록시. 클라이언트는 prompt만 POST하고, Edge Function이 시크릿에 보관된 `ANTHROPIC_API_KEY`로 Anthropic을 호출합니다 (supabase/functions/ai-analyze/index.ts). 호출 모델은 `claude-sonnet-4-6`.
 - **Supabase Edge Function `ad-watch-scan`** — 스캔이 끝나면 등급별(의심/주의/낮음) 집계와 '의심' 후보 목록을 Resend로 즉시 이메일 발송합니다(스캔 직후 알림형). 표시광고 영역에 국한된 알림이며, 전체 영역 정기 리포트(`weekly-report`)와는 별개.
 - **Supabase Edge Function `weekly-report`** — 매주 금요일 15:00 KST에 pg_cron(`supabase/migrations/20260803_weekly_report_cron.sql`)이 트리거. `records` 전체 11개 영역에 대해 영역별 KPI 표·전주 대비 추이(막대 비교)·SLA 초과(14일 이상 미해결)·전월 대비 임계치 경보·최근 60일 반복/고위험 항목(같은 영역·브랜드 조합이 반복되거나 누적 건수가 많은 경우)을 집계하고, Claude로 진단 요약 + 영역별(11개 전체, 각 최소 1개) 권고 조치를 생성해 Resend로 이메일 발송 (supabase/functions/weekly-report/index.ts). 표시광고 검토대기 큐는 이 리포트에 포함하지 않음(스캔 직후 알림으로 별도 커버). 필요 시크릿(두 함수 공통): `RESEND_API_KEY`, `RESEND_SENDER_EMAIL`(선택, 기본 `onboarding@resend.dev` — Resend 샌드박스 발신 주소), `RESEND_SENDER_NAME`(선택), `REPORT_RECIPIENTS`(콤마 구분 수신자 목록 — 샌드박스 모드에서는 Resend 가입 이메일만 가능). `ANTHROPIC_API_KEY`는 `ai-analyze`와 공유.
@@ -108,15 +115,16 @@ Supabase에 두 개의 테이블이 있습니다:
 
 이 코드에는 **데모/내부용** 보안 결정이 여러 개 있습니다. 변경 시 모르고 우회하지 않도록 주의하세요:
 
-1. **Supabase publishable key가 클라이언트에 노출**되어 있습니다 (assets/js/config.js:5). RLS(Row Level Security)와 함께 쓰이도록 설계된 키지만, `records`/`ad_watch_candidates` 등 여러 테이블의 실제 RLS 정책(INSERT/UPDATE/DELETE)은 Supabase 콘솔에만 있어 코드로 확인 불가합니다. 현재 구조상 로그인 여부와 무관하게 이 키만 있으면 `records` REST 엔드포인트를 직접 호출해 읽기/쓰기가 가능합니다(로그인 화면은 UI 게이트일 뿐 DB 레벨 인가가 아님) — 근본적으로 닫으려면 Supabase Auth로 전환하거나 모든 쓰기를 Edge Function(service role) 경유로 옮겨야 합니다. 변경 전 Supabase 콘솔의 RLS 정책을 먼저 확인하세요.
-2. **비밀번호 해시**: 로그인 검증은 `supabase/functions/auth-login`이 서버(service role)에서 처리합니다. 신규 계정은 PBKDF2-SHA256(100,000회, salt) 형식(`pbkdf2:salt:hash`, assets/js/utils.js `strongHash()`)으로 저장되고, 예전에 클라이언트가 직접 비교하던 djb2 변형 해시(`hp()`)는 로그인 경로에서 완전히 제거되었습니다 — 레거시 계정은 다음 로그인 성공 시 자동으로 pbkdf2로 승격됩니다. 다만 `users` 테이블 자체의 anon SELECT/UPDATE는 아직 열려 있어(1번 참고, admin.js의 사용자 승인/역할변경/삭제가 이 경로에 의존) REST로 해시 값을 직접 조회하는 것 자체는 여전히 가능합니다 — admin.js의 사용자 관리 기능까지 Edge Function으로 옮긴 뒤 `users` RLS를 잠그는 후속 작업이 필요합니다.
+1. **Supabase publishable key가 클라이언트에 노출**되어 있습니다 (assets/js/config.js:5). RLS(Row Level Security)와 함께 쓰이도록 설계된 키지만, `records`/`ad_watch_candidates` 테이블의 실제 RLS 정책(INSERT/UPDATE/DELETE)은 Supabase 콘솔에만 있어 코드로 확인 불가합니다. 현재 구조상 로그인 여부와 무관하게 이 키만 있으면 `records` REST 엔드포인트를 직접 호출해 읽기/쓰기가 가능합니다(로그인 화면은 UI 게이트일 뿐 DB 레벨 인가가 아님) — 근본적으로 닫으려면 Supabase Auth로 전환하거나 모든 쓰기를 Edge Function(service role) 경유로 옮겨야 합니다(아직 미착수). `users` 테이블은 아래 2번 대로 이미 잠겨 있습니다. 변경 전 Supabase 콘솔의 RLS 정책을 먼저 확인하세요.
+2. **비밀번호 해시 · users 테이블 접근**: 로그인 검증은 `supabase/functions/auth-login`, 관리자의 사용자 관리는 `supabase/functions/admin-users`가 서버(service role)에서 처리합니다. 신규 계정은 PBKDF2-SHA256(100,000회, salt) 형식(`pbkdf2:salt:hash`, assets/js/utils.js `strongHash()`)으로 저장되고, 예전에 클라이언트가 직접 비교하던 djb2 변형 해시(`hp()`)는 완전히 제거되었습니다 — 레거시 계정은 다음 로그인 성공 시 자동으로 pbkdf2로 승격됩니다. `users` 테이블은 `supabase/migrations/20260821_lock_down_users.sql`로 anon SELECT/UPDATE/DELETE를 전부 차단했고, INSERT도 가입 신청 모양(status='pending', role='user')으로만 허용됩니다 — REST로 비밀번호 해시를 직접 조회하거나 role을 조작하는 경로는 막혔습니다.
 3. **관리자 계정은 자동 생성되지 않습니다.** `users` 테이블이 비어 있으면 아무도 로그인할 수 없으므로, 최초 1회는 Supabase 콘솔에서 `id='admin', role='admin'`으로 직접 시드해야 합니다. `pw` 값은 `tools/password-hash.html`(로컬 전용, 네트워크 전송 없음)로 pbkdf2 해시를 만들어 넣으세요.
 4. **세션**: `sessionStorage`에는 `AUTH_TOKEN_SECRET`으로 서명된 토큰(`{token, exp}`)만 저장하고, 새로고침마다 `auth-login`의 `verify` 액션으로 서버에 재검증을 맡깁니다. 클라이언트가 sessionStorage 값을 직접 조작해도(예: 관리자 id로 위조) 서명을 통과하지 못해 로그인되지 않습니다.
 5. **Anthropic API 키는 Supabase Edge Function 시크릿에 보관** — 클라이언트 코드에는 없습니다. AI 분석은 `${SB_URL}/functions/v1/ai-analyze`로 prompt만 POST하고 Edge Function이 대신 호출합니다 (assets/js/ai.js:122-132, supabase/functions/ai-analyze/index.ts:32-48). 키를 운영하려면 Supabase 대시보드의 Edge Function 환경변수에서 `ANTHROPIC_API_KEY`를 설정하세요. **절대 클라이언트 코드(`assets/js/*`)에 직접 박지 마세요** — GitHub Pages는 공개 URL입니다.
 
 ## 개발 / 실행
 
-- 빌드 도구가 없습니다. 로컬에서는 단순 정적 서버(`python -m http.server`, `npx serve` 등)로 띄우면 됩니다. CDN 스크립트 때문에 `file://` 직접 열기는 일부 기능이 제한될 수 있습니다.
+- CI 빌드는 없습니다. 로컬에서는 단순 정적 서버(`python -m http.server`, `npx serve` 등)로 띄우면 됩니다. CDN 스크립트 때문에 `file://` 직접 열기는 일부 기능이 제한될 수 있습니다.
+- **주의**: `index.html`은 `assets/js-min/`(난독화 산출물)을 로드합니다. `assets/js/*.js`(원본)를 수정한 뒤 로컬 새로고침만으로는 반영되지 않습니다 — `assets/js/`를 편집한 세션에서 브라우저로 동작을 확인하려면 최소한 `powershell -ExecutionPolicy Bypass -File .\tools\obfuscate.ps1`을 먼저 돌려 `assets/js-min/`을 재생성해야 합니다(캐시 버스터까지 함께 갱신하려면 `update-cache-buster.ps1`을 대신 실행).
 - 데이터를 보려면 Supabase에 `records`, `users` 테이블이 존재해야 합니다.
 - AI 분석을 테스트하려면 Edge Function `ai-analyze`가 배포되어 있고 `ANTHROPIC_API_KEY` 시크릿이 설정되어 있어야 합니다. 로컬에서 함수 코드를 수정했다면 `supabase functions deploy ai-analyze`로 재배포 필요.
 - 변경 후에는 브라우저에서 직접 확인 — 자동 테스트가 없습니다. UI 변경 시 4개 탭(대시보드/데이터 입력/AI 분석/관리자)을 모두 한 번씩 열어 회귀를 확인하세요.

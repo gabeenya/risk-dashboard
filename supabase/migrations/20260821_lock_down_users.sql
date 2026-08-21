@@ -1,0 +1,37 @@
+-- users 테이블 익명(anon) 접근을 완전히 잠근다.
+--
+-- 배경: 로그인 검증(auth-login)과 관리자 페이지의 사용자 관리(admin-users)가
+-- 전부 Edge Function(service role)으로 이전되어, 클라이언트가 anon key로 users
+-- 테이블을 직접 SELECT/UPDATE/DELETE할 이유가 더 이상 없다. 지금까지는 그게 열려
+-- 있어서 누구나 REST API(SB_URL/rest/v1/users)를 직접 호출해 전 계정의 비밀번호
+-- 해시를 통째로 가져가거나, role을 admin으로 바꿔치기하는 것도 이론상 가능했다.
+-- (service_role은 RLS를 우회하므로 Edge Function들은 이 변경과 무관하게 계속 동작한다.)
+--
+-- 유일하게 남겨두는 anon 권한은 "가입 신청" INSERT — status='pending', role='user'
+-- 조합으로만 새 행을 만들 수 있게 제한해서, 누군가 이 경로로 관리자 계정을 직접
+-- 만들어 넣는 것도 막는다.
+--
+-- 적용 방법: Supabase 대시보드 → SQL Editor → 본 SQL 실행 (또는 CLI: supabase db push)
+-- 주의: auth-login·admin-users 두 Edge Function이 먼저 배포되어 있어야 한다.
+--       (배포 전에 이 SQL을 먼저 실행하면 로그인/관리자 페이지가 즉시 막힌다.)
+
+alter table public.users enable row level security;
+
+-- 기존에 콘솔에서 만들어둔 users 정책은 이름을 알 수 없으므로 전부 동적으로 제거한다.
+do $$
+declare pol record;
+begin
+  for pol in select policyname from pg_policies where schemaname = 'public' and tablename = 'users'
+  loop
+    execute format('drop policy %I on public.users', pol.policyname);
+  end loop;
+end $$;
+
+-- 가입 신청 INSERT만 허용 — status/role을 벗어난 값으로는 행을 만들 수 없다.
+create policy "users_signup_insert" on public.users
+  for insert
+  to anon
+  with check (status = 'pending' and role = 'user');
+
+-- SELECT/UPDATE/DELETE는 정책을 만들지 않는다 → anon에게는 전부 묵시적 차단.
+-- (service_role은 RLS를 우회하므로 auth-login/admin-users Edge Function은 영향 없음)

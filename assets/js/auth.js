@@ -1,8 +1,6 @@
 // ── 인증 / 로그인 ────────────────────────────────────
-async function loadUsers() {
-  try { users = await sbGet('users'); }
-  catch(e) { users = []; }
-}
+// users 테이블 전체 조회는 이제 admin.js의 loadAdminUsers()(admin-users Edge Function 경유)
+// 뿐이다 — anon key로 users를 직접 SELECT하던 예전 loadUsers()는 RLS 잠금과 함께 제거됨.
 
 // ── 세션 유지 / 자동 로그아웃 ─────────────────────────
 // 세션은 sessionStorage에 보관합니다 → 창(탭)을 닫으면 세션이 사라져 자동 로그아웃되고,
@@ -176,13 +174,16 @@ async function doSignup() {
   if (pw.length < 4) { err('signupErr', '비밀번호는 4자 이상이어야 합니다.'); return; }
   if (!brands.length) { err('signupErr', '희망 접근 브랜드를 1개 이상 선택하세요.'); return; }
 
-  await loadUsers();
-  if (users.find(u => u.id === id)) { err('signupErr', '이미 사용 중이거나 신청 중인 아이디입니다.'); return; }
-
+  // users 테이블은 더 이상 anon SELECT가 열려있지 않아 사전 중복 체크 대신
+  // INSERT 실패(기본키 충돌)로 중복 여부를 판단한다 — RLS: 20260821_lock_down_users.sql 참고.
   const ok = await sbIns('users', {
     id, name: n, pw: await strongHash(pw), role: 'user', joined: td(), brands, status: 'pending'
   });
-  if (!ok) { err('signupErr', '신청 실패 — ' + (window.__sbLastErr || '잠시 후 다시 시도해 주세요.')); return; }
+  if (!ok) {
+    const dup = /duplicate key|already exists/i.test(window.__sbLastErr || '');
+    err('signupErr', dup ? '이미 사용 중이거나 신청 중인 아이디입니다.' : '신청 실패 — ' + (window.__sbLastErr || '잠시 후 다시 시도해 주세요.'));
+    return;
+  }
 
   document.getElementById('su-name').value = '';
   document.getElementById('su-id').value   = '';

@@ -3,9 +3,9 @@ async function init() {
   // 관리자 계정은 Supabase 콘솔에서 수동 시드합니다 (자동 생성 X).
   // users 테이블이 비어 있으면 아무도 로그인 못 하므로, 초기 1회는 콘솔에서
   // id='admin', role='admin', pw=강력한 해시값으로 직접 INSERT 하세요.
-  // (로그인/세션 검증은 supabase/functions/auth-login이 서버에서 처리하므로
-  //  부트스트랩 시점에 users 테이블을 미리 통째로 내려받을 필요가 없다 — admin.js/가입
-  //  신청에서 필요할 때만 loadUsers()를 개별 호출한다.)
+  // (로그인/세션 검증은 supabase/functions/auth-login, 사용자 관리는 admin-users가
+  //  서버에서 처리하므로 부트스트랩 시점에 users 테이블을 통째로 내려받을 필요가 없다.
+  //  users 테이블 anon 접근 자체가 차단돼 있음 — supabase/migrations/20260821_lock_down_users.sql 참고)
 
   applyUser();
 
