@@ -9,7 +9,7 @@
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1e3a8a">
-<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=20260818b">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=20260821g">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="RO 리스크">
@@ -25,37 +25,37 @@
   배포 캐시 버스터: 코드 수정 후 배포할 때마다 v= 값을 새로 갱신하세요.
   CSS·JS 모두 같은 값을 쓰면 일괄 무효화됩니다.
 -->
-<script>window.__ASSET_V = '20260818b';</script>
+<script>window.__ASSET_V = '20260821g';</script>
 
 <!-- ?�폰?? Pretendard (?��? UI ?��? ?�트) -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 
 <!-- ?��???(?�이지�?분리) -->
-<link rel="stylesheet" href="assets/css/base.css?v=20260818b">
-<link rel="stylesheet" href="assets/css/dashboard.css?v=20260818b">
-<link rel="stylesheet" href="assets/css/input.css?v=20260818b">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260818b">
-<link rel="stylesheet" href="assets/css/ai.css?v=20260818b">
-<link rel="stylesheet" href="assets/css/help.css?v=20260818b">
+<link rel="stylesheet" href="assets/css/base.css?v=20260821g">
+<link rel="stylesheet" href="assets/css/dashboard.css?v=20260821g">
+<link rel="stylesheet" href="assets/css/input.css?v=20260821g">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260821g">
+<link rel="stylesheet" href="assets/css/ai.css?v=20260821g">
+<link rel="stylesheet" href="assets/css/help.css?v=20260821g">
 
 <!--
   스크립트 로드 (의존성 순서대로 / 모두 defer):
     config → constants → state → utils → auth → nav
                   → dashboard → input → adwatch → admin → ai → ppt → main
 -->
-<script src="assets/js/config.js?v=20260818b"     defer></script>
-<script src="assets/js/constants.js?v=20260818b"  defer></script>
-<script src="assets/js/state.js?v=20260818b"      defer></script>
-<script src="assets/js/utils.js?v=20260818b"      defer></script>
-<script src="assets/js/auth.js?v=20260818b"       defer></script>
-<script src="assets/js/nav.js?v=20260818b"        defer></script>
-<script src="assets/js/dashboard.js?v=20260818b"  defer></script>
-<script src="assets/js/input.js?v=20260818b"      defer></script>
-<script src="assets/js/adwatch.js?v=20260818b"    defer></script>
-<script src="assets/js/admin.js?v=20260818b"      defer></script>
-<script src="assets/js/ai.js?v=20260818b"         defer></script>
-<script src="assets/js/ppt.js?v=20260818b"        defer></script>
-<script src="assets/js/main.js?v=20260818b"       defer></script>
+<script src="assets/js/config.js?v=20260821g"     defer></script>
+<script src="assets/js/constants.js?v=20260821g"  defer></script>
+<script src="assets/js/state.js?v=20260821g"      defer></script>
+<script src="assets/js/utils.js?v=20260821g"      defer></script>
+<script src="assets/js/auth.js?v=20260821g"       defer></script>
+<script src="assets/js/nav.js?v=20260821g"        defer></script>
+<script src="assets/js/dashboard.js?v=20260821g"  defer></script>
+<script src="assets/js/input.js?v=20260821g"      defer></script>
+<script src="assets/js/adwatch.js?v=20260821g"    defer></script>
+<script src="assets/js/admin.js?v=20260821g"      defer></script>
+<script src="assets/js/ai.js?v=20260821g"         defer></script>
+<script src="assets/js/ppt.js?v=20260821g"        defer></script>
+<script src="assets/js/main.js?v=20260821g"       defer></script>
 </head>
 <body>
 
@@ -64,7 +64,7 @@
   <!-- ?�?� 좌측 ?�이?�바 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?� -->
   <aside class="sidebar" id="sidebar">
     <a class="side-logo" onclick="goHome()">
-      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260818b" alt="Elandeats" />
+      <img class="side-logo-img" src="assets/img/elandeats-logo.png?v=20260821g" alt="Elandeats" />
     </a>
     <div class="side-scroll">
       <p class="side-sec">메뉴</p>
@@ -132,61 +132,69 @@
   <div id="page-login" class="pg on">
     <!-- 로그??카드 -->
     <div class="login-card" id="loginCard">
-      <div class="login-brand">
-        <div class="login-logo">E</div>
-        <p class="login-tit">외식BG 리스크 관리 시스템</p>
-        <p class="login-sub">Risk Monitoring &amp; Analytics Platform</p>
+      <div class="login-hero">
+        <img class="login-hero-logo" src="assets/img/elandeats-logo.png?v=20260821g" alt="Elandeats" />
       </div>
-      <div class="mo-err" id="loginErr"></div>
-      <div class="fg">
-        <label>아이디</label>
-        <input type="text" id="li-id" placeholder="아이디 입력"
-               onkeydown="if(event.key==='Enter')document.getElementById('li-pw').focus()">
+      <div class="login-body">
+        <div class="login-brand">
+          <p class="login-tit">외식BG 리스크 관리 시스템</p>
+          <p class="login-sub">Risk Monitoring &amp; Analytics Platform</p>
+        </div>
+        <div class="mo-err" id="loginErr"></div>
+        <div class="fg">
+          <label>아이디</label>
+          <input type="text" id="li-id" placeholder="아이디 입력"
+                 onkeydown="if(event.key==='Enter')document.getElementById('li-pw').focus()">
+        </div>
+        <div class="fg">
+          <label>비밀번호</label>
+          <input type="password" id="li-pw" placeholder="비밀번호 입력"
+                 onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <button class="btn-full" onclick="doLogin()">로그인</button>
+        <p class="login-foot">
+          승인된 계정으로 로그인하세요.<br>
+          계정이 없으신가요? <a class="signup-link" onclick="showSignupCard()">가입 신청</a>
+        </p>
       </div>
-      <div class="fg">
-        <label>비밀번호</label>
-        <input type="password" id="li-pw" placeholder="비밀번호 입력"
-               onkeydown="if(event.key==='Enter')doLogin()">
-      </div>
-      <button class="btn-full" onclick="doLogin()">로그인</button>
-      <p class="login-foot">
-        승인된 계정으로 로그인하세요.<br>
-        계정이 없으신가요? <a class="signup-link" onclick="showSignupCard()">가입 신청</a>
-      </p>
     </div>
 
     <!-- 가???�청 카드 -->
     <div class="login-card login-card-wide hide" id="signupCard">
-      <div class="login-brand">
-        <div class="login-logo">E</div>
-        <p class="login-tit">가입 신청</p>
-        <p class="login-sub">관리자 승인 후 로그인이 가능합니다</p>
+      <div class="login-hero">
+        <img class="login-hero-logo" src="assets/img/elandeats-logo.png?v=20260821g" alt="Elandeats" />
       </div>
-      <div class="mo-err" id="signupErr"></div>
-      <div class="fg">
-        <label>이름</label>
-        <input type="text" id="su-name" placeholder="이름 입력">
-      </div>
-      <div class="fg">
-        <label>아이디</label>
-        <input type="text" id="su-id" placeholder="영문/숫자 조합">
-      </div>
-      <div class="fg">
-        <label>비밀번호</label>
-        <input type="password" id="su-pw" placeholder="4자 이상">
-      </div>
-      <div class="fg">
-        <label>희망 접근 브랜드</label>
-        <div class="brand-pick-grid" id="suBrandGrid"><!-- JS에서 렌더 --></div>
-        <div class="brand-pick-acts" style="margin-top:6px">
-          <button type="button" class="ai-opt-link" onclick="suBrandAll(true)">모두 선택</button>
-          <button type="button" class="ai-opt-link" onclick="suBrandAll(false)">모두 해제</button>
+      <div class="login-body">
+        <div class="login-brand">
+          <p class="login-tit">가입 신청</p>
+          <p class="login-sub">관리자 승인 후 로그인이 가능합니다</p>
         </div>
+        <div class="mo-err" id="signupErr"></div>
+        <div class="fg">
+          <label>이름</label>
+          <input type="text" id="su-name" placeholder="이름 입력">
+        </div>
+        <div class="fg">
+          <label>아이디</label>
+          <input type="text" id="su-id" placeholder="영문/숫자 조합">
+        </div>
+        <div class="fg">
+          <label>비밀번호</label>
+          <input type="password" id="su-pw" placeholder="4자 이상">
+        </div>
+        <div class="fg">
+          <label>희망 접근 브랜드</label>
+          <div class="brand-pick-grid" id="suBrandGrid"><!-- JS에서 렌더 --></div>
+          <div class="brand-pick-acts" style="margin-top:6px">
+            <button type="button" class="ai-opt-link" onclick="suBrandAll(true)">모두 선택</button>
+            <button type="button" class="ai-opt-link" onclick="suBrandAll(false)">모두 해제</button>
+          </div>
+        </div>
+        <button class="btn-full" onclick="doSignup()">가입 신청</button>
+        <p class="login-foot">
+          이미 계정이 있으신가요? <a class="signup-link" onclick="showLoginCard()">로그인</a>
+        </p>
       </div>
-      <button class="btn-full" onclick="doSignup()">가입 신청</button>
-      <p class="login-foot">
-        이미 계정이 있으신가요? <a class="signup-link" onclick="showLoginCard()">로그인</a>
-      </p>
     </div>
   </div>
 

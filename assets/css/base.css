@@ -203,31 +203,39 @@ main { max-width: 1680px; margin: 0 auto; padding: 1.75rem 2.25rem; width: 100%;
   justify-content: center;
   min-height: calc(100vh - 3.5rem);
   padding: 1.5rem 1rem;
+  /* 카드 뒤로 브랜드 네이비 톤이 은은하게 번지는 배경 — 로그인 페이지에만 적용 */
+  background:
+    radial-gradient(circle at 50% 0%, rgba(18, 34, 68, 0.07), transparent 60%),
+    #f8f9fc;
 }
 .login-card {
   background: #fff;
   border-radius: 16px;
-  padding: 2.4rem 2.2rem 2rem;
+  padding: 0;
+  overflow: hidden;
   width: 100%;
   max-width: 400px;
   border: 1px solid #eaecf0;
   box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
 }
-.login-brand { text-align: center; margin-bottom: 1.6rem; }
-.login-logo {
-  width: 56px; height: 56px;
-  background: #1e3a8a;
-  border-radius: 14px;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 28px; font-weight: 700; color: #fff;
-  font-family: Georgia, serif;
-  margin-bottom: 14px;
+/* 로그인 카드 상단 브랜드 밴드 — 사이드바와 동일한 누끼 로고를 네이비 배경 위에 표시 */
+.login-hero {
+  background: linear-gradient(160deg, #16294f 0%, #0e1a35 100%);
+  padding: 1.4rem 1.5rem 1.2rem;
+  display: flex; align-items: center; justify-content: center;
 }
-.login-tit { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 4px; letter-spacing: -0.3px; }
-.login-sub { font-size: 10.5px; color: #94a3b8; letter-spacing: 0.6px; text-transform: uppercase; }
+.login-hero-logo { width: 100%; max-width: 190px; height: auto; display: block; }
+.login-body { padding: 1.9rem 2.2rem 2rem; }
+.login-brand { text-align: center; margin-bottom: 1.6rem; }
+.login-tit { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 5px; letter-spacing: -0.4px; }
+.login-sub { font-size: 11px; color: #64748b; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
 .login-foot { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 1rem; line-height: 1.6; }
-.signup-link { color: #1e3a8a; font-weight: 600; cursor: pointer; text-decoration: none; }
+.signup-link { color: #122244; font-weight: 600; cursor: pointer; text-decoration: none; }
 .signup-link:hover { text-decoration: underline; }
+/* 로그인/가입 버튼 + 인풋 포커스 — 상단 브랜드 밴드(.login-hero)와 동일한 네이비로 통일 */
+.login-body .btn-full { background: #122244; }
+.login-body .btn-full:hover { background: #1a2f5c; }
+.login-body .fg input:focus { border-color: #122244; }
 .login-card.hide { display: none; }
 .login-card-wide { max-width: 480px; }
 
