@@ -196,18 +196,26 @@ ${text.slice(0, 4000)}
 다음 JSON 형식으로만 응답하세요 (다른 설명 금지):
 {"verdict":"의심 | 주의 | 낮음","reason":"판단 근거 1~2문장"}`;
 
-  const content: Record<string, unknown>[] = images.map(img => ({
-    type: 'image',
-    source: { type: 'base64', media_type: img.mediaType, data: img.data },
-  }));
-  content.push({ type: 'text', text: promptText });
+  async function callClaude(withImages: boolean) {
+    const content: Record<string, unknown>[] = withImages
+      ? images.map(img => ({ type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.data } }))
+      : [];
+    content.push({ type: 'text', text: promptText });
+    return fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 300, messages: [{ role: 'user', content }] }),
+    });
+  }
 
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 300, messages: [{ role: 'user', content }] }),
-  });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  let r = await callClaude(images.length > 0);
+  // 이미지 포함 요청이 실패하면(예: 네이버 핫링크 방지로 받아온 이미지가 실제로는
+  // 손상/비이미지 데이터라 Claude가 디코딩 못 해 400을 내는 경우) 이미지를 빼고
+  // 텍스트만으로 1회 재시도 — 이미지 한 장 때문에 분류 전체가 실패하지 않도록.
+  if (!r.ok && images.length > 0) {
+    r = await callClaude(false);
+  }
+  if (!r.ok) throw new Error(`HTTP ${r.status} — ${await r.text().catch(() => '(본문 읽기 실패)')}`);
   const data = await r.json();
   const raw: string = data?.content?.[0]?.text ?? '';
   const match = raw.match(/\{[\s\S]*\}/);
