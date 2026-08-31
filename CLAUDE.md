@@ -73,7 +73,7 @@ Supabase에 두 개의 테이블이 있습니다:
 **`records`** — 리스크 적발 기록
 - `id` (number, `Date.now()` 사용), `date` (YYYY-MM-DD)
 - `type` (6개 영역 중 하나), `subtype` (영역별 상세 위반 유형)
-- `brand` (13개 브랜드 중 하나), `count` (정수)
+- `brand` (13개 브랜드 중 하나), `store` (선택, 브랜드별 매장명 — `assets/js/constants.js`의 `STORES[brand]` 목록에서 드롭다운 선택. 매장 목록이 없는 브랜드(`상권`/`본부`/`광주ck`/`주안ck`/`기흥ck`/`CX팀`)는 항상 빈 값), `count` (정수)
 - `status`: `모니터링` | `위반(처리중)` | `완료`
 - `note` (선택), `author` (작성자 이름)
 
@@ -83,7 +83,9 @@ Supabase에 두 개의 테이블이 있습니다:
 
 ## 도메인 상수 (assets/js/constants.js)
 
-`SUB`, `ILLEGAL_DISPATCH_CATS`, `TYPES`, `BRANDS`, `TC`/`BC`/`SC`/`TYPE_COLORS`, `MONTHS`, `STATS`, `ADMIN` 등 모든 도메인 상수가 한 파일에 모여 있습니다. 영역·브랜드·상세유형을 추가/변경할 때 이곳을 먼저 수정해야 합니다.
+`SUB`, `ILLEGAL_DISPATCH_CATS`, `TYPES`, `BRANDS`, `STORES`, `TC`/`BC`/`SC`/`TYPE_COLORS`, `MONTHS`, `STATS`, `ADMIN` 등 모든 도메인 상수가 한 파일에 모여 있습니다. 영역·브랜드·상세유형을 추가/변경할 때 이곳을 먼저 수정해야 합니다.
+
+`STORES`는 `{브랜드: [매장명, ...]}` 형태로, 데이터 입력 폼(`f-store`)·데이터 목록 인라인 수정·엑셀 일괄 업로드(양식 다운로드·검증) 3곳에서 매장명 드롭다운/검증에 공통으로 사용됩니다 (assets/js/input.js). 매장명이 브랜드 접두어와 다른 경우(예: `뺑드프랑스`→`프랑제리`, `다구오`/`후원`/`반궁`/`스테이크어스`/`테루`/`아시아문`→`프랜차이즈`, `더카페`/`루고`/`페르케노`→`카페`)가 있으니 새 매장을 추가할 때 실제 매장명 접두어가 아니라 소속 브랜드 카테고리 기준으로 넣어야 합니다.
 
 특이 사항:
 - **`불법파견`만 13개 브랜드 전체 사용**, 나머지 영역은 9개(`COMMON_BRANDS` = `광주ck/주안ck/기흥ck/CX팀` 제외) — PPT의 영역별 상세 슬라이드 표 너비 계산이 이에 의존합니다 (assets/js/ppt.js:19-22, 190).

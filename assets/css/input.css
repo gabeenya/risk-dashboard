@@ -79,6 +79,7 @@
 /* 인라인 편집용 셀렉트 / 건수 입력 */
 .sub-sel { max-width: 180px; }
 .brand-sel { max-width: 110px; }
+.store-sel { max-width: 170px; }
 .date-sel { max-width: 130px; }
 .count-wrap { min-width: 70px; max-width: 90px; }
 .count-inp { padding-right: 30px; }
@@ -223,7 +224,7 @@
   #adWatchTbody td:nth-child(5) { white-space: nowrap; }
 
   /* 데이터 목록 — 인라인 컨트롤 */
-  .sub-sel, .brand-sel { max-width: 120px; font-size: 10px; padding: 2px 5px; }
+  .sub-sel, .brand-sel, .store-sel { max-width: 120px; font-size: 10px; padding: 2px 5px; }
   .date-sel { max-width: 110px; font-size: 10px; padding: 2px 4px; }
   .count-wrap { min-width: 60px; max-width: 80px; }
   .note-inp { font-size: 10px; padding: 4px 26px 4px 6px; }
@@ -261,6 +262,7 @@
   /* 데이터 목록 — 더 좁게 */
   .sub-sel { max-width: 100px; }
   .brand-sel { max-width: 80px; }
+  .store-sel { max-width: 90px; }
   /* 일괄 처리 바 — 세로 스택 */
   .inp-bulk-bar { flex-direction: column; align-items: stretch; }
   .inp-bulk-stat { flex-direction: column; gap: 4px; }

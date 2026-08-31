@@ -109,11 +109,22 @@ async function deleteNote(id) {
   toast('삭제되었습니다.');
 }
 
+// 브랜드 선택에 따라 '매장명' 드롭다운 옵션을 갱신 (신규 입력 폼 전용)
+function refreshFormStoreOptions() {
+  const brand = document.getElementById('f-brand')?.value || '';
+  const sel = document.getElementById('f-store');
+  if (!sel) return;
+  const stores = STORES[brand] || [];
+  sel.innerHTML = '<option value="">선택 안함</option>' +
+    stores.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+}
+
 async function addRecord() {
   const date   = document.getElementById('f-date').value;
   const type   = curType;
   const sub    = document.getElementById('f-subtype').value;
   const brand  = document.getElementById('f-brand').value;
+  const store  = document.getElementById('f-store')?.value || null;
   const count  = parseInt(document.getElementById('f-count').value) || 0;
   const status = document.getElementById('f-status').value || '모니터링';
   const note   = document.getElementById('f-note').value;
@@ -133,7 +144,7 @@ async function addRecord() {
 
   const ok = await sbIns('records', {
     id: Math.floor(Date.now() / 1000), date, type,
-    subtype: sub || '-', brand,
+    subtype: sub || '-', brand, store,
     status, count, note,
     jg_name, jg_sent, jng_type, bc_amount, exposed,
     author: user.name
@@ -218,6 +229,13 @@ async function updBrand(id, brand) {
   toast(`브랜드 → "${brand}"`);
 }
 
+async function updStore(id, store) {
+  await sbUpd('records', id, { store: store || null });
+  await loadData();
+  renderInputTable();
+  toast(`매장명 → "${store || '선택 안함'}"`);
+}
+
 async function updSubtype(id, subtype) {
   await sbUpd('records', id, { subtype: subtype || '-' });
   await loadData();
@@ -268,6 +286,7 @@ async function undoDelete() {
 function resetForm() {
   document.getElementById('f-date').value    = new Date().toISOString().split('T')[0];
   document.getElementById('f-brand').value   = '';
+  refreshFormStoreOptions();
   document.getElementById('f-subtype').value = '';
   document.getElementById('f-count').value   = 1;
   document.getElementById('f-status').value  = (curType === '감사' || curType === '부실채권') ? '위반(처리중)' : '모니터링';
@@ -369,13 +388,13 @@ function renderInputTable() {
   const fl = filteredInputRecords();
   const isJg = curType === '감사';
   const isBc = curType === '부실채권';
-  const colSpan = isJg ? 14 : isBc ? 12 : 11;
+  const colSpan = isJg ? 15 : isBc ? 13 : 12;
 
   // 동적 헤더
   if (th) {
     th.innerHTML = `<tr>
       <th class="chk-col"><input type="checkbox" id="inpChkAll" title="현재 목록 전체 선택" onchange="toggleInpSelAll(this.checked)"></th>
-      <th>날짜</th><th>유형</th><th>상세</th><th>브랜드</th><th>건수</th><th>상태</th>
+      <th>날짜</th><th>유형</th><th>상세</th><th>브랜드</th><th>매장명</th><th>건수</th><th>상태</th>
       ${isJg ? '<th>징계유형</th><th>성명</th><th>양형</th>' : ''}
       ${isBc ? '<th>금액</th>' : ''}
       <th>비고</th>
@@ -454,6 +473,10 @@ function renderInputTable() {
     <td><select class="st-sel brand-sel" onchange="updBrand(${rid},this.value)">
         ${BRANDS.map(b => `<option${r.brand===b?' selected':''}>${esc(b)}</option>`).join('')}
       </select></td>
+    <td>${(()=>{ const _stOpts = STORES[r.brand] || []; const _extra = r.store && !_stOpts.includes(r.store) ? [r.store] : []; return `<select class="st-sel store-sel" onchange="updStore(${rid},this.value)">
+        <option value="">선택 안함</option>
+        ${_extra.concat(_stOpts).map(s => `<option${r.store===s?' selected':''}>${esc(s)}</option>`).join('')}
+      </select>`; })()}</td>
     <td><div class="note-wrap count-wrap">
         <input type="number" min="1" class="note-inp count-inp" id="cnt-inp-${rid}" value="${Number(r.count) || 0}"
           onkeydown="if(event.key==='Enter'){const b=document.getElementById('cnt-btn-${rid}');updCount(${rid},this.value,b)}">
@@ -590,8 +613,8 @@ async function downloadExcelTemplate() {
   const aSubs  = SUB[aType] || [];
 
   // ── 헤더 / 열 너비 ──────────────────────
-  const headers = ['날짜','영역','상세유형','브랜드','건수','상태','비고','노출여부'];
-  const widths  = [12,    10,    24,       14,    7,    12,   30,   10   ];
+  const headers = ['날짜','영역','상세유형','브랜드','매장명','건수','상태','비고','노출여부'];
+  const widths  = [12,    10,    24,       14,    26,    7,    12,   30,   10   ];
   if (isJg) { headers.push('징계유형','성명','양형'); widths.push(14, 14, 14); }
   if (isBc) { headers.push('금액');       widths.push(12);      }
 
@@ -602,7 +625,7 @@ async function downloadExcelTemplate() {
 
   const exSub  = aSubs[0] || '';
   const exStat = aStats[0];
-  const exRow  = [today, aType, exSub, '애슐리', 1, exStat, '예시 행 — 삭제 후 입력하세요', ''];
+  const exRow  = [today, aType, exSub, '애슐리', '', 1, exStat, '예시 행 — 삭제 후 입력하세요', ''];
   if (isJg) exRow.push(JNG_TYPES[0], '', '');
   if (isBc) exRow.push('');
   ws1.addRow(exRow);
@@ -635,6 +658,22 @@ async function downloadExcelTemplate() {
     wb.definedNames.add(`참고_유효값!$D$2:$D$${1 + JNG_TYPES.length}`, '징계유형목록');
   }
 
+  // ── 시트3: 참고_매장 (브랜드별 매장명 — 매장명 열 드롭다운이 브랜드 열 값에 따라 자동 연동) ──
+  const ws3 = wb.addWorksheet('참고_매장');
+  ws3.addRow(BRANDS);
+  ws3.getRow(1).font = { bold: true };
+  ws3.columns = BRANDS.map(() => ({ width: 26 }));
+  const storeMaxLen = Math.max(0, ...BRANDS.map(b => (STORES[b] || []).length));
+  for (let i = 0; i < storeMaxLen; i++) {
+    ws3.addRow(BRANDS.map(b => (STORES[b] || [])[i] || ''));
+  }
+  BRANDS.forEach((b, i) => {
+    const len = (STORES[b] || []).length;
+    if (len === 0) return;
+    const col = String.fromCharCode(65 + i); // A, B, C... (BRANDS 15개 → O열까지, 26 이내)
+    wb.definedNames.add(`참고_매장!$${col}$2:$${col}$${1 + len}`, b);
+  });
+
   // ── 데이터 유효성 검사 ───────────────────
   const lastRow = 1 + MAX_ROWS;
   for (let r = 2; r <= lastRow; r++) {
@@ -654,24 +693,29 @@ async function downloadExcelTemplate() {
       errorStyle: 'warning', errorTitle: '브랜드', error: '목록에서 선택하세요.',
       formulae: [`참고_유효값!$B$2:$B$${1 + BRANDS.length}`]
     };
-    ws1.getCell(`F${r}`).dataValidation = {
+    // 매장명: 같은 행의 브랜드(D열) 값에 연동된 목록 (브랜드에 등록된 매장이 없으면 자유 입력)
+    ws1.getCell(`E${r}`).dataValidation = {
+      type: 'list', allowBlank: true, showErrorMessage: false,
+      formulae: [`INDIRECT($D${r})`]
+    };
+    ws1.getCell(`G${r}`).dataValidation = {
       type: 'list', allowBlank: true, showErrorMessage: true,
       errorStyle: 'warning', errorTitle: '상태', error: '목록에서 선택하세요.',
       formulae: [`참고_유효값!$C$2:$C$${1 + aStats.length}`]
     };
-    ws1.getCell(`H${r}`).dataValidation = {
+    ws1.getCell(`I${r}`).dataValidation = {
       type: 'list', allowBlank: true, showErrorMessage: false,
       formulae: ['"O"']
     };
     if (isJg) {
-      ws1.getCell(`I${r}`).dataValidation = {
+      ws1.getCell(`J${r}`).dataValidation = {
         type: 'list', allowBlank: true, showErrorMessage: true,
         errorStyle: 'warning', errorTitle: '징계유형', error: '목록에서 선택하세요. (필수)',
         formulae: [`참고_유효값!$D$2:$D$${1 + JNG_TYPES.length}`]
       };
     }
     if (isBc) {
-      ws1.getCell(`I${r}`).dataValidation = {
+      ws1.getCell(`J${r}`).dataValidation = {
         type: 'decimal', allowBlank: true, showErrorMessage: true,
         errorStyle: 'warning', errorTitle: '금액', error: '숫자만 입력하세요.',
         operator: 'greaterThanOrEqual', formulae: [0]
@@ -762,6 +806,14 @@ function validateXlRow(row, lineNo) {
   if (!brand) errs.push('브랜드 필수');
   else if (!BRANDS.includes(brand)) errs.push(`브랜드 (${brand}) 알 수 없음`);
 
+  const store = String(row['매장명'] || '').trim();
+  if (store && brand && BRANDS.includes(brand)) {
+    const stores = STORES[brand] || [];
+    if (stores.length > 0 && !stores.includes(store)) {
+      errs.push(`매장명 (${store}) — '${brand}' 브랜드에 없음`);
+    }
+  }
+
   const countRaw = row['건수'];
   const count = parseInt(countRaw);
   if (!count || count < 1 || isNaN(count)) errs.push('건수는 1 이상 정수');
@@ -796,7 +848,7 @@ function validateXlRow(row, lineNo) {
   const bc_amount = (type === '부실채권' && BC_AMT_SUBS.includes(subtype) && !isNaN(_amtVal) && _amtVal > 0) ? _amtVal : null;
 
   return {
-    lineNo, date, type, subtype, brand, count: count || 0, status, note, exposed,
+    lineNo, date, type, subtype, brand, store: store || null, count: count || 0, status, note, exposed,
     jg_name, jg_sent, jng_type, bc_amount,
     errs, ok: errs.length === 0
   };
@@ -818,7 +870,7 @@ function renderXlPreview(rows) {
   // 헤더 동적 업데이트
   const thead = document.querySelector('#xlPreview .xl-pv-tbl thead tr');
   if (thead) {
-    thead.innerHTML = `<th>#</th><th>날짜</th><th>영역</th><th>상세유형</th><th>브랜드</th><th>건수</th><th>상태</th><th>비고</th><th>노출여부</th>
+    thead.innerHTML = `<th>#</th><th>날짜</th><th>영역</th><th>상세유형</th><th>브랜드</th><th>매장명</th><th>건수</th><th>상태</th><th>비고</th><th>노출여부</th>
       ${isJg ? '<th>징계유형</th><th>성명</th><th>양형</th>' : ''}
       ${isBc ? '<th>금액</th>' : ''}
       <th>결과</th>`;
@@ -833,6 +885,7 @@ function renderXlPreview(rows) {
     <td>${esc(r.type||'-')}</td>
     <td>${esc(r.subtype||'-')}</td>
     <td>${esc(r.brand||'-')}</td>
+    <td>${esc(r.store||'-')}</td>
     <td>${r.count||'-'}</td>
     <td>${esc(r.status ? statLbl(r.status, r.type) : '-')}</td>
     <td>${esc(r.note||'')}</td>
@@ -862,7 +915,7 @@ async function confirmBulkUpload() {
   const payload = okRows.map((r, i) => ({
     id: base + i,
     date: r.date, type: r.type, subtype: r.subtype,
-    brand: r.brand, count: r.count, status: r.status, note: r.note,
+    brand: r.brand, store: r.store || null, count: r.count, status: r.status, note: r.note,
     exposed: r.exposed || false,
     jg_name: r.jg_name || null, jg_sent: r.jg_sent || null, jng_type: r.jng_type || null, bc_amount: r.bc_amount || null,
     author: user.name
