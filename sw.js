@@ -2,7 +2,7 @@
 // Supabase/Naver/CDN 등 다른 출처 요청은 손대지 않고 그대로 네트워크로 흘려보낸다(항상 최신 데이터 필요).
 // CACHE_VERSION은 index.html의 __ASSET_V와 같은 값으로 유지 —
 // tools/update-cache-buster.ps1이 두 파일을 함께 갱신한다.
-const CACHE_VERSION = '20260901a';
+const CACHE_VERSION = '20260901b';
 const CACHE_NAME = `ro-risk-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
