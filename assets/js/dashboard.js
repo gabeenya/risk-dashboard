@@ -1181,6 +1181,9 @@ function hideGradeInfo() {
 const GRADE_AREAS   = ['불법파견','표시광고','가맹','IP','노무','영업비밀','부실채권','안전','위생'];
 const GRADE_SCORE   = { A:10, B:8, C:5, D:3, F:0 };
 const RANK_EXCLUDE  = new Set(['광주ck','기흥ck','주안ck','CX팀','상권','본부']);
+// 위생·안전·부실채권은 사실상 "위반/전체" 비율 개념이 성립하지 않는다(모니터링 상태를 쓰지 않아 mon이
+// 항상 0) — 측정판 셀에 의미 없는 "N/N" 대신 입력된 건수만 표시한다.
+const SIMPLE_COUNT_AREAS = new Set(['위생', '안전', '부실채권']);
 
 // 평균 점수 → 등급 문자 (종합등급과 동일 기준)
 function gradeFromScore(avg) {
@@ -1201,6 +1204,14 @@ function gradeFromRate(cnt, mon) {
 // A ≤0.3 · B ≤0.6 · C ≤0.9 · D ≤1.2 · F 1.2 초과
 function gradeFromHygieneRate(rate) {
   return rate > 1.2 ? 'F' : rate > 0.9 ? 'D' : rate > 0.6 ? 'C' : rate > 0.3 ? 'B' : 'A';
+}
+
+// 안전 전용: 중대재해는 별도로 즉시 F 처리하고(그 외 등급 산정에는 반영하지 않음), 나머지 등급은
+// "산업재해 발생" 건수만으로 위생과 동일한 방식(월평균 매장당 발생 건수)으로 산정한다 — 조치 완료
+// 여부와 무관하게 발생 자체를 카운트. 이 비율 기준으로는 F를 매기지 않고 최저 D까지만 내려간다.
+// A=0건 · B ≤0.005건 · C ≤0.035건 · D 0.035건 초과
+function gradeFromSafetyRate(rate) {
+  return rate > 0.035 ? 'D' : rate > 0.005 ? 'C' : rate > 0 ? 'B' : 'A';
 }
 
 // 컴플라이언스 6개 영역(불법파견·표시광고·가맹·IP·노무·영업비밀) 중 매장을 보유한 브랜드 전용:
@@ -1244,6 +1255,8 @@ const GRADE_ACC_DEFAULT_START = 3;
 // 컴플라이언스 6개 영역(STORE_RATE_TYPES)도 매장 보유 브랜드에 한해 같은 방식(매장당 월평균 위반+완료
 // 건수)을 쓴다 — 단, 매장이 없는 조직단위 브랜드는 이 예외에서 빠지고 아래 위반율(%) 로직을 그대로 탄다.
 // 이 6개 영역은 비율 기준으로는 F를 매기지 않고(최저 D) 외부노출이 있을 때만 F로 올린다.
+// 안전도 동일 계열: 중대재해는 별도 즉시 F, 그 외엔 "산업재해 발생" 건수만으로 매장당 월평균을 산정하고
+// 이 비율 기준으로는 F를 매기지 않는다(gradeFromSafetyRate).
 function calcGradeDetail(type, brand, ym, acc) {
   if (type === '위생') {
     const [yr, mo] = ym.split('-').map(Number);
@@ -1256,6 +1269,21 @@ function calcGradeDetail(type, brand, ym, acc) {
     const monthsElapsed = mo - startMo + 1;
     const rate = cnt / storeCnt / monthsElapsed;
     return { grade: gradeFromHygieneRate(rate), cnt, mon: 0 };
+  }
+
+  if (type === '안전') {
+    const [yr, mo] = ym.split('-').map(Number);
+    const startMo = acc ? Math.min(GRADE_ACC_START_MONTH['안전'], mo) : mo;
+    const startYm = `${yr}-${String(startMo).padStart(2,'0')}`;
+    const recs = records.filter(r => r.brand === brand && r.type === '안전' && r.date &&
+      r.date.slice(0,7) >= startYm && r.date.slice(0,7) <= ym);
+    const cnt = recs.filter(r => r.subtype === '산업재해 발생').reduce((s, r) => s + r.count, 0);
+    const critical = recs.filter(r => r.subtype === '중대재해 발생');
+    if (critical.some(r => r.count > 0)) return { grade: 'F', cnt, mon: 0 };
+    const storeCnt = (STORES[brand] || []).length || 1;
+    const monthsElapsed = mo - startMo + 1;
+    const rate = cnt / storeCnt / monthsElapsed;
+    return { grade: gradeFromSafetyRate(rate), cnt, mon: 0 };
   }
 
   // 컴플라이언스 6개 영역 중 매장 보유 브랜드: 위생과 동일한 방식(매장당 월평균 발생 건수)으로 산정.
@@ -1305,17 +1333,6 @@ function calcGradeDetail(type, brand, ym, acc) {
     });
     if (over2.length) return { grade:'D', cnt: over2.reduce((s,r) => s+r.count, 0), mon: 0 };
     // A~D: 위반율 기준 (모니터링+위반+완료 대비 위반+완료)
-    const mon = recs.filter(r => r.status === '모니터링').reduce((s, r) => s + r.count, 0);
-    const cnt = recs.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
-    const grade = gradeFromRate(cnt, mon);
-    return { grade, cnt, mon };
-  }
-
-  if (type === '안전') {
-    // F: 중대재해 발생 1건 이상
-    const critical = recs.filter(r => r.subtype === '중대재해 발생');
-    if (critical.some(r => r.count > 0)) return { grade:'F', cnt: critical.reduce((s,r)=>s+r.count,0), mon: 0 };
-    // A~D: 위반율 기준 (발생+조치완료 ÷ 모니터링+발생+조치완료)
     const mon = recs.filter(r => r.status === '모니터링').reduce((s, r) => s + r.count, 0);
     const cnt = recs.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
     const grade = gradeFromRate(cnt, mon);
@@ -1396,12 +1413,14 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
       (brandOnly ? '' : `<td><span class="gp ${pc}">${rank}</span></td>`) +
       `<td class="gt-brand">${esc(brand)}</td>` +
       (showOverall ? `<td class="gt-overall"><div class="gt-overall-wrap"><span class="gc ${overallGrade}">${overallGrade}</span><span class="gt-overall-score">${scoreTxt}점</span></div></td><td class="gt-sep"></td>` : '') +
-      visibleAreas.map(t =>
-        isGradeAreaExcluded(t, brand)
-          ? `<td class="gt-area"><div class="gc-cell"><span class="gc na">-</span></div></td>`
-          : `<td class="gt-area"><div class="gc-cell"><span class="gc ${details[t].grade}">${details[t].grade}</span>` +
-            `<span class="gc-cnt"><span class="gc-vio">${details[t].cnt}</span>/<span class="gc-mon">${details[t].cnt + details[t].mon}</span></span></div></td>`
-      ).join('');
+      visibleAreas.map(t => {
+        if (isGradeAreaExcluded(t, brand)) return `<td class="gt-area"><div class="gc-cell"><span class="gc na">-</span></div></td>`;
+        const d = details[t];
+        const cntHtml = SIMPLE_COUNT_AREAS.has(t)
+          ? `<span class="gc-cnt"><span class="gc-vio">${d.cnt}</span>건</span>`
+          : `<span class="gc-cnt"><span class="gc-vio">${d.cnt}</span>/<span class="gc-mon">${d.cnt + d.mon}</span></span>`;
+        return `<td class="gt-area"><div class="gc-cell"><span class="gc ${d.grade}">${d.grade}</span>${cntHtml}</div></td>`;
+      }).join('');
     tbody.appendChild(tr);
     setTimeout(() => tr.classList.add('gb-in'), 40 + idx * 500);
   });
