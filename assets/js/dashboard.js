@@ -1154,12 +1154,12 @@ function showGradeInfo(target) {
     `<div class="gip-sec">평가 영역 (${areaList.length}개)</div>` +
     `<div class="gip-val">${esc(areaStr)}</div>` +
     `<div class="gip-sec">월별 등급 기준 (해당 월 위반율 = 위반+완료 ÷ 모니터링+위반+완료)</div>` +
-    `<div class="gip-val">A ≤5% · B ≤10% · C ≤15% · D ≤20% · F 20%초과<br>즉시 F: 외부노출 1건↑ · 안전 중대재해 1건↑ · 부실채권 2개월초과 미입금 1억초과<br>즉시 D: 부실채권 2개월초과 미입금 1억이하<br>위생 예외: 위반율 대신 월평균 매장당 발생 건수 기준(누적건수÷매장수÷경과개월수) — 0.3건이하 A · 0.6건이하 B · 0.9건이하 C · 1.2건이하 D · 1.2건초과 F</div>` +
+    `<div class="gip-val">A ≤5% · B ≤10% · C ≤15% · D ≤20% · F 20%초과<br>즉시 F: 외부노출 1건↑ · 안전 중대재해 1건↑ · 부실채권 2개월초과 미입금 1억초과<br>즉시 D: 부실채권 2개월초과 미입금 1억이하<br>위생 예외: 위반율 대신 월평균 매장당 발생 건수 기준(누적건수÷매장수÷경과개월수) — 0.3건이하 A · 0.6건이하 B · 0.9건이하 C · 1.2건이하 D · 1.2건초과 F<br>불법파견·표시광고·가맹·IP·노무·영업비밀 예외(매장 보유 브랜드만): 위반율 대신 월평균 매장당 위반+완료 건수 기준, 영역별 실측 분포에 맞춰 구간이 다름. 이 비율만으로는 F를 매기지 않고 최저 D까지만 내려가며, <b>외부노출이 있을 때만 F</b>로 올라간다(매장 없는 조직단위는 위반율 방식 유지)<br>· 불법파견: 0건 A · 0.003건이하 B · 0.01건이하 C · 초과 D<br>· 가맹: 0건 A · 0.008건이하 B · 0.015건이하 C · 초과 D<br>· IP: 0건 A · 0.005건이하 B · 0.01건이하 C · 초과 D<br>· 표시광고: 0.02건이하 A · 0.05건이하 B · 0.08건이하 C · 초과 D<br>· 노무: 0.03건이하 A · 0.07건이하 B · 0.11건이하 C · 초과 D<br>· 영업비밀: 0.02건이하 A · 0.05건이하 B · 0.1건이하 C · 초과 D</div>` +
     `<div class="gip-sec">등급 점수</div>` +
     `<div class="gip-val">A=10점 · B=8점 · C=5점 · D=3점 · F=0점</div>` +
     (isAcc
       ? `<div class="gip-sec">영역별 누적 등급</div>` +
-        `<div class="gip-val">시작월~기준월 매월 등급 점수의 평균으로 산정<br>(안전·위생 1월~ · 그 외 영역 3월~, 단순 누적 건수 아님 — 단, 위생은 시작월~기준월 월평균 매장당 발생 건수를 기준에 직접 대입)</div>`
+        `<div class="gip-val">시작월~기준월 매월 등급 점수의 평균으로 산정<br>(안전·위생 1월~ · 그 외 영역 3월~, 단순 누적 건수 아님 — 단, 위생 및 매장 보유 브랜드의 불법파견·표시광고·가맹·IP·노무·영업비밀은 시작월~기준월 월평균 매장당 발생 건수를 기준에 직접 대입)</div>`
       : '') +
     `<div class="gip-sec">종합등급 기준 (평균점수)</div>` +
     `<div class="gip-val">A 9-10 · B 7-8 · C 4-6 · D 1-3 · F 0</div>` +
@@ -1203,6 +1203,32 @@ function gradeFromHygieneRate(rate) {
   return rate > 1.2 ? 'F' : rate > 0.9 ? 'D' : rate > 0.6 ? 'C' : rate > 0.3 ? 'B' : 'A';
 }
 
+// 컴플라이언스 6개 영역(불법파견·표시광고·가맹·IP·노무·영업비밀) 중 매장을 보유한 브랜드 전용:
+// 위반율(%) 대신 위생과 같은 방식으로 "월평균 매장당 위반+완료 발생 건수"로 등급 산정한다.
+// (모니터링 대비 위반율은 활동량이 큰 브랜드의 실제 문제를 비율 희석으로 가릴 수 있음 — 예: 영업비밀에서
+//  애슐리는 위반+완료 127건으로 압도적이지만 모니터링을 워낙 많이 해서 위반율로는 3.1%(A)로 나옴.
+//  매장당 절대 발생 빈도로 보면 0.34(F)로 정확히 잡힘. 매장이 없는 조직단위(상권·본부·광주ck·주안ck·
+//  기흥ck·CX팀)는 매장 수 분모가 성립하지 않아 기존 위반율(%) 방식을 그대로 유지한다.)
+// 영역마다 실제 발생 빈도 스케일이 크게 달라(불법파견 최대 관측치 0.006 vs 영업비밀 0.34) 하나의
+// 공통 임계값을 쓰면 저활동 영역은 전부 A로, 고활동 영역은 과도하게 F로 쏠리므로 영역별 실측 분포에
+// 맞춰 개별 보정한다. 각 배열 = [A상한, B상한, C상한](그 이상은 D). F는 이 비율 기준으로는 절대 매기지
+// 않고 외부노출 발생 시에만(calcGradeDetail 참조) 매긴다 — 매장당 건수만으로는 아무리 나빠도 D가 최저.
+// 불법파견·가맹·IP는 전사 실적발 자체가 반년간 한 자릿수~10여 건 수준이라 A상한을 0으로 둬
+// "무결점만 A, 1건이라도 발생하면 최소 B"로 민감하게 잡는다.
+const STORE_RATE_BANDS = {
+  '불법파견': [0,    0.003, 0.01],
+  '가맹':    [0,    0.008, 0.015],
+  'IP':      [0,    0.005, 0.01],
+  '표시광고': [0.02, 0.05,  0.08],
+  '노무':    [0.03, 0.07,  0.11],
+  '영업비밀': [0.02, 0.05,  0.10]
+};
+const STORE_RATE_TYPES = Object.keys(STORE_RATE_BANDS);
+function gradeFromStoreRate(type, rate) {
+  const [a, b, c] = STORE_RATE_BANDS[type];
+  return rate > c ? 'D' : rate > b ? 'C' : rate > a ? 'B' : 'A';
+}
+
 // 영역별 누적 평균 시작월 (그 외 영역은 데이터 입력이 대부분 3월부터 시작됨)
 const GRADE_ACC_START_MONTH = { 안전: 1, 위생: 1 };
 const GRADE_ACC_DEFAULT_START = 3;
@@ -1215,6 +1241,9 @@ const GRADE_ACC_DEFAULT_START = 3;
 // 위생만 예외: 위반율 개념이 없어(단일 상태) 시작월~ym 누적 건수를 매장수·경과개월수로 정규화한
 // "월평균 매장당 발생 건수"를 gradeFromHygieneRate 기준에 대입한다
 // (acc=false인 당월/특정월 단독 조회 시엔 경과개월수=1이 되어 그 한 달만의 매장당 건수로 동일 기준을 적용).
+// 컴플라이언스 6개 영역(STORE_RATE_TYPES)도 매장 보유 브랜드에 한해 같은 방식(매장당 월평균 위반+완료
+// 건수)을 쓴다 — 단, 매장이 없는 조직단위 브랜드는 이 예외에서 빠지고 아래 위반율(%) 로직을 그대로 탄다.
+// 이 6개 영역은 비율 기준으로는 F를 매기지 않고(최저 D) 외부노출이 있을 때만 F로 올린다.
 function calcGradeDetail(type, brand, ym, acc) {
   if (type === '위생') {
     const [yr, mo] = ym.split('-').map(Number);
@@ -1227,6 +1256,23 @@ function calcGradeDetail(type, brand, ym, acc) {
     const monthsElapsed = mo - startMo + 1;
     const rate = cnt / storeCnt / monthsElapsed;
     return { grade: gradeFromHygieneRate(rate), cnt, mon: 0 };
+  }
+
+  // 컴플라이언스 6개 영역 중 매장 보유 브랜드: 위생과 동일한 방식(매장당 월평균 발생 건수)으로 산정.
+  // 매장이 없는 브랜드(상권·본부·광주ck·주안ck·기흥ck·CX팀)는 아래로 흘려보내 기존 위반율(%) 방식 유지.
+  if (STORE_RATE_TYPES.includes(type) && (STORES[brand] || []).length > 0) {
+    const [yr, mo] = ym.split('-').map(Number);
+    const startMo = acc ? Math.min(GRADE_ACC_START_MONTH[type] ?? GRADE_ACC_DEFAULT_START, mo) : mo;
+    const startYm = `${yr}-${String(startMo).padStart(2,'0')}`;
+    const recs = records.filter(r => r.brand === brand && r.type === type && r.date &&
+      r.date.slice(0,7) >= startYm && r.date.slice(0,7) <= ym);
+    const mon = recs.filter(r => r.status === '모니터링').reduce((s, r) => s + r.count, 0);
+    const cnt = recs.filter(r => r.status !== '모니터링').reduce((s, r) => s + r.count, 0);
+    if (recs.some(r => r.exposed)) return { grade: 'F', cnt, mon };
+    const storeCnt = STORES[brand].length;
+    const monthsElapsed = mo - startMo + 1;
+    const rate = cnt / storeCnt / monthsElapsed;
+    return { grade: gradeFromStoreRate(type, rate), cnt, mon };
   }
 
   if (acc) {
