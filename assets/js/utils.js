@@ -27,12 +27,22 @@ const __STAT_CS_LBL = { '위반(처리중)':'접수/처리중', '완료':'처리
 const __STAT_AN_LBL = { '위반(처리중)':'발생', '완료':'조치완료' };
 const __STAT_JG_LBL = { '위반(처리중)':'적발', '완료':'조치완료' };
 const __STAT_BC_LBL = { '위반(처리중)':'발생', '완료':'해결' };
+// 위생: 상태를 '모니터링' 단일값으로만 사용하되 화면엔 '해충반품'으로 표시
+const __STAT_HY_LBL = { '모니터링':'해충반품' };
 function statLbl(status, type) {
   if (type === '클레임')   return __STAT_CS_LBL[status] || status;
   if (type === '안전')     return __STAT_AN_LBL[status] || status;
   if (type === '감사')     return __STAT_JG_LBL[status] || status;
   if (type === '부실채권') return __STAT_BC_LBL[status] || status;
+  if (type === '위생')     return __STAT_HY_LBL[status] || status;
   return status;
+}
+
+// 영역별로 선택 가능한 상태 목록. 감사·부실채권·안전·클레임은 '모니터링' 옵션 없이 2단계,
+// 위생은 '모니터링'(표시상 '해충반품') 단일 상태만 사용. 나머지는 3단계 전체(STATS) 사용.
+function availStatuses(type) {
+  if (type === '위생') return ['모니터링'];
+  return (['감사','부실채권','안전','클레임'].includes(type)) ? STATS.filter(s => s !== '모니터링') : STATS;
 }
 
 // 동기화 배지 문구/색 갱신

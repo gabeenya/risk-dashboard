@@ -151,7 +151,7 @@ function setInputType(btn, type) {
   // 상태 select: 영역별 표시 라벨 적용, 징계는 모니터링 옵션 제거
   const stSel = document.getElementById('f-status');
   if (stSel) {
-    const availStats = (['감사','부실채권','안전','클레임'].includes(type)) ? STATS.filter(s => s !== '모니터링') : STATS;
+    const availStats = availStatuses(type);
     const cur = stSel.value || availStats[0];
     stSel.innerHTML = availStats.map(s => `<option value="${s}">${statLbl(s, type)}</option>`).join('');
     stSel.value = availStats.includes(cur) ? cur : availStats[0];

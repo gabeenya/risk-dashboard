@@ -675,7 +675,7 @@ function renderDash(k) {
     document.getElementById('kpi4').textContent    = jngRate + '%';
     k4s.textContent = `조치완료 ${jngDone.toLocaleString()} / 적발 ${jngVio.toLocaleString()}건 · ${yr}년 ${mo}월까지 누적`;
   } else if (isStoreOps) {
-    // 매장 운영 관리 분류 전체 뷰 — 안전+클레임 합산 (위생은 체계 개편 예정으로 집계 제외)
+    // 매장 운영 관리 분류 전체 뷰 — 안전+클레임 합산 (위생은 위반율 개념이 없는 예외 영역이라 이 KPI 합산에서 제외, 등급은 3-3 측정판 참고)
     const stOps   = r => r.type === '안전' || r.type === '클레임';
     const dYSt    = dY.filter(stOps);
     const dmSt    = dmKpi.filter(stOps);
@@ -1154,12 +1154,12 @@ function showGradeInfo(target) {
     `<div class="gip-sec">평가 영역 (${areaList.length}개)</div>` +
     `<div class="gip-val">${esc(areaStr)}</div>` +
     `<div class="gip-sec">월별 등급 기준 (해당 월 위반율 = 위반+완료 ÷ 모니터링+위반+완료)</div>` +
-    `<div class="gip-val">A ≤5% · B ≤10% · C ≤15% · D ≤20% · F 20%초과<br>즉시 F: 외부노출 1건↑ · 안전 중대재해 1건↑ · 부실채권 2개월초과 미입금 1억초과<br>즉시 D: 부실채권 2개월초과 미입금 1억이하</div>` +
+    `<div class="gip-val">A ≤5% · B ≤10% · C ≤15% · D ≤20% · F 20%초과<br>즉시 F: 외부노출 1건↑ · 안전 중대재해 1건↑ · 부실채권 2개월초과 미입금 1억초과<br>즉시 D: 부실채권 2개월초과 미입금 1억이하<br>위생 예외: 위반율 대신 누적 건수 기준 — 0건 A · 1건 B · 2~3건 C · 4~5건 D · 6건이상 F</div>` +
     `<div class="gip-sec">등급 점수</div>` +
     `<div class="gip-val">A=10점 · B=8점 · C=5점 · D=3점 · F=0점</div>` +
     (isAcc
       ? `<div class="gip-sec">영역별 누적 등급</div>` +
-        `<div class="gip-val">시작월~기준월 매월 등급 점수의 평균으로 산정<br>(안전 1월~ · 그 외 영역 3월~, 단순 누적 건수 아님)</div>`
+        `<div class="gip-val">시작월~기준월 매월 등급 점수의 평균으로 산정<br>(안전·위생 1월~ · 그 외 영역 3월~, 단순 누적 건수 아님 — 단, 위생은 시작월~기준월 누적 건수를 기준에 직접 대입)</div>`
       : '') +
     `<div class="gip-sec">종합등급 기준 (평균점수)</div>` +
     `<div class="gip-val">A 9-10 · B 7-8 · C 4-6 · D 1-3 · F 0</div>` +
@@ -1178,7 +1178,7 @@ function hideGradeInfo() {
 }
 
 // ── 브랜드 리스크 등급 순위판 ──────────────────────
-const GRADE_AREAS   = ['불법파견','표시광고','가맹','IP','노무','영업비밀','부실채권','안전'];
+const GRADE_AREAS   = ['불법파견','표시광고','가맹','IP','노무','영업비밀','부실채권','안전','위생'];
 const GRADE_SCORE   = { A:10, B:8, C:5, D:3, F:0 };
 const RANK_EXCLUDE  = new Set(['광주ck','기흥ck','주안ck','CX팀','상권','본부']);
 
@@ -1195,8 +1195,14 @@ function gradeFromRate(cnt, mon) {
   return rate > 0.2 ? 'F' : rate > 0.15 ? 'D' : rate > 0.1 ? 'C' : rate > 0.05 ? 'B' : 'A';
 }
 
+// 위생 전용: 위반율이 아닌 누적 건수 자체로 등급 산정
+// 0=A · 1=B · 2~3=C · 4~5=D · 6건 이상=F
+function gradeFromHygieneCount(cnt) {
+  return cnt >= 6 ? 'F' : cnt >= 4 ? 'D' : cnt >= 2 ? 'C' : cnt >= 1 ? 'B' : 'A';
+}
+
 // 영역별 누적 평균 시작월 (그 외 영역은 데이터 입력이 대부분 3월부터 시작됨)
-const GRADE_ACC_START_MONTH = { 안전: 1 };
+const GRADE_ACC_START_MONTH = { 안전: 1, 위생: 1 };
 const GRADE_ACC_DEFAULT_START = 3;
 
 // 등급 + 위반 건수를 함께 반환
@@ -1204,7 +1210,19 @@ const GRADE_ACC_DEFAULT_START = 3;
 // (단순 누적 건수로 매기면 개월 수가 쌓일수록 결국 모두 D/F로 수렴하므로,
 //  월별로 계산한 등급의 평균 점수를 다시 등급으로 환산하는 방식을 쓴다.)
 // cnt/mon은 평균이 아니라 시작월~ym까지의 실제 누적 합산값이다.
+// 위생만 예외: 위반율 개념이 없어(단일 상태) 시작월~ym 누적 건수를 gradeFromHygieneCount 기준에 직접 대입한다
+// (acc=false인 당월/특정월 단독 조회 시엔 그 한 달만의 건수로 동일 기준을 적용).
 function calcGradeDetail(type, brand, ym, acc) {
+  if (type === '위생') {
+    const [yr, mo] = ym.split('-').map(Number);
+    const startMo = acc ? Math.min(GRADE_ACC_START_MONTH['위생'], mo) : mo;
+    const startYm = `${yr}-${String(startMo).padStart(2,'0')}`;
+    const recs = records.filter(r => r.brand === brand && r.type === '위생' && r.date &&
+      r.date.slice(0,7) >= startYm && r.date.slice(0,7) <= ym);
+    const cnt = recs.reduce((s, r) => s + r.count, 0);
+    return { grade: gradeFromHygieneCount(cnt), cnt, mon: 0 };
+  }
+
   if (acc) {
     const [yr, mo] = ym.split('-').map(Number);
     const startMo = Math.min(GRADE_ACC_START_MONTH[type] ?? GRADE_ACC_DEFAULT_START, mo);

@@ -93,6 +93,7 @@ Supabase에 두 개의 테이블이 있습니다:
 - `영업비밀`, `IP`도 `SUB`에 상세 유형이 채워져 있습니다 (예전엔 빈 배열이었으나 현재는 정의됨, constants.js:38-49). 빈 배열이 되는 영역은 없지만 코드는 여전히 빈 배열을 안전하게 처리합니다("해당 없음" 표시).
 - 레거시 영역명 `IP(지식재산)`은 `loadData()`에서 `IP`로 자동 정규화 (assets/js/dashboard.js:7).
 - `불법파견`의 13개 상세 유형은 `ILLEGAL_DISPATCH_CATS`로 4개 카테고리로 그룹화되어 있으나, 현재 PPT에서는 이 그룹화를 직접 사용하지 않고 평면 리스트로 렌더합니다.
+- **`위생`은 상세유형이 `['BK']` 단일값, 상태도 `모니터링`(표시 라벨 `해충반품`) 단일값만 사용**하는 예외 영역입니다(`availStatuses()`/`statLbl()`, assets/js/utils.js). 다른 영역과 달리 위반/완료 구분이 없어 `dashboard.js`의 일반 KPI 카드(위반/모니터링 비율)는 항상 0으로 표시되며, 대신 `assets/js/dashboard.js`의 `calcGradeDetail()`이 위생만 위반율이 아닌 **연 누적 건수를 등급 기준에 직접 대입**합니다(0=A·1=B·2~3=C·4~5=D·6+=F, `gradeFromHygieneCount()`). `위생`은 `GRADE_AREAS`·`GRADE_ACC_START_MONTH`(1월 시작)에도 포함되어 브랜드 종합등급 평균에 반영됩니다.
 
 ## 페이지 / 탭 구조 (index.html:78-279)
 

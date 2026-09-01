@@ -344,7 +344,7 @@ function refreshInpFilterOpts() {
   // 상태: 현재 영역(curType)의 표시 라벨로 옵션 구성 (클레임은 접수/처리중/처리완료)
   const stt = document.getElementById('inpStatFilter');
   if (stt) {
-    const availSt = (['감사','부실채권','안전','클레임'].includes(curType)) ? STATS.filter(s => s !== '모니터링') : STATS;
+    const availSt = availStatuses(curType);
     stt.innerHTML = ['<option value="all">전체</option>']
       .concat(availSt.map(s => `<option value="${esc(s)}">${esc(statLbl(s, curType))}</option>`))
       .join('');
@@ -483,7 +483,7 @@ function renderInputTable() {
         <button class="note-save-btn" id="cnt-btn-${rid}" onclick="updCount(${rid},document.getElementById('cnt-inp-${rid}').value,this)">저장</button>
       </div></td>
     <td><select class="st-sel" onchange="updStatus(${rid},this.value)">
-        ${(()=>{ const _av = (['감사','부실채권','안전','클레임'].includes(r.type)) ? STATS.filter(s => s !== '모니터링') : STATS; const _opts = _av.includes(r.status) ? _av : [r.status, ..._av]; return _opts.map(s=>`<option value="${esc(s)}"${r.status===s?' selected':''}>${esc(statLbl(s,r.type))}</option>`).join(''); })()}
+        ${(()=>{ const _av = availStatuses(r.type); const _opts = _av.includes(r.status) ? _av : [r.status, ..._av]; return _opts.map(s=>`<option value="${esc(s)}"${r.status===s?' selected':''}>${esc(statLbl(s,r.type))}</option>`).join(''); })()}
       </select></td>
     ${specialCols}
     <td class="exp-td"><input type="checkbox" title="외부노출" ${r.exposed?'checked':''} onchange="updExposed(${rid},this.checked)"></td>
@@ -523,7 +523,7 @@ function updInpBulkUI() {
   const stBtn = document.getElementById('inpBulkStatBtn');
   const stSel = document.getElementById('inpBulkStatSel');
   if (stSel) {
-    const availSt = (['감사','부실채권','안전','클레임'].includes(curType)) ? STATS.filter(s => s !== '모니터링') : STATS;
+    const availSt = availStatuses(curType);
     const cur = stSel.value || availSt[0];
     stSel.innerHTML = availSt.map(s => `<option value="${esc(s)}">${esc(statLbl(s, curType))}</option>`).join('');
     stSel.value = availSt.includes(cur) ? cur : availSt[0];
@@ -597,6 +597,7 @@ function _areaStats(type) {
   if (type === '안전')     return ['발생','조치완료'];
   if (type === '감사')     return ['적발','조치완료'];
   if (type === '부실채권') return ['발생','해결'];
+  if (type === '위생')     return ['해충반품'];
   return ['모니터링','위반(처리중)','완료'];
 }
 
@@ -825,10 +826,12 @@ function validateXlRow(row, lineNo) {
     '발생':        '위반(처리중)', '조치완료': '완료',  // 안전·감사
     '적발':        '위반(처리중)',                      // 감사
     '해결':        '완료',                              // 부실채권
+    '해충반품':    '모니터링',                          // 위생
   };
   if (__STAT_ALIAS[status]) status = __STAT_ALIAS[status];
   if (!status) status = (['안전','클레임','감사','부실채권'].includes(type)) ? '위반(처리중)' : '모니터링';
   else if (!STATS.includes(status)) errs.push(`상태 (${status}) 알 수 없음`);
+  if (type === '위생' && status !== '모니터링') errs.push(`상태 (${status}) — '위생' 영역은 '해충반품'만 가능`);
 
   const note = String(row['비고'] || '').trim();
   const _expRaw = String(row['노출여부'] || '').trim().toUpperCase();
