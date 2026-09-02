@@ -394,6 +394,10 @@ function buildTypeDetailSlide(pres, ctx, type, typeIdx) {
   const dataFs   = type === '불법파견' ? 8 : 9;
 
   const subs2 = SUB[type];
+  // 상세유형이 목록에 없는 레코드('-' 등 미입력)는 "(상세 없음)" 행으로 별도 합산.
+  // 안 그러면 이 레코드들이 소계 행 어디에도 안 잡히는데 브랜드 합계엔 포함돼 소계 합≠합계가 된다.
+  const hasUnclassified = subs2 && subs2.length && typeRecs.some(r => !subs2.includes(r.subtype));
+  const subItems = subs2 && subs2.length ? (hasUnclassified ? [...subs2, '(상세 없음)'] : subs2) : ['(세부 항목 없음)'];
   const tableData = [];
 
   // 헤더행1: 세부 항목 + 브랜드별 colspan:2 + 소계 colspan:2
@@ -412,12 +416,14 @@ function buildTypeDetailSlide(pres, ctx, type, typeIdx) {
   h2.push({ text:'위반', options:{ bold:true, fill:{color:'1a3270'}, color:PPT_WHITE, fontSize:8, align:'center' } });
   tableData.push(h2);
 
-  (subs2 && subs2.length ? subs2 : ['(세부 항목 없음)']).forEach((item, idx) => {
+  subItems.forEach((item, idx) => {
     const bg = idx % 2 === 0 ? 'f8fafc' : PPT_WHITE;
     const row = [{ text:item, options:{ fontSize:dataFs, fill:{color:bg}, valign:'middle' } }];
     let rTot = 0, rVio = 0;
     useBrands.forEach(brand => {
-      const recs = typeRecs.filter(r => r.brand === brand && (subs2 && subs2.length ? r.subtype === item : true));
+      const recs = typeRecs.filter(r => r.brand === brand && (subs2 && subs2.length
+        ? (item === '(상세 없음)' ? !subs2.includes(r.subtype) : r.subtype === item)
+        : true));
       const t = recs.reduce((sum, r) => sum + pptMonCnt(r), 0);
       const v = recs.filter(r => r.status !== '모니터링').reduce((sum, r) => sum + r.count, 0);
       rTot += t; rVio += v;
@@ -511,13 +517,17 @@ function drawTypeSummaryCard(pres, s, ctx, type, x, y, w, h) {
   // 좌측: 미니 도넛
   const subs = SUB[type];
   if (subs && subs.length) {
-    const subCnts        = subs.map(sub => typeRecs.filter(r => r.subtype === sub && r.status !== '모니터링').reduce((sum, r) => sum + r.count, 0));
-    const filteredLabels = subs.filter((_, i) => subCnts[i] > 0);
-    const filteredCnts   = subCnts.filter(v => v > 0);
+    const subCnts  = subs.map(sub => typeRecs.filter(r => r.subtype === sub && r.status !== '모니터링').reduce((sum, r) => sum + r.count, 0));
+    // 상세유형이 목록에 없는 레코드('-' 등 미입력)도 "(상세 없음)" 조각으로 포함 — 안 그러면 도넛 합이 '위반 건수' KPI보다 작아진다.
+    const otherCnt = typeRecs.filter(r => !subs.includes(r.subtype) && r.status !== '모니터링').reduce((sum, r) => sum + r.count, 0);
+    const labels   = otherCnt > 0 ? [...subs, '(상세 없음)'] : subs;
+    const cnts     = otherCnt > 0 ? [...subCnts, otherCnt] : subCnts;
+    const filteredLabels = labels.filter((_, i) => cnts[i] > 0);
+    const filteredCnts   = cnts.filter(v => v > 0);
     if (filteredCnts.length) {
       s.addChart(pres.charts.DOUGHNUT, [{ name:'건수', labels:filteredLabels, values:filteredCnts }], {
         x:x+0.10, y:bodyY, w:donW, h:bodyH,
-        chartColors: SUB_COLORS.slice(0, filteredLabels.length),
+        chartColors: filteredLabels.map((_, i) => SUB_COLORS[i % SUB_COLORS.length]),
         showLegend:true, legendPos:'b', legendFontSize:6,
         showPercent:false,
         dataLabelColor:PPT_WHITE,
