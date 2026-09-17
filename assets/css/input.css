@@ -129,6 +129,8 @@
 .xl-badge-err { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; max-width: 260px; white-space: normal; line-height: 1.4; }
 .xl-apply-btn { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; cursor: pointer; }
 .xl-apply-btn:hover { background: #dbeafe; }
+.xl-newstore-btn { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; cursor: pointer; }
+.xl-newstore-btn:hover { background: #ffedd5; }
 
 /* 부실채권 금액 셀 */
 .bc-amt-cell { font-size: 11px; color: #1e3a8a; font-weight: 600; white-space: nowrap; }

@@ -783,17 +783,33 @@ function _levenshtein(a, b) {
   return dp[m][n];
 }
 
-// 등록된 매장명 중 입력값과 가장 비슷한 것을 제안 (유사도 낮으면 제안 안 함)
-function _suggestStore(input, stores) {
-  let best = null, bestDist = Infinity;
-  for (const s of stores) {
-    const d = _levenshtein(input, s);
-    if (d < bestDist) { bestDist = d; best = s; }
+// 두 문자열의 최장 공통부분수열(LCS) 길이 — 순서만 지키면 되는 공통 글자 수
+function _lcsLen(a, b) {
+  const m = a.length, n = b.length;
+  if (!m || !n) return 0;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] + 1 : Math.max(dp[i - 1][j], dp[i][j - 1]);
+    }
   }
-  if (!best) return null;
-  const maxLen = Math.max(input.length, best.length);
-  const similarity = maxLen ? 1 - bestDist / maxLen : 1;
-  return similarity >= 0.5 ? best : null;
+  return dp[m][n];
+}
+
+// 등록된 매장명 중 입력값과 가장 비슷한 것을 제안. 공통 글자가 2자 미만이면 추측 불가(신규 매장)로 null 반환
+function _suggestStore(input, stores) {
+  const ni = _normStore(input);
+  let best = null, bestLcs = -1, bestDist = Infinity;
+  for (const s of stores) {
+    const ns = _normStore(s);
+    const lcs = _lcsLen(ni, ns);
+    const dist = _levenshtein(ni, ns);
+    // 공통 글자 수를 우선 비교하고, 동률이면 편집거리가 작은 쪽을 채택
+    if (lcs > bestLcs || (lcs === bestLcs && dist < bestDist)) {
+      best = s; bestLcs = lcs; bestDist = dist;
+    }
+  }
+  return (best && bestLcs >= 2) ? best : null;
 }
 
 function validateXlRow(row, lineNo) {
@@ -846,6 +862,7 @@ function validateXlRow(row, lineNo) {
 
   let store = String(row['매장명'] || '').trim();
   let storeSuggestion = null;
+  let storeUnknown = false;
   if (store && brand && BRANDS.includes(brand)) {
     const stores = STORES[brand] || [];
     if (stores.length > 0 && !stores.includes(store)) {
@@ -855,7 +872,12 @@ function validateXlRow(row, lineNo) {
         store = exact;
       } else {
         storeSuggestion = _suggestStore(store, stores);
-        errs.push(`매장명 (${store}) — '${brand}' 브랜드에 없음${storeSuggestion ? ` (혹시 '${storeSuggestion}'?)` : ''}`);
+        if (storeSuggestion) {
+          errs.push(`매장명 (${store}) — '${brand}' 브랜드에 없음 (혹시 '${storeSuggestion}'?)`);
+        } else {
+          storeUnknown = true;
+          errs.push(`매장명 (${store}) — '${brand}' 브랜드에 등록되지 않은 새 매장`);
+        }
       }
     }
   }
@@ -897,7 +919,7 @@ function validateXlRow(row, lineNo) {
 
   return {
     lineNo, date, type, subtype, brand, store: store || null, count: count || 0, status, note, exposed,
-    jg_name, jg_sent, jng_type, bc_amount, storeSuggestion,
+    jg_name, jg_sent, jng_type, bc_amount, storeSuggestion, storeUnknown,
     errs, ok: errs.length === 0
   };
 }
@@ -918,7 +940,7 @@ function renderXlPreview(rows) {
   // 헤더 동적 업데이트
   const thead = document.querySelector('#xlPreview .xl-pv-tbl thead tr');
   if (thead) {
-    thead.innerHTML = `<th>#</th><th>날짜</th><th>영역</th><th>상세유형</th><th>브랜드</th><th>매장명</th><th>건수</th><th>상태</th><th>비고</th><th>노출여부</th>
+    thead.innerHTML = `<th><input type="checkbox" id="xlSelAllCk" onchange="toggleAllXlSuggestions(this.checked)" title="제안된 매장명 전체 선택"></th><th>#</th><th>날짜</th><th>영역</th><th>상세유형</th><th>브랜드</th><th>매장명</th><th>건수</th><th>상태</th><th>비고</th><th>노출여부</th>
       ${isJg ? '<th>징계유형</th><th>성명</th><th>양형</th>' : ''}
       ${isBc ? '<th>금액</th>' : ''}
       <th>결과</th>`;
@@ -927,10 +949,16 @@ function renderXlPreview(rows) {
   const tb = document.getElementById('xlPvTbody');
   tb.innerHTML = rows.map((r, i) => {
     const errsTxt = r.errs.join(' / ');
-    const suggBtn = (!r.ok && r.storeSuggestion)
+    const hasSugg = !r.ok && !!r.storeSuggestion;
+    const isNewStore = !r.ok && !!r.storeUnknown;
+    const suggBtn = hasSugg
       ? `<button type="button" class="xl-apply-btn" onclick="applyXlSuggestion(${i})">'${esc(r.storeSuggestion)}'로 적용</button>`
       : '';
+    const newStoreBtn = isNewStore
+      ? `<button type="button" class="xl-newstore-btn" onclick="registerNewXlStore(${i})">＋ '${esc(r.store)}' 새 매장으로 등록</button>`
+      : '';
     return `<tr class="${r.ok?'xl-row-ok':'xl-row-err'}">
+    <td>${hasSugg ? `<input type="checkbox" class="xl-sugg-ck" data-idx="${i}" onchange="syncXlApplySelBtn()">` : ''}</td>
     <td>${r.lineNo}</td>
     <td>${esc(r.date||'-')}</td>
     <td>${esc(r.type||'-')}</td>
@@ -943,9 +971,11 @@ function renderXlPreview(rows) {
     <td>${r.exposed ? 'O' : ''}</td>
     ${isJg ? `<td>${esc(r.jng_type||'')}</td><td>${esc(r.jg_name||'')}</td><td>${esc(r.jg_sent||'')}</td>` : ''}
     ${isBc ? `<td>${r.bc_amount != null ? r.bc_amount.toLocaleString() : ''}</td>` : ''}
-    <td>${r.ok?'<span class="xl-badge xl-badge-ok">유효</span>':`<span class="xl-badge xl-badge-err" title="${esc(errsTxt)}">${esc(errsTxt)}</span>`}${suggBtn}</td>
+    <td>${r.ok?'<span class="xl-badge xl-badge-ok">유효</span>':`<span class="xl-badge xl-badge-err" title="${esc(errsTxt)}">${esc(errsTxt)}</span>`}${suggBtn}${newStoreBtn}</td>
   </tr>`;
   }).join('');
+
+  syncXlApplySelBtn();
 
   document.getElementById('xlPreview').classList.remove('hide');
 }
@@ -999,6 +1029,57 @@ function applyXlSuggestion(i) {
   xlRawRows[i]['매장명'] = r.storeSuggestion;
   xlParsed[i] = validateXlRow(xlRawRows[i], r.lineNo);
   renderXlPreview(xlParsed);
+}
+
+// 비슷한 등록 매장이 전혀 없는 완전히 새 매장명을 이번 업로드/현재 세션 한정으로 정식 매장 목록에 추가
+// (STORES는 배포 시점의 constants.js 상수라 새로고침하면 초기화됨 — 영구 반영은 별도 코드 배포 필요)
+function registerNewXlStore(i) {
+  const r = xlParsed[i];
+  if (!r || !r.storeUnknown || !r.store || !r.brand || !xlRawRows[i]) return;
+  if (!confirm(`'${r.brand}' 브랜드에 새 매장 '${r.store}'을(를) 등록하시겠습니까?\n(이번 업로드 및 현재 화면 세션에서 정식 매장으로 인식됩니다)`)) return;
+  if (!STORES[r.brand]) STORES[r.brand] = [];
+  if (!STORES[r.brand].includes(r.store)) STORES[r.brand].push(r.store);
+  // 같은 매장명이 등장하는 다른 행도 함께 재검증
+  xlParsed = xlRawRows.map((row, idx) => validateXlRow(row, idx + 2));
+  renderXlPreview(xlParsed);
+  toast(`신규 매장 '${r.store}' 등록 완료`);
+}
+
+// 제안 체크박스 전체선택/해제
+function toggleAllXlSuggestions(checked) {
+  document.querySelectorAll('.xl-sugg-ck').forEach(ck => { ck.checked = checked; });
+  syncXlApplySelBtn();
+}
+
+// 체크된 항목 유무에 따라 '선택 매장명 적용' 버튼 활성화 상태 갱신
+function syncXlApplySelBtn() {
+  const total = document.querySelectorAll('.xl-sugg-ck').length;
+  const checked = document.querySelectorAll('.xl-sugg-ck:checked').length;
+  const applyBtn = document.getElementById('xlApplySelBtn');
+  if (applyBtn) applyBtn.disabled = checked === 0;
+  const selAll = document.getElementById('xlSelAllCk');
+  if (selAll) {
+    selAll.disabled = total === 0;
+    selAll.checked = total > 0 && checked === total;
+    selAll.indeterminate = checked > 0 && checked < total;
+  }
+}
+
+// 체크된 제안들을 한 번에 적용
+function applySelectedXlSuggestions() {
+  const idxs = [...document.querySelectorAll('.xl-sugg-ck:checked')].map(ck => parseInt(ck.dataset.idx, 10));
+  if (!idxs.length) { toast('선택된 항목이 없습니다.'); return; }
+  let applied = 0;
+  idxs.forEach(i => {
+    const r = xlParsed[i];
+    if (r && r.storeSuggestion && xlRawRows[i]) {
+      xlRawRows[i]['매장명'] = r.storeSuggestion;
+      xlParsed[i] = validateXlRow(xlRawRows[i], r.lineNo);
+      applied++;
+    }
+  });
+  renderXlPreview(xlParsed);
+  toast(`매장명 ${applied}건 일괄 적용 완료`);
 }
 
 function cancelBulkUpload() {
