@@ -590,6 +590,8 @@ async function bulkUpdStatusSelected() {
 // ── 엑셀 일괄 업로드 ──────────────────────────────────
 // 검증된 행을 임시로 보관 (확정 시 INSERT)
 let xlParsed = [];
+// 매장명 제안 적용 시 재검증할 수 있도록 원본 엑셀 행(가공 전)도 보관
+let xlRawRows = [];
 
 // 영역별 유효 상태 라벨 (엑셀 표시용 — validateXlRow에서 DB 값으로 정규화)
 function _areaStats(type) {
@@ -748,6 +750,7 @@ function handleExcelFile(ev) {
       const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
       if (!rows.length) { toast('데이터가 비어 있습니다.'); return; }
       const validated = rows.map((row, i) => validateXlRow(row, i + 2));
+      xlRawRows = rows;
       xlParsed = validated;
       renderXlPreview(validated);
     } catch (err) {
@@ -842,6 +845,7 @@ function validateXlRow(row, lineNo) {
   else if (!BRANDS.includes(brand)) errs.push(`브랜드 (${brand}) 알 수 없음`);
 
   let store = String(row['매장명'] || '').trim();
+  let storeSuggestion = null;
   if (store && brand && BRANDS.includes(brand)) {
     const stores = STORES[brand] || [];
     if (stores.length > 0 && !stores.includes(store)) {
@@ -850,8 +854,8 @@ function validateXlRow(row, lineNo) {
       if (exact) {
         store = exact;
       } else {
-        const suggestion = _suggestStore(store, stores);
-        errs.push(`매장명 (${store}) — '${brand}' 브랜드에 없음${suggestion ? ` (혹시 '${suggestion}'?)` : ''}`);
+        storeSuggestion = _suggestStore(store, stores);
+        errs.push(`매장명 (${store}) — '${brand}' 브랜드에 없음${storeSuggestion ? ` (혹시 '${storeSuggestion}'?)` : ''}`);
       }
     }
   }
@@ -893,7 +897,7 @@ function validateXlRow(row, lineNo) {
 
   return {
     lineNo, date, type, subtype, brand, store: store || null, count: count || 0, status, note, exposed,
-    jg_name, jg_sent, jng_type, bc_amount,
+    jg_name, jg_sent, jng_type, bc_amount, storeSuggestion,
     errs, ok: errs.length === 0
   };
 }
@@ -921,8 +925,11 @@ function renderXlPreview(rows) {
   }
 
   const tb = document.getElementById('xlPvTbody');
-  tb.innerHTML = rows.map(r => {
+  tb.innerHTML = rows.map((r, i) => {
     const errsTxt = r.errs.join(' / ');
+    const suggBtn = (!r.ok && r.storeSuggestion)
+      ? `<button type="button" class="xl-apply-btn" onclick="applyXlSuggestion(${i})">'${esc(r.storeSuggestion)}'로 적용</button>`
+      : '';
     return `<tr class="${r.ok?'xl-row-ok':'xl-row-err'}">
     <td>${r.lineNo}</td>
     <td>${esc(r.date||'-')}</td>
@@ -936,7 +943,7 @@ function renderXlPreview(rows) {
     <td>${r.exposed ? 'O' : ''}</td>
     ${isJg ? `<td>${esc(r.jng_type||'')}</td><td>${esc(r.jg_name||'')}</td><td>${esc(r.jg_sent||'')}</td>` : ''}
     ${isBc ? `<td>${r.bc_amount != null ? r.bc_amount.toLocaleString() : ''}</td>` : ''}
-    <td>${r.ok?'<span class="xl-badge xl-badge-ok">유효</span>':`<span class="xl-badge xl-badge-err" title="${esc(errsTxt)}">${esc(errsTxt)}</span>`}</td>
+    <td>${r.ok?'<span class="xl-badge xl-badge-ok">유효</span>':`<span class="xl-badge xl-badge-err" title="${esc(errsTxt)}">${esc(errsTxt)}</span>`}${suggBtn}</td>
   </tr>`;
   }).join('');
 
@@ -985,8 +992,18 @@ async function confirmBulkUpload() {
   else toast(`업로드: 성공 ${inserted}건 / 실패 ${failed}건`);
 }
 
+// 미리보기에서 '혹시 OO?' 제안을 클릭해 해당 행의 매장명을 확정 반영
+function applyXlSuggestion(i) {
+  const r = xlParsed[i];
+  if (!r || !r.storeSuggestion || !xlRawRows[i]) return;
+  xlRawRows[i]['매장명'] = r.storeSuggestion;
+  xlParsed[i] = validateXlRow(xlRawRows[i], r.lineNo);
+  renderXlPreview(xlParsed);
+}
+
 function cancelBulkUpload() {
   xlParsed = [];
+  xlRawRows = [];
   document.getElementById('xlPreview').classList.add('hide');
   document.getElementById('xlPvTbody').innerHTML = '';
   document.getElementById('xlFileName').textContent = '선택된 파일 없음';
