@@ -759,6 +759,40 @@ function handleExcelFile(ev) {
   ev.target.value = '';
 }
 
+// 매장명 비교용 정규화 — 공백(전각 포함)·대소문자 차이 무시
+function _normStore(s) { return String(s || '').replace(/[\s　]+/g, '').toLowerCase(); }
+
+// 두 문자열의 편집 거리(Levenshtein) — 오타로 추정되는 매장명 제안용
+function _levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  const dp = [];
+  for (let i = 0; i <= m; i++) dp.push([i]);
+  for (let j = 1; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+// 등록된 매장명 중 입력값과 가장 비슷한 것을 제안 (유사도 낮으면 제안 안 함)
+function _suggestStore(input, stores) {
+  let best = null, bestDist = Infinity;
+  for (const s of stores) {
+    const d = _levenshtein(input, s);
+    if (d < bestDist) { bestDist = d; best = s; }
+  }
+  if (!best) return null;
+  const maxLen = Math.max(input.length, best.length);
+  const similarity = maxLen ? 1 - bestDist / maxLen : 1;
+  return similarity >= 0.5 ? best : null;
+}
+
 function validateXlRow(row, lineNo) {
   const errs = [];
   let date = row['날짜'];
@@ -807,11 +841,18 @@ function validateXlRow(row, lineNo) {
   if (!brand) errs.push('브랜드 필수');
   else if (!BRANDS.includes(brand)) errs.push(`브랜드 (${brand}) 알 수 없음`);
 
-  const store = String(row['매장명'] || '').trim();
+  let store = String(row['매장명'] || '').trim();
   if (store && brand && BRANDS.includes(brand)) {
     const stores = STORES[brand] || [];
     if (stores.length > 0 && !stores.includes(store)) {
-      errs.push(`매장명 (${store}) — '${brand}' 브랜드에 없음`);
+      // 공백/대소문자 차이만 있으면 등록된 정식 매장명으로 자동 보정
+      const exact = stores.find(s => _normStore(s) === _normStore(store));
+      if (exact) {
+        store = exact;
+      } else {
+        const suggestion = _suggestStore(store, stores);
+        errs.push(`매장명 (${store}) — '${brand}' 브랜드에 없음${suggestion ? ` (혹시 '${suggestion}'?)` : ''}`);
+      }
     }
   }
 
