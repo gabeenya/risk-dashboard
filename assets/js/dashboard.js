@@ -1162,9 +1162,11 @@ function showGradeInfo(target) {
         `<div class="gip-val">시작월~기준월 매월 등급 점수의 평균으로 산정<br>(안전·위생 1월~ · 그 외 영역 3월~, 단순 누적 건수 아님 — 단, 위생 및 매장 보유 브랜드의 불법파견·표시광고·가맹·IP·노무·영업비밀은 시작월~기준월 월평균 매장당 발생 건수를 기준에 직접 대입)</div>`
       : '') +
     `<div class="gip-sec">종합등급 기준 (평균점수)</div>` +
-    `<div class="gip-val">A 9-10 · B 7-8 · C 4-6 · D 1-3 · F 0</div>` +
+    `<div class="gip-val">A 9-10 · B 7-8 · C 4-6 · D 1-3 · F 0<br>기본은 영역별 등급 점수의 동일가중 평균. 단 <b>프랜차이즈·카페</b>는 가맹 75% · (IP+표시광고) 10% · 부실채권 10% · 나머지(불법파견·노무·영업비밀·안전·위생) 5%로 가중 반영</div>` +
     `<div class="gip-sec">100점 환산</div>` +
-    `<div class="gip-val">평균점수 × 10</div>`;
+    `<div class="gip-val">평균점수 × 10</div>` +
+    `<div class="gip-sec">'-' 표기</div>` +
+    `<div class="gip-val">해당 브랜드+영역에 전체 기간 기록이 하나도 없으면(가맹 미운영 등 제외 대상 포함) 0건=A가 아니라 '-'로 표시하고 종합등급 평균에서 제외</div>`;
   document.body.appendChild(__gradeInfoEl);
   const rect = target.getBoundingClientRect();
   const pw = 260;
@@ -1258,6 +1260,12 @@ const GRADE_ACC_DEFAULT_START = 3;
 // 안전도 동일 계열: 중대재해는 별도 즉시 F, 그 외엔 "산업재해 발생" 건수만으로 매장당 월평균을 산정하고
 // 이 비율 기준으로는 F를 매기지 않는다(gradeFromSafetyRate).
 function calcGradeDetail(type, brand, ym, acc) {
+  // 해당 브랜드+영역 조합에 전체 기간 기록이 하나도 없으면(예: 델리바이애슐리의 위생) "0건이라 A"가
+  // 아니라 "애초에 측정된 값이 없음"으로 보고 '-'를 반환한다 — 렌더링에서 제외 영역과 동일하게 처리되고
+  // 종합등급 평균 계산에서도 빠진다.
+  if (!records.some(r => r.brand === brand && r.type === type)) {
+    return { grade: '-', cnt: 0, mon: 0 };
+  }
   if (type === '위생') {
     const [yr, mo] = ym.split('-').map(Number);
     const startMo = acc ? Math.min(GRADE_ACC_START_MONTH['위생'], mo) : mo;
@@ -1350,6 +1358,43 @@ function calcGradeDetail(type, brand, ym, acc) {
 // 하위 호환 (다른 곳에서 사용 가능)
 function calcGrade(type, brand, ym) { return calcGradeDetail(type, brand, ym).grade; }
 
+// '프랜차이즈'·'카페' 브랜드는 가맹 비중이 커서 종합등급을 9개 영역 동일가중 평균 대신
+// 가맹75% · (IP+표시광고)10% · 부실채권10% · 나머지(불법파견·노무·영업비밀·안전·위생)5%로 가중 반영한다.
+// 버킷 내 영역이 여러 개면(IP+표시광고, 나머지 5개) 그 안에서는 동일가중 평균을 낸 뒤 버킷 가중치를 곱한다.
+const OVERALL_WEIGHTED_BRANDS = new Set(['프랜차이즈', '카페']);
+const OVERALL_WEIGHT_BUCKETS = [
+  { areas: ['가맹'],                                     weight: 0.75 },
+  { areas: ['IP', '표시광고'],                            weight: 0.10 },
+  { areas: ['부실채권'],                                  weight: 0.10 },
+  { areas: ['불법파견', '노무', '영업비밀', '안전', '위생'], weight: 0.05 }
+];
+
+// details = { [영역]: {grade, cnt, mon} }, areas = 종합등급에 반영할 영역 목록(보통 GRADE_AREAS 또는 그 부분집합)
+// 반환: { avg(0~10 평균점수), score(100점 환산), overallGrade }
+// 제외 영역(isGradeAreaExcluded)과 무기록 영역(grade === '-')은 평균에서 빠진다.
+function calcOverallGrade(brand, details, areas) {
+  const usable = t => details[t] && details[t].grade !== '-' && !isGradeAreaExcluded(t, brand);
+
+  if (OVERALL_WEIGHTED_BRANDS.has(brand)) {
+    let weightedSum = 0, weightTotal = 0;
+    OVERALL_WEIGHT_BUCKETS.forEach(({ areas: bucketAreas, weight }) => {
+      const valid = bucketAreas.filter(usable);
+      if (!valid.length) return;
+      const bucketAvg = valid.reduce((s, t) => s + (GRADE_SCORE[details[t].grade] ?? 0), 0) / valid.length;
+      weightedSum += bucketAvg * weight;
+      weightTotal += weight;
+    });
+    const avg = weightTotal ? weightedSum / weightTotal : 0;
+    return { avg, score: parseFloat((avg * 10).toFixed(1)), overallGrade: gradeFromScore(avg) };
+  }
+
+  const effAreas = areas.filter(usable);
+  const fallbackAreas = effAreas.length ? effAreas : areas;
+  const total = fallbackAreas.reduce((s, t) => s + (GRADE_SCORE[details[t].grade] ?? 0), 0);
+  const avg = fallbackAreas.length ? total / fallbackAreas.length : 0;
+  return { avg, score: parseFloat((avg * 10).toFixed(1)), overallGrade: gradeFromScore(avg) };
+}
+
 function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
   visibleAreas = visibleAreas || GRADE_AREAS;
   if (showOverall === undefined) showOverall = true;
@@ -1389,14 +1434,8 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
       const d = calcGradeDetail(type, brand, ym, isAcc);
       details[type] = d;
     });
-    const brandScoreAreas = scoreAreas.filter(t => !isGradeAreaExcluded(t, brand));
-    const effAreas = brandScoreAreas.length ? brandScoreAreas : scoreAreas;
-    let total = 0;
-    effAreas.forEach(type => { total += GRADE_SCORE[details[type].grade] ?? 0; });
-    const avg   = effAreas.length ? total / effAreas.length : 0;
-    const score = parseFloat((avg * 10).toFixed(1));
-    const overallGrade = gradeFromScore(avg);
-    return { brand, details, total, score, overallGrade };
+    const { score, overallGrade } = calcOverallGrade(brand, details, scoreAreas);
+    return { brand, details, score, overallGrade };
   }).sort((a, b) => b.score - a.score || a.brand.localeCompare(b.brand));
   if (brandOnly) ranked = ranked.filter(r => r.brand === curBrand);
 
@@ -1414,8 +1453,8 @@ function renderLeaderboard(visibleAreas, showOverall, brandOnly) {
       `<td class="gt-brand">${esc(brand)}</td>` +
       (showOverall ? `<td class="gt-overall"><div class="gt-overall-wrap"><span class="gc ${overallGrade}">${overallGrade}</span><span class="gt-overall-score">${scoreTxt}점</span></div></td><td class="gt-sep"></td>` : '') +
       visibleAreas.map(t => {
-        if (isGradeAreaExcluded(t, brand)) return `<td class="gt-area"><div class="gc-cell"><span class="gc na">-</span></div></td>`;
         const d = details[t];
+        if (isGradeAreaExcluded(t, brand) || d.grade === '-') return `<td class="gt-area"><div class="gc-cell"><span class="gc na">-</span></div></td>`;
         const cntHtml = SIMPLE_COUNT_AREAS.has(t)
           ? `<span class="gc-cnt"><span class="gc-vio">${d.cnt}</span>건</span>`
           : `<span class="gc-cnt"><span class="gc-vio">${d.cnt}</span>/<span class="gc-mon">${d.cnt + d.mon}</span></span>`;
