@@ -119,6 +119,85 @@ function refreshFormStoreOptions() {
     stores.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
 }
 
+// ── 매장명 빠른 검색 (브랜드를 몰라도 매장명으로 바로 찾아 선택, 신규 입력 폼 전용) ──
+let storeSearchIdx = -1;
+function onStoreSearchInput(q) {
+  q = (q || '').trim();
+  if (!q) { hideStoreSearchResults(); return; }
+  const ql = q.toLowerCase();
+  const matches = [];
+  outer: for (const brand in STORES) {
+    for (const store of STORES[brand]) {
+      if (store.toLowerCase().includes(ql)) {
+        matches.push({ store, brand });
+        if (matches.length >= 40) break outer;
+      }
+    }
+  }
+  renderStoreSearchResults(matches, q);
+}
+function highlightStoreMatch(text, q) {
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if (idx < 0) return esc(text);
+  return esc(text.slice(0, idx)) + '<b>' + esc(text.slice(idx, idx + q.length)) + '</b>' + esc(text.slice(idx + q.length));
+}
+function renderStoreSearchResults(matches, q) {
+  const box = document.getElementById('storeSearchResults');
+  if (!box) return;
+  box.innerHTML = matches.length
+    ? matches.map((m, i) => `<div class="store-search-item" data-idx="${i}" data-store="${esc(m.store)}" data-brand="${esc(m.brand)}">
+        <span class="ss-name">${highlightStoreMatch(m.store, q)}</span><span class="ss-brand">${esc(m.brand)}</span>
+      </div>`).join('')
+    : '<div class="store-search-empty">일치하는 매장이 없습니다.</div>';
+  box.classList.remove('hide');
+  storeSearchIdx = -1;
+}
+function hideStoreSearchResults() {
+  const box = document.getElementById('storeSearchResults');
+  if (box) { box.classList.add('hide'); box.innerHTML = ''; }
+  storeSearchIdx = -1;
+}
+function pickStoreSearchResult(store, brand) {
+  const brandSel = document.getElementById('f-brand');
+  if (brandSel) brandSel.value = brand;
+  refreshFormStoreOptions();
+  const storeSel = document.getElementById('f-store');
+  if (storeSel) storeSel.value = store;
+  const inp = document.getElementById('f-store-search');
+  if (inp) inp.value = '';
+  hideStoreSearchResults();
+  toast(`매장 선택: ${store} (${brand})`);
+}
+function onStoreSearchKeydown(e) {
+  const box = document.getElementById('storeSearchResults');
+  if (!box || box.classList.contains('hide')) return;
+  const items = [...box.querySelectorAll('.store-search-item')];
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    storeSearchIdx = Math.min(storeSearchIdx + 1, items.length - 1);
+    items.forEach((it, i) => it.classList.toggle('hl', i === storeSearchIdx));
+    items[storeSearchIdx].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    storeSearchIdx = Math.max(storeSearchIdx - 1, 0);
+    items.forEach((it, i) => it.classList.toggle('hl', i === storeSearchIdx));
+    items[storeSearchIdx].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    const target = storeSearchIdx >= 0 ? items[storeSearchIdx] : (items.length === 1 ? items[0] : null);
+    if (target) pickStoreSearchResult(target.dataset.store, target.dataset.brand);
+  } else if (e.key === 'Escape') {
+    hideStoreSearchResults();
+    e.target.blur();
+  }
+}
+document.addEventListener('click', e => {
+  const item = e.target.closest('.store-search-item');
+  if (item) { pickStoreSearchResult(item.dataset.store, item.dataset.brand); return; }
+  if (!e.target.closest('.store-search-wrap')) hideStoreSearchResults();
+});
+
 async function addRecord() {
   const date   = document.getElementById('f-date').value;
   const type   = curType;
@@ -287,6 +366,9 @@ function resetForm() {
   document.getElementById('f-date').value    = new Date().toISOString().split('T')[0];
   document.getElementById('f-brand').value   = '';
   refreshFormStoreOptions();
+  const stSearch = document.getElementById('f-store-search');
+  if (stSearch) stSearch.value = '';
+  hideStoreSearchResults();
   document.getElementById('f-subtype').value = '';
   document.getElementById('f-count').value   = 1;
   document.getElementById('f-status').value  = (curType === '감사' || curType === '부실채권') ? '위반(처리중)' : '모니터링';

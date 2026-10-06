@@ -23,6 +23,24 @@
 .fgroup select:disabled { background: #f8fafc; color: #94a3b8; }
 .fgroup input[readonly] { background: #f8fafc; color: #94a3b8; }
 
+/* ── 매장명 빠른 검색 (신규 입력 폼) ──────────────────── */
+.store-search-wrap { position: relative; }
+.store-search-inp { background: #f8fafc; }
+.store-search-inp:focus { background: #fff; }
+.store-search-results {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+  max-height: 260px; overflow-y: auto;
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15,23,42,0.12);
+}
+.store-search-results.hide { display: none; }
+.store-search-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; font-size: 12.5px; color: #0f172a; cursor: pointer; }
+.store-search-item:hover, .store-search-item.hl { background: #eff6ff; }
+.store-search-item .ss-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.store-search-item .ss-name b { color: #1e3a8a; }
+.store-search-item .ss-brand { flex-shrink: 0; font-size: 10px; font-weight: 600; color: #64748b; background: #f1f5f9; border-radius: 4px; padding: 2px 6px; }
+.store-search-empty { padding: 10px 12px; font-size: 12px; color: #94a3b8; }
+
 .f-acts { display: flex; gap: 10px; margin-top: 1.1rem; align-items: center; }
 
 /* ── Lock screen (비로그인 시) ─────────────────────── */
@@ -203,6 +221,7 @@
   .fgrid { gap: 10px; }
   .fgroup label { font-size: 9px; }
   .fgroup input, .fgroup select { padding: 8px 10px; font-size: 12px; }
+  .store-search-item { padding: 7px 10px; font-size: 11.5px; }
   .f-acts { flex-wrap: wrap; gap: 8px; }
   .btn-pri { padding: 8px 18px; font-size: 12px; }
   .btn-sec { padding: 8px 14px; font-size: 12px; }
