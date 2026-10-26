@@ -156,6 +156,16 @@ function searchQueryFor(brand: string): string {
   return SEARCH_QUERY_ALIAS[brand] || brand;
 }
 
+// 네이버 검색은 합성어를 형태소로 쪼개 찾는다(예: "자연별곡" → "자연"+"별곡").
+// 그래서 "자연에너지 주유소", "단양읍 별곡9길", "청산별곡" 같은 무관한 글이 대량으로 섞여
+// 실제로 저장분의 60% 이상이 무관 글이었음 — 제목/검색요약에 브랜드명이 붙은 그대로
+// (띄어쓰기 무시) 들어 있는 글만 후보로 삼는다. 요약은 검색어가 걸린 부분을 보여주므로
+// 본문에 브랜드명이 있으면 대개 요약에도 나타난다.
+function mentionsBrand(brand: string, title: string, snippet: string): boolean {
+  const norm = (s: string) => s.replace(/\s+/g, '').toLowerCase();
+  return norm(title + snippet).includes(norm(brand));
+}
+
 async function naverSearch(kind: 'blog' | 'cafearticle', query: string, start: number): Promise<any> {
   const clientId = Deno.env.get('NAVER_CLIENT_ID');
   const clientSecret = Deno.env.get('NAVER_CLIENT_SECRET');
@@ -352,10 +362,12 @@ Deno.serve(async (req) => {
           const postDate = blogPostdateToYmd(it.postdate || '');
           if (postDate && postDate < from) { stop = true; break; }
           if (postDate && postDate > to) continue;
+          const title = stripHtmlTags(it.title || '');
+          const snippet = stripHtmlTags(it.description || '');
+          if (!mentionsBrand(brand, title, snippet)) continue;
           allItems.push({
             brand, platform: '네이버블로그',
-            title: stripHtmlTags(it.title || ''), link: it.link,
-            snippet: stripHtmlTags(it.description || ''),
+            title, link: it.link, snippet,
             bloggerName: it.bloggername || '', postDate,
           });
         }
@@ -366,12 +378,15 @@ Deno.serve(async (req) => {
       // 카페: 검색 API가 게시일을 반환하지 않음(Naver API 제약) — 상위 일부만 후보로 삼고
       // 본문 수집 후 텍스트에서 날짜 추출을 시도한다(실패 시 게시일 미상으로 표시).
       const cafeData = await naverSearch('cafearticle', q, 1).catch(() => null);
-      const cafeItems = (cafeData?.items ?? []).slice(0, MAX_CAFE_PER_BRAND);
-      for (const it of cafeItems) {
+      // 무관 글을 먼저 거른 뒤 상위 N개를 자른다(자르고 거르면 남는 게 거의 없음).
+      const cafeItems = (cafeData?.items ?? [])
+        .map((it: any) => ({ it, title: stripHtmlTags(it.title || ''), snippet: stripHtmlTags(it.description || '') }))
+        .filter((c: any) => mentionsBrand(brand, c.title, c.snippet))
+        .slice(0, MAX_CAFE_PER_BRAND);
+      for (const { it, title, snippet } of cafeItems) {
         allItems.push({
           brand, platform: '네이버카페',
-          title: stripHtmlTags(it.title || ''), link: it.link,
-          snippet: stripHtmlTags(it.description || ''),
+          title, link: it.link, snippet,
           bloggerName: it.cafename || '', postDate: '',
         });
       }
