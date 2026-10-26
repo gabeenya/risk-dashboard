@@ -28,7 +28,9 @@ const MAX_CANDIDATES = 100;      // 스캔 1회당 처리 상한(Edge Function �
 const CONCURRENCY = 8;           // 본문수집+AI분류 동시 처리 개수 — MAX_CANDIDATES 상향에 맞춰 함께 올림
 const BODY_MAX_CHARS = 4000;
 const MAX_IMAGES_PER_POST = 3;   // 게시물당 비전 분석에 사용할 이미지 상한(비용/시간 제한)
-const MAX_IMAGE_BYTES = 4.5 * 1024 * 1024; // Claude 비전 API 이미지 1장 상한(약 5MB)에 여유를 둠
+const MAX_IMAGE_BYTES = 4.5 * 1024 * 1024; // Claude 비전 API 이미지 1장 상한(약 5MB)에 여유를 둠 — 넘으면 Claude가 거부하므로 미리 제외
+const MAX_HTML_BYTES = 1.5 * 1024 * 1024; // 본문 HTML 다운로드 상한 — 비정상적으로 큰 페이지 하나가 워커 메모리를 다 쓰지 않도록
+const SCAN_DEADLINE_MS = 110_000; // 이 시간이 지나면 새 후보 처리를 멈추고 지금까지 결과만 저장(Edge Function 실행시간 제한 546 방지)
 const MIN_IMAGE_BYTES = 3000;    // 이보다 작으면 아이콘/장식 이미지로 간주해 제외
 
 type SearchItem = {
@@ -53,22 +55,27 @@ function stripHtmlTags(s: string): string {
     .trim();
 }
 
-// 외부 import 없이 자체적으로 base64 인코딩(대시보드 브라우저 에디터 배포 시
-// 원격 import 해석이 불안정할 수 있어 표준 라이브러리 의존을 없앰).
-// 이미지가 여러 장 겹치면 JS 루프 인코딩이 CPU 시간을 많이 써서 Edge Function이
-// "CPU Time exceeded"(546)로 죽는 사례가 있어, 런타임에 내장된 네이티브 인코더
-// (Uint8Array.prototype.toBase64, V8/Deno 최신 버전)가 있으면 그걸 우선 사용하고
-// 없는 구형 런타임에서만 기존 청크 루프로 폴백한다.
-function bytesToBase64(bytes: Uint8Array): string {
-  const native = (bytes as unknown as { toBase64?: () => string }).toBase64;
-  if (typeof native === 'function') return native.call(bytes);
-
-  const CHUNK = 0x8000;
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+// 응답 본문을 maxBytes까지만 읽는다. Content-Length가 상한을 넘으면 아예 받지 않고,
+// 헤더가 없거나 거짓이어도 스트림 누적량이 상한을 넘는 순간 중단 — 거대한 파일 하나를
+// 통째로 메모리에 올렸다가 버리는 일이 없도록(546 WORKER_LIMIT 메모리 초과 방지).
+async function readCapped(r: Response, maxBytes: number): Promise<Uint8Array | null> {
+  const len = Number(r.headers.get('content-length') || 0);
+  if (len > maxBytes) { r.body?.cancel().catch(() => {}); return null; }
+  if (!r.body) return new Uint8Array(await r.arrayBuffer());
+  const reader = r.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) { reader.cancel().catch(() => {}); return null; }
+    chunks.push(value);
   }
-  return btoa(binary);
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const c of chunks) { out.set(c, off); off += c.byteLength; }
+  return out;
 }
 
 function htmlToText(html: string): string {
@@ -79,6 +86,11 @@ function htmlToText(html: string): string {
 
 // 본문 HTML에서 이미지 URL을 추출한다(태그 스트립 전에 호출해야 함).
 // 아이콘/로고/장식 이미지로 보이는 것은 파일명 패턴으로 걸러내고, 상한 개수만 반환.
+// 네이버 블로그 프로필 사진(blogpfthumb)·스티커(storep)·사이트 공용 이미지(ssl.pstatic.net/static)·
+// 링크 미리보기 썸네일(dthumb)은 본문 사진이 아니라 OCR 대상에서 뺀다 — 이게 앞쪽 슬롯을 차지해
+// 실제 사진이 분석되지 못하던 문제가 있었음.
+// 협찬 표시는 글 첫 사진(상단 고지)이나 마지막 사진(체험단 배너 "~로부터 제공받아 작성")에 몰려
+// 있는 경우가 많아, 앞에서 MAX-1장 + 맨 마지막 1장을 고른다.
 function extractImageUrls(html: string, baseUrl: string): string[] {
   const urls: string[] = [];
   const re = /<img[^>]+src=["']([^"']+)["']/gi;
@@ -93,27 +105,33 @@ function extractImageUrls(html: string, baseUrl: string): string[] {
       continue; // data URI 등은 스킵
     }
     if (/icon|logo|btn_|blank\.gif|profile|sprite|spacer/i.test(src)) continue;
+    if (/blogpfthumb-phinf|storep-phinf|dthumb-phinf|ssl\.pstatic\.net\/static/i.test(src)) continue;
     urls.push(src);
   }
-  return Array.from(new Set(urls)).slice(0, MAX_IMAGES_PER_POST);
+  const uniq = Array.from(new Set(urls));
+  if (uniq.length <= MAX_IMAGES_PER_POST) return uniq;
+  return [...uniq.slice(0, MAX_IMAGES_PER_POST - 1), uniq[uniq.length - 1]];
 }
 
-// 이미지 다운로드 후 Claude 비전 API에 넣을 수 있는 base64로 인코딩.
-// 너무 크거나(용량 초과) 너무 작으면(아이콘 추정) null 반환해 판별에서 제외.
-async function fetchImageAsBase64(url: string): Promise<{ mediaType: string; data: string } | null> {
+// 이미지는 서버에서 내려받아 base64로 바꾸지 않고 URL만 Claude에 넘긴다(Claude가 직접 가져감).
+// base64 변환은 1MB 사진 한 장에 ~100ms CPU가 들어, 사진 많은 브랜드(예: 자연별곡)에서
+// Edge Function CPU 한도(2초)를 넘겨 "CPU Time exceeded"(546)로 죽던 원인이었음.
+// 여기서는 HEAD 요청(본문 없이 헤더만, CPU 거의 0)으로 형식·용량만 확인해 부적합한 것을 거른다.
+async function checkImageUrl(url: string): Promise<boolean> {
   try {
     const r = await fetch(url, {
+      method: 'HEAD',
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RiskDashboardBot/1.0)' },
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(5000),
     });
-    if (!r.ok) return null;
+    if (!r.ok) return false;
     const mediaType = (r.headers.get('content-type') || '').split(';')[0].trim();
-    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mediaType)) return null;
-    const buf = new Uint8Array(await r.arrayBuffer());
-    if (buf.byteLength > MAX_IMAGE_BYTES || buf.byteLength < MIN_IMAGE_BYTES) return null;
-    return { mediaType, data: bytesToBase64(buf) };
+    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mediaType)) return false;
+    const len = Number(r.headers.get('content-length') || 0);
+    if (len && (len > MAX_IMAGE_BYTES || len < MIN_IMAGE_BYTES)) return false;
+    return true;
   } catch {
-    return null;
+    return false;
   }
 }
 
@@ -165,7 +183,9 @@ async function fetchBody(link: string): Promise<{ text: string; ok: boolean; ima
     signal: AbortSignal.timeout(8000),
   }).catch(() => null);
   if (!r || !r.ok) return { text: '', ok: false, imageUrls: [] };
-  const html = await r.text();
+  const raw = await readCapped(r, MAX_HTML_BYTES).catch(() => null);
+  if (!raw) return { text: '', ok: false, imageUrls: [] };
+  const html = new TextDecoder().decode(raw);
   const text = htmlToText(html).slice(0, BODY_MAX_CHARS);
   const loginWall = text.length < 400 && /로그인|카페\s*가입|비공개\s*게시물/.test(text);
   if (text.length < 200 || loginWall) return { text, ok: false, imageUrls: [] };
@@ -173,12 +193,12 @@ async function fetchBody(link: string): Promise<{ text: string; ok: boolean; ima
 }
 
 async function classifyWithClaude(
-  brand: string, text: string, images: { mediaType: string; data: string }[]
-): Promise<{ verdict: string | null; reason: string }> {
+  brand: string, text: string, images: string[]
+): Promise<{ verdict: string | null; reason: string; usedImages: number }> {
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
   const imgNote = images.length > 0
-    ? `게시물에 첨부된 사진 ${images.length}장도 함께 제공됩니다. 사진 속에 표시된 문구(협찬/광고 워터마크, 촬영된 안내문 등 텍스트로 된 것)가 있다면 그것도 판단 근거로 활용하세요.`
+    ? `게시물에 첨부된 사진 ${images.length}장도 함께 제공됩니다(본문 앞부분 사진과 맨 마지막 사진). 사진 속 글자를 꼼꼼히 읽어(OCR) 협찬/광고 워터마크, "~로부터 제공받아 작성" 같은 체험단 배너, 촬영된 안내문 등이 있는지 확인하고, 발견하면 그 문구를 reason에 그대로 인용하세요.`
     : '이 게시물에는 분석 가능한 사진이 첨부되지 않아, 아래 텍스트만으로 판단합니다.';
   const promptText = `다음은 '${brand}' 브랜드가 언급된 게시물의 본문(또는 검색 요약)입니다. ${imgNote}
 
@@ -198,7 +218,7 @@ ${text.slice(0, 4000)}
 
   async function callClaude(withImages: boolean) {
     const content: Record<string, unknown>[] = withImages
-      ? images.map(img => ({ type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.data } }))
+      ? images.map(url => ({ type: 'image', source: { type: 'url', url } }))
       : [];
     content.push({ type: 'text', text: promptText });
     return fetch('https://api.anthropic.com/v1/messages', {
@@ -208,24 +228,26 @@ ${text.slice(0, 4000)}
     });
   }
 
-  let r = await callClaude(images.length > 0);
-  // 이미지 포함 요청이 실패하면(예: 네이버 핫링크 방지로 받아온 이미지가 실제로는
-  // 손상/비이미지 데이터라 Claude가 디코딩 못 해 400을 내는 경우) 이미지를 빼고
-  // 텍스트만으로 1회 재시도 — 이미지 한 장 때문에 분류 전체가 실패하지 않도록.
-  if (!r.ok && images.length > 0) {
+  let usedImages = images.length;
+  let r = await callClaude(usedImages > 0);
+  // 이미지 포함 요청이 실패하면(예: Claude 쪽에서 네이버 이미지 URL을 못 가져오거나
+  // 디코딩 못 해 400을 내는 경우) 이미지를 빼고 텍스트만으로 1회 재시도 —
+  // 이미지 한 장 때문에 분류 전체가 실패하지 않도록. 이때 사진 수는 0으로 기록.
+  if (!r.ok && usedImages > 0) {
     r = await callClaude(false);
+    usedImages = 0;
   }
   if (!r.ok) throw new Error(`HTTP ${r.status} — ${await r.text().catch(() => '(본문 읽기 실패)')}`);
   const data = await r.json();
   const raw: string = data?.content?.[0]?.text ?? '';
   const match = raw.match(/\{[\s\S]*\}/);
-  if (!match) return { verdict: null, reason: 'AI 응답 파싱 실패' };
+  if (!match) return { verdict: null, reason: 'AI 응답 파싱 실패', usedImages };
   try {
     const parsed = JSON.parse(match[0]);
     const verdict = ['의심', '주의', '낮음'].includes(parsed.verdict) ? parsed.verdict : null;
-    return { verdict, reason: String(parsed.reason || '') };
+    return { verdict, reason: String(parsed.reason || ''), usedImages };
   } catch {
-    return { verdict: null, reason: 'AI 응답 파싱 실패' };
+    return { verdict: null, reason: 'AI 응답 파싱 실패', usedImages };
   }
 }
 
@@ -313,6 +335,7 @@ Deno.serve(async (req) => {
 
   try {
   const scanId = Date.now();
+  const deadline = scanId + SCAN_DEADLINE_MS;
   const allItems: SearchItem[] = [];
 
   try {
@@ -375,13 +398,14 @@ Deno.serve(async (req) => {
   const newItems = allItems.filter(it => !existingLinks.has(it.link));
 
   const totalFound = allItems.length;
-  const truncated = newItems.length > MAX_CANDIDATES;
+  let truncated = newItems.length > MAX_CANDIDATES;
   const candidates = newItems.slice(0, MAX_CANDIDATES);
 
   const results: Record<string, unknown>[] = [];
   let idx = 0;
   async function worker() {
     while (idx < candidates.length) {
+      if (Date.now() > deadline) { truncated = true; return; }
       const item = candidates[idx++];
       const { text: bodyText, ok: bodyOk, imageUrls } = await fetchBody(item.link);
       const finalText = bodyOk && bodyText ? bodyText : item.snippet;
@@ -390,20 +414,22 @@ Deno.serve(async (req) => {
       if (!postDate) postDate = extractDateFromText(finalText);
       if (postDate && (postDate < from || postDate > to)) continue; // 기간 밖으로 판명 — 저장 생략
 
-      // 본문 수집에 성공한 경우에만 이미지도 함께 분석(스니펫만 있을 땐 이미지 URL이 없음)
-      const images: { mediaType: string; data: string }[] = [];
-      if (bodyOk) {
+      // 본문 수집에 성공한 경우에만 이미지도 함께 분석(스니펫만 있을 땐 이미지 URL이 없음).
+      // 카페는 본문이 iframe 안에 있어 PC 페이지에서 잡히는 img가 카페 대표 배너/썸네일뿐이라
+      // 판별에 도움이 안 되고 요청만 늘어 제외한다.
+      const images: string[] = [];
+      if (bodyOk && item.platform === '네이버블로그') {
         for (const imgUrl of imageUrls) {
-          const img = await fetchImageAsBase64(imgUrl);
-          if (img) images.push(img);
+          if (await checkImageUrl(imgUrl)) images.push(imgUrl);
         }
       }
 
       let verdict: string | null = null;
       let reason = '';
+      let imageCount = 0;
       try {
         const c = await classifyWithClaude(item.brand, finalText, images);
-        verdict = c.verdict; reason = c.reason;
+        verdict = c.verdict; reason = c.reason; imageCount = c.usedImages;
       } catch (e) {
         reason = `AI 분류 실패: ${String(e)}`;
       }
@@ -412,7 +438,7 @@ Deno.serve(async (req) => {
         brand: item.brand, platform: item.platform,
         title: item.title, link: item.link, snippet: item.snippet,
         blogger_name: item.bloggerName, post_date: postDate || null,
-        body_fetch_ok: bodyOk, image_count: images.length,
+        body_fetch_ok: bodyOk, image_count: imageCount,
         ai_verdict: verdict, ai_reason: reason,
         status: '검토대기',
       });

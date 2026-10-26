@@ -67,6 +67,8 @@ async function runAdWatchScan() {
       body: JSON.stringify({ from, to, brands }),
     });
     const data = await r.json().catch(() => ({}));
+    // 546 = Supabase Edge Function 자원 한도(CPU/메모리/실행시간) 초과로 함수가 강제 종료된 경우 — 본문 JSON이 없음
+    if (r.status === 546) throw new Error('서버 처리 한도 초과(546) — 브랜드를 나눠서 다시 스캔해주세요. 반복되면 Supabase 함수 로그 확인 필요');
     if (!r.ok || data.error) throw new Error(data.error || `HTTP ${r.status}`);
 
     await loadAdWatchCandidates();
